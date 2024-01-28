@@ -20,7 +20,7 @@ export default class PluginTableImporter extends Plugin {
   }: {
     detail: { menu: Menu; blockElements: [HTMLElement]; protyle: Protyle };
   }) {
-    console.log(detail);
+    //console.log(detail);
     if (detail.blockElements.length !== 1) {
       return;
     }
@@ -30,6 +30,7 @@ export default class PluginTableImporter extends Plugin {
     }
     const protyleHtml = selectElement.querySelector("protyle-html");
     const html = protyleHtml?.getAttribute("data-content");
+    /*
     const tempEle = document.createElement("div");
     tempEle.innerHTML = html;
     if (!tempEle.querySelector("table")) {
@@ -37,6 +38,12 @@ export default class PluginTableImporter extends Plugin {
       if (!tempEle.querySelector("table")) {
         return;
       }
+    }*/
+    //直接使用shadow
+    const shadow = protyleHtml.shadowRoot.querySelector("div");
+
+    if (!shadow.querySelector("table")) {
+      return;
     }
     detail.menu.addItem({
       iconHTML: "",
@@ -49,7 +56,7 @@ export default class PluginTableImporter extends Plugin {
         }
         const fullWidth = window.getComputedStyle(selectElement).width;
         let tableBlocks = buildSyTableBlocks(
-          tempEle,
+          shadow,
           fullWidth,
           window.Lute.NewNodeID()
         );

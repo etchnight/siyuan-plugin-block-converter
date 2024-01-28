@@ -57,20 +57,11 @@ function buildSyTables(ele: HTMLElement) {
     newTable.spellcheck = false;
     //let table = tableSource.cloneNode(true)
     let head = table.tHead;
-    head
-      ? newTable.appendChild(
-          rebuildTableSection(
-            head.cloneNode(true) as HTMLTableSectionElement,
-            true
-          )
-        )
-      : null;
+    head ? newTable.appendChild(rebuildTableSection(head, true)) : null;
 
     let bodys = table.tBodies;
     for (let body of bodys) {
-      newTable.appendChild(
-        rebuildTableSection(body.cloneNode(true) as HTMLTableSectionElement)
-      );
+      newTable.appendChild(rebuildTableSection(body));
     }
     //无head强制加head
     if (!head) {
@@ -101,37 +92,43 @@ function buildSyTables(ele: HTMLElement) {
   }
 }
 function rebuildTableSection(body: HTMLTableSectionElement, ishead?: boolean) {
+  const bodyClone = body.cloneNode(true) as HTMLTableSectionElement;
   //插入空白单元格
   let tdStr = ishead ? "th" : "td";
   let noneCell = document.createElement(tdStr);
   noneCell.className = "fn__none";
-  for (let i = 0; i < body.rows.length; i++) {
-    let tr = body.rows[i];
+  for (let i = 0; i < bodyClone.rows.length; i++) {
+    let tr = bodyClone.rows[i];
     removeAttr(tr);
+    let k = 0;
     for (let j = 0; j < tr.cells.length; j++) {
       let td = tr.cells[j];
-      td.innerHTML = td.textContent.replace(/\s+/g, "");
+      td.innerHTML = getContent(body.rows[i].cells[k]).replace(/\s+/g, "");
       removeAttr(td);
+      //*会导致 tr.cells.length 变化
       for (let m = 0; m < td.colSpan; m++) {
         //tr.insertBefore(noneCell.cloneNode(), tr.cells[j + m] || null)
         for (let n = 0; n < td.rowSpan; n++) {
           if (m == 0 && n == 0) {
             continue;
           }
-          body.rows[i + n].insertBefore(
+          bodyClone.rows[i + n].insertBefore(
             noneCell.cloneNode(),
-            body.rows[i + n].cells[j + m] || null
+            bodyClone.rows[i + n].cells[j + m] || null
           );
         }
+      }
+      if (td.className !== "fn__none") {
+        k++;
       }
     }
   }
   //不规范表格每行用fn__none补位
   let maxCellCount = 0;
-  for (let tr of body.rows) {
+  for (let tr of bodyClone.rows) {
     maxCellCount = Math.max(tr.cells.length, maxCellCount);
   }
-  for (let tr of body.rows) {
+  for (let tr of bodyClone.rows) {
     let count = 0;
     while (tr.cells.length < maxCellCount && count < 100) {
       tr.appendChild(noneCell.cloneNode());
@@ -161,10 +158,32 @@ function rebuildTableSection(body: HTMLTableSectionElement, ishead?: boolean) {
         }
     }
     */
-  return body;
+  return bodyClone;
+  function getContent(td: HTMLTableCellElement) {
+    if (!td) {
+      return "";
+    }
+    if (!td.innerText) {
+      return "";
+    }
+    let contentList = [];
+    const blockLikes = ["block", "block ", " block"];
+    for (let ele of td.children) {
+      let display = window.getComputedStyle(ele).display;
+      const flagList = blockLikes.map((e) => {
+        return display.indexOf(e);
+      });
+      if (Math.max(...flagList) !== -1) {
+        contentList.push(ele.textContent);
+      } else {
+        contentList[contentList.length - 1] += ele.textContent;
+      }
+    }
+    return contentList.join("<br>");
+  }
 }
 
-function removeAttr(ele) {
+function removeAttr(ele: HTMLElement) {
   if (ele.className !== "fn__none") {
     for (let attr of ele.attributes) {
       if (attr.name !== "colspan" && attr.name !== "rowspan") {
@@ -215,7 +234,7 @@ function buildColgroupByComputedWidth(
 
 function buildColgroupByContent(newTable: HTMLTableElement) {
   let colgroup = document.createElement("colgroup");
-  let contentLengthArr: number[] = [
+  let tdContentLengthArr: number[] = [
     ...Array(newTable.rows[0].cells.length),
   ].map(() => {
     return 0;
@@ -224,16 +243,25 @@ function buildColgroupByContent(newTable: HTMLTableElement) {
     let i = 0;
     for (let td of tr.cells) {
       for (let m = 0; m < td.colSpan; m++) {
-        contentLengthArr[i + m] += td.textContent.length / td.colSpan;
+        //取最大值而非合计值
+        //contentLengthArr[i + m] += td.innerText .length / td.colSpan;
+        const contentList = td.innerHTML.split("<br>"); //!注意，这里使用了 innerHTML ，如果后续需要引用样式需要再次处理
+        const contentLengthList = contentList.map((e) => {
+          return e.length;
+        });
+        tdContentLengthArr[i + m] = Math.max(
+          Math.max(...contentLengthList) / td.colSpan,
+          tdContentLengthArr[i + m]
+        );
       }
       i++;
     }
   }
   let sumLength = 0;
-  for (let item of contentLengthArr) {
+  for (let item of tdContentLengthArr) {
     sumLength += item;
   }
-  const widthArr = contentLengthArr.map((e) => {
+  const widthArr = tdContentLengthArr.map((e) => {
     return e / sumLength;
   });
   for (let width of widthArr) {
