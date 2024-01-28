@@ -1,12 +1,18 @@
-export function buildSyTableBlocks(ele: HTMLElement) {
+export function buildSyTableBlocks(
+  ele: HTMLElement,
+  fullWidth?: string,
+  id?: BlockId
+) {
   const tablesEles = buildSyTables(ele);
   let result: string[] = [];
   for (let newTable of tablesEles) {
     let tempEle = document.createElement("div");
     tempEle.appendChild(newTable);
-    const colWidthList = reComputeWidth(newTable);
+    const colWidthList = reComputeWidth(newTable, fullWidth);
+    //todo 很多参数是随便copy过来的，但是目前未发现问题
     const html = `<div data-node-index="16" data-type="NodeTable" class="table"
     colgroup="${colWidthList.join("|")}"
+    ${id ? "data-node-id='" + id + "'" : ""}
     >
 <div contenteditable="false">
 ${newTable.outerHTML}
@@ -25,19 +31,21 @@ ${newTable.outerHTML}
   }
   return result;
 }
-export function reComputeWidth(newTable: HTMLTableElement, fullWidth?: string) {
+function reComputeWidth(newTable: HTMLTableElement, fullWidth?: string) {
   const colgroup = newTable.querySelector("colgroup")?.querySelectorAll("col");
   let colWidthList: string[] = [];
   for (let col of colgroup) {
     let width = col.style.width;
     if (fullWidth && width.indexOf("%") !== -1) {
       let unit = fullWidth.replace(/[0-9]/g, "").replace(".", "");
-      width = parseFloat(width) / parseFloat(fullWidth) + unit;
+      width =
+        Math.round((parseFloat(width) * parseFloat(fullWidth)) / 100) + unit;
     }
-    colWidthList.push(
-      col.style.width ? `width: ${col.style.width};` : `min-width: 60px;`
-    );
+    colWidthList.push(width ? `width: ${width};` : `min-width: 60px;`);
+    //*更改colgroup下的colgroup,副作用
+    col.style.width = width;
   }
+
   return colWidthList;
 }
 function buildSyTables(ele: HTMLElement) {
@@ -207,14 +215,18 @@ function buildColgroupByComputedWidth(
 
 function buildColgroupByContent(newTable: HTMLTableElement) {
   let colgroup = document.createElement("colgroup");
-  let contentLengthArr: number[] = [];
-  contentLengthArr[newTable.rows[0].cells.length - 1] = 0; //确定长度
+  let contentLengthArr: number[] = [
+    ...Array(newTable.rows[0].cells.length),
+  ].map(() => {
+    return 0;
+  });
   for (let tr of newTable.rows) {
     let i = 0;
     for (let td of tr.cells) {
       for (let m = 0; m < td.colSpan; m++) {
         contentLengthArr[i + m] += td.textContent.length / td.colSpan;
       }
+      i++;
     }
   }
   let sumLength = 0;

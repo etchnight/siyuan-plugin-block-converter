@@ -1,19 +1,17 @@
-# Table Insertion Assistant
+# 表格插入助手
 
-[中文版](./README_zh_CN.md)
+[English](./README_en_US.md)
 
-Convert html-type table blocks to Ciesource built-in table blocks.
+将 html 类型的表格块转换为思源内置表格块。
 
-## How to use
+## 使用方法
 
-1. Create a new HTML block and paste the tabular HTML code into it (must contain the `<table>` tag)
-2. Click on the block mark -> Plugin -> to convert to Siyuan Table
-3. The converted table will be inserted after the new HTML created in Step 1
+1. 新建 html 块，在其中粘贴表格 html 代码（必须含有`<table>`标签）
+2. 点击块标 -> 插件 -> 转换为思源表格
+3. 转换后的表格将插入在步骤 1 新建的 html 之后
 
-## Frequently Asked Questions
+## 常见问题
 
-- Q : Do this plugin support table in Word and Excel?
-- A : No, all of the above files can be saved as html files
+- Q : 是否支持 Word、Excel 中的表格？
+- A : 不支持，上述文件均可以另存为 html 文件
 
-- Q : The generated table block does not have block markers?
-- A : Please refresh or reopen the document, and the block mark will appear.

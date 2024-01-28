@@ -17,7 +17,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: 20
           registry-url: "https://registry.npmjs.org"
 
         # Install pnpm
@@ -57,6 +57,9 @@ jobs:
         run: pnpm build
 
 # github action的设置中需要以下权限
+  #仓库设置
+    # 侧边栏 Actions
+      # General
         # Workflow permissions
           # ✔ Read and write permissions 
           # ✔ Allow GitHub Actions to create and approve pull requests
