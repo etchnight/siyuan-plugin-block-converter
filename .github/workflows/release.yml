@@ -44,6 +44,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
 
+# 子模块
+      - name: Update Submodule
+        run: git submodule update --init --recursive
+
       # Install dependencies
       - name: Install dependencies
         run: pnpm install
@@ -52,6 +56,10 @@ jobs:
       - name: Build for production
         run: pnpm build
 
+# github action的设置中需要以下权限
+        # Workflow permissions
+          # ✔ Read and write permissions 
+          # ✔ Allow GitHub Actions to create and approve pull requests
       - name: Release
         uses: ncipollo/release-action@v1
         with:

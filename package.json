@@ -1,8 +1,8 @@
 {
-  "name": "plugin-sample-vite-svelte",
-  "version": "0.3.2",
+  "name": "siyuan-plugin-table-importer",
+  "version": "0.0.1",
   "type": "module",
-  "description": "This is a sample plugin based on vite and svelte for Siyuan (https://b3log.org/siyuan)",
+  "description": "Help to copy and paste HTML tables",
   "repository": "",
   "homepage": "",
   "author": "",

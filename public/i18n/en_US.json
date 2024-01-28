@@ -6,7 +6,7 @@
     "helloPlugin": "Hello, Plugin!",
     "byePlugin": "Bye, Plugin!",
     "showDialog": "Show dialog",
-    "removedData": "Data deleted",
+    "blockMenuName": "Convert to Siyuan table",
     "confirmRemove": "Confirm to delete the data in ${name}?",
     "insertEmoji": "Insert Emoji",
     "removeSpace": "Remove Space",

@@ -1,41 +1,25 @@
 {
-  "name": "plugin-sample-vite-svelte",
+  "name": "siyuan-plugin-table-importer",
   "author": "frostime",
-  "url": "https://github.com/siyuan-note/plugin-sample-vite-svelte",
-  "version": "0.3.2",
-  "minAppVersion": "2.12.1",
-  "backends": [
-    "windows",
-    "linux",
-    "darwin",
-    "ios",
-    "android"
-  ],
-  "frontends": [
-    "desktop",
-    "mobile",
-    "browser-desktop",
-    "browser-mobile",
-    "desktop-window"
-  ],
+  "url": "https://github.com/etchnight/siyuan-plugin-table-importer",
+  "version": "0.0.1",
+  "minAppVersion": "2.9.0",
+  "backends": ["windows", "linux", "darwin"],
+  "frontends": ["desktop", "desktop-window"],
   "displayName": {
-    "en_US": "Plugin sample with vite and svelte",
-    "zh_CN": "插件样例 vite + svelte 版"
+    "en_US": "Table Importer",
+    "zh_CN": "表格插入助手"
   },
   "description": {
-    "en_US": "SiYuan plugin sample with vite and svelte",
-    "zh_CN": "使用 vite 和 svelte 开发的思源插件样例"
+    "en_US": "Convert html-type table blocks to Ciesource built-in table blocks",
+    "zh_CN": "将html类型的表格块转换为思源内置表格块"
   },
   "readme": {
     "en_US": "README.md",
     "zh_CN": "README_zh_CN.md"
   },
   "funding": {
-    "custom": [
-      "https://afdian.net/a/frostime"
-    ]
+    "custom": []
   },
-  "keywords": [
-    "plugin", "sample", "插件样例"
-  ]
+  "keywords": ["plugin", "table", "表格"]
 }
