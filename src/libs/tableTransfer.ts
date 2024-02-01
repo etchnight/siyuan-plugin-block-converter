@@ -31,7 +31,7 @@ ${newTable.outerHTML}
   }
   return result;
 }
-function reComputeWidth(newTable: HTMLTableElement, fullWidth?: string) {
+export function reComputeWidth(newTable: HTMLTableElement, fullWidth?: string) {
   const colgroup = newTable.querySelector("colgroup")?.querySelectorAll("col");
   let colWidthList: string[] = [];
   for (let col of colgroup) {
@@ -194,7 +194,7 @@ function removeAttr(ele: HTMLElement) {
 }
 
 /**
- * @deprecated
+ * @deprecated 复制原网页单元格的显示宽度，由于不引入css，不采用该方案
  */
 function buildColgroupByComputedWidth(
   table: HTMLTableElement,
@@ -232,7 +232,12 @@ function buildColgroupByComputedWidth(
   return colgroup;
 }
 
-function buildColgroupByContent(newTable: HTMLTableElement) {
+/**
+ * 
+ * @param newTable 
+ * @returns 生成的 colgroup 是以 `width : xx% ;` 形式计的
+ */
+export function buildColgroupByContent(newTable: HTMLTableElement) {
   let colgroup = document.createElement("colgroup");
   let tdContentLengthArr: number[] = [
     ...Array(newTable.rows[0].cells.length),

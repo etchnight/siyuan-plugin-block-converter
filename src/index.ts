@@ -62,7 +62,11 @@ export default class PluginTableImporter extends Plugin {
         );
         //替换或插入表格
         for (let html of tableBlocks) {
-          let res = await insertBlock("dom", html, "", blockId);
+          let res = await insertBlock({
+            dataType: "dom",
+            data: html,
+            previousID: blockId,
+          });
           blockId = res[0].doOperations[0].id;
         }
       },
