@@ -20,7 +20,14 @@ export default class PluginTableImporter extends Plugin {
   }: {
     detail: { menu: Menu; blockElements: [HTMLElement]; protyle: Protyle };
   }) {
-    //console.log(detail);
+    this.htmlBlock2tableBlock(detail);
+  }
+
+  private htmlBlock2tableBlock = (detail: {
+    menu: Menu;
+    blockElements: [HTMLElement];
+    protyle: Protyle;
+  }) => {
     if (detail.blockElements.length !== 1) {
       return;
     }
@@ -29,16 +36,7 @@ export default class PluginTableImporter extends Plugin {
       return;
     }
     const protyleHtml = selectElement.querySelector("protyle-html");
-    const html = protyleHtml?.getAttribute("data-content");
-    /*
-    const tempEle = document.createElement("div");
-    tempEle.innerHTML = html;
-    if (!tempEle.querySelector("table")) {
-      tempEle.innerHTML = protyleHtml.shadowRoot.innerHTML;
-      if (!tempEle.querySelector("table")) {
-        return;
-      }
-    }*/
+    //const html = protyleHtml?.getAttribute("data-content");
     //直接使用shadow
     const shadow = protyleHtml.shadowRoot.querySelector("div");
 
@@ -49,7 +47,7 @@ export default class PluginTableImporter extends Plugin {
       iconHTML: "",
       label: this.i18n.blockMenuName,
       click: async () => {
-        let blockId = detail.blockElements[0]?.getAttribute("data-node-id");
+        let blockId = selectElement.getAttribute("data-node-id");
         if (!blockId) {
           console.error("获取块id失败");
           return;
@@ -71,5 +69,5 @@ export default class PluginTableImporter extends Plugin {
         }
       },
     });
-  }
+  };
 }
