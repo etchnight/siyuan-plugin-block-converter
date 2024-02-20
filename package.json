@@ -1,8 +1,8 @@
 {
-  "name": "siyuan-plugin-table-importer",
-  "version": "0.0.1",
+  "name": "siyuan-plugin-block-converter",
+  "version": "0.1.0",
   "type": "module",
-  "description": "Help to copy and paste HTML tables",
+  "description": "Provide a series of block conversion tools, such as HTML table block to Siyuan table block, block to Mermaid flow chart",
   "repository": "",
   "homepage": "",
   "author": "",
