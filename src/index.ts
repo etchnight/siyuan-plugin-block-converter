@@ -3,6 +3,7 @@ import { buildSyTableBlocks } from "./libs/tableTransfer";
 import { insertBlock } from "../subMod/siyuanPlugin-common/siyuan-api/block";
 import {
   queryBlockById,
+  queryFirstChildBlock,
   queryRefInfoById,
 } from "../subMod/siyuanPlugin-common/siyuan-api/query";
 export default class PluginTableImporter extends Plugin {
@@ -43,8 +44,11 @@ export default class PluginTableImporter extends Plugin {
       click: async () => {
         let flowchartText = "flowchart LR";
         let count = 0;
-        const startBlock = await queryBlockById(blockId);
-        let queue = [startBlock];
+        let startBlock = await queryBlockById(blockId);
+        if (startBlock.type === "i") {
+          startBlock = await queryFirstChildBlock(startBlock);
+        }
+        let queue = [startBlock]; //未完成队列
         let idList = []; //已完成的，防止重复
         while (queue.length !== 0 && count < 100) {
           let block = queue.pop();
