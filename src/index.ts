@@ -6,6 +6,7 @@ import {
   queryFirstChildBlock,
   queryRefInfoById,
 } from "../subMod/siyuanPlugin-common/siyuan-api/query";
+import { buildFlowEdge, buildFlowNode } from "./libs/str2mermaid";
 export default class PluginTableImporter extends Plugin {
   private blockIconEventBindThis = this.blockIconEvent.bind(this);
   async onload() {
@@ -42,7 +43,9 @@ export default class PluginTableImporter extends Plugin {
       iconHTML: "",
       label: "生成流程图",
       click: async () => {
-        let flowchartText = "flowchart LR";
+        let flowchartText = `
+        %%{init: {"flowchart": {"htmlLabels": false}} }%%
+        flowchart LR`;
         let count = 0;
         let startBlock = await queryBlockById(blockId);
         if (startBlock.type === "i") {
@@ -57,7 +60,8 @@ export default class PluginTableImporter extends Plugin {
           const refInfos = await queryRefInfoById(id);
           let flowRefs: string[] = [];
           for (let item of refInfos) {
-            if (item.content.startsWith("-&gt;")) {
+            console.log(item.content);
+            if (item.content.search(/(\[.*?\]|)(-&gt;|&gt;-)/) === 0) {
               flowchartText +=
                 "\n" + buildFlowEdge(id, item.def_block_id, item.content);
               flowRefs.push(item.content);
@@ -75,52 +79,6 @@ export default class PluginTableImporter extends Plugin {
           data: "```" + "mermaid" + "\n" + flowchartText + "\n" + "```",
           previousID: blockId,
         });
-        function buildFlowId(id: BlockId) {
-          return "a" + id.replace("-", "");
-        }
-        function buildFlowNode(
-          id: BlockId,
-          markdown: string,
-          flowRefs: string[]
-        ) {
-          //markdown转义
-          let result = markdown.replace(/\"/g, "#quot;");
-          result = result.replace(/\'/g, "#quot;");
-          for (let content of flowRefs) {
-            result = result.replace(content, "");
-          }
-          //节点形状
-          const prefix = flowRefs.length > 1 ? "{{" : "[";
-          const suffix = flowRefs.length > 1 ? "}}" : "]";
-          return buildFlowId(id) + `${prefix}\"\`${result}\`\"${suffix}`;
-        }
-        function buildFlowEdge(
-          id: BlockId,
-          targetId: BlockId,
-          refContent: string
-        ) {
-          let textOnArrow = "";
-          //const arrowText = ["是", "yes", "否", "no"];
-          /**
-           * @param isMatch 在match中使用为ture，在search中使用为false
-           * @returns 箭头+中英文括号+括号内内容+中英文括号，isMatch为ture时使用预查
-           */
-          const regexFunc = (isMatch?: boolean) => {
-            const prefix = isMatch ? "?<=" : "";
-            const suffix = isMatch ? "?=" : "";
-            return new RegExp(
-              `(${prefix}-&gt;(\\(|（))(.*?)(${suffix}(\\)|）))`,
-              "g"
-            );
-          };
-          const index = refContent.toLowerCase().search(regexFunc());
-          if (index === 0) {
-            const matchResult = refContent.toLowerCase().match(regexFunc(true));
-            textOnArrow = "|" + matchResult[0] + "|";
-          }
-          ` A-->|text|B`;
-          return `${buildFlowId(id)} -->${textOnArrow}${buildFlowId(targetId)}`;
-        }
       },
     });
   }
