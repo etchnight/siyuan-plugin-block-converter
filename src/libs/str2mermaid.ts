@@ -6,6 +6,9 @@ enum EReg {
   方括号左 = "\\[|【",
   方括号右 = "\\]|】",
 }
+enum Ekeyword {
+  event = "event",
+}
 export function searchComp(str: string) {
   const reg = new RegExp(
     `(${EReg.方括号左}?)` +
@@ -31,9 +34,9 @@ export function searchComp(str: string) {
   //console.log(matchResult);
   return {
     input: str,
-    label: matchResult[2],
-    arrow: matchResult[4],
-    linkLabel: matchResult[7],
+    label: matchResult[2] || "",
+    arrow: matchResult[4] || "",
+    linkLabel: matchResult[7] || "",
   };
 }
 
@@ -73,8 +76,14 @@ export function buildFlowEdge(
   targetId: BlockId,
   refAnchorCompo: RefAnchorCompo
 ) {
-  let textOnArrow = refAnchorCompo.linkLabel
-    ? "|" + refAnchorCompo.linkLabel + "|"
-    : "";
-  return `${buildFlowId(id)} -->${textOnArrow}${buildFlowId(targetId)}`;
+  //console.log(refAnchorCompo)
+  const labelCompo = refAnchorCompo.linkLabel.split(/:|：/);
+  let arrow = "-->";
+  let textOnArrow = "";
+  if (labelCompo[0] === Ekeyword.event) {
+    textOnArrow = labelCompo.slice(1).join(":");
+    arrow = "-.->";
+  }
+  textOnArrow = textOnArrow ? "|" + textOnArrow + "|" : "";
+  return `${buildFlowId(id)} ${arrow}${textOnArrow}${buildFlowId(targetId)}`;
 }
