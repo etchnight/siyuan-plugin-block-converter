@@ -1,20 +1,64 @@
+enum EReg {
+  括号左 = "\\(|（",
+  括号右 = "\\)|）",
+  右箭头 = "-&gt;",
+  左箭头 = "&gt;-",
+  方括号左 = "\\[|【",
+  方括号右 = "\\]|】",
+}
+export function searchComp(str: string) {
+  const reg = new RegExp(
+    `(${EReg.方括号左}?)` +
+      `(.*?)` +
+      `(${EReg.方括号右}?)` +
+      `(${EReg.右箭头}|${EReg.左箭头})` +
+      "(" +
+      `(${EReg.括号左})` +
+      `(.*?)` +
+      `(${EReg.括号右})` +
+      ")?"
+  );
+  const index = str.search(reg);
+  if (index !== 0) {
+    return {
+      input: str,
+      label: "",
+      arrow: "",
+      linkLabel: "",
+    };
+  }
+  const matchResult = str.match(reg);
+  //console.log(matchResult);
+  return {
+    input: str,
+    label: matchResult[2],
+    arrow: matchResult[4],
+    linkLabel: matchResult[7],
+  };
+}
+
+export type RefAnchorCompo = ReturnType<typeof searchComp>;
+
 function buildFlowId(id: BlockId) {
   return "a" + id.replace("-", "");
 }
 export function buildFlowNode(
   id: BlockId,
   markdown: string,
-  flowRefs: string[]
+  flowRefs: RefAnchorCompo[]
 ) {
-  //markdown转义
-  let result = markdown.replace(/(\"|\')/g, "#quot;");
-  for (let content of flowRefs) {
-    let customerRes = content.match(/(?<=\[)(.*?)(?=\](-&gt;|&gt;-))/);
-    if (customerRes) {
-      result = customerRes[0];
+  let result = markdown;
+  //去除流程图链接文本
+  for (let ref of flowRefs) {
+    if (ref.label) {
+      result = ref.label;
+      break;
+    } else {
+      result = result.replace(ref.input, "");
     }
-    result = result.replace(content, "");
   }
+  //markdown转义
+  result = result.replace(/(\"|\')/g, "#quot;");
   //节点形状
   const prefix = flowRefs.length > 1 ? "{{" : "[";
   const suffix = flowRefs.length > 1 ? "}}" : "]";
@@ -27,23 +71,10 @@ export function buildFlowNode(
 export function buildFlowEdge(
   id: BlockId,
   targetId: BlockId,
-  refContent: string
+  refAnchorCompo: RefAnchorCompo
 ) {
-  let textOnArrow = "";
-  //const arrowText = ["是", "yes", "否", "no"];
-  /**
-   * @param isMatch 在match中使用为ture，在search中使用为false
-   * @returns 箭头+中英文括号+括号内内容+中英文括号，isMatch为ture时使用预查
-   */
-  const regexFunc = (isMatch?: boolean) => {
-    const prefix = isMatch ? "?<=" : "";
-    const suffix = isMatch ? "?=" : "";
-    return new RegExp(`(${prefix}-&gt;(\\(|（))(.*?)(${suffix}(\\)|）))`, "g");
-  };
-  const index = refContent.toLowerCase().search(regexFunc());
-  if (index === 0) {
-    const matchResult = refContent.toLowerCase().match(regexFunc(true));
-    textOnArrow = "|" + matchResult[0] + "|";
-  }
+  let textOnArrow = refAnchorCompo.linkLabel
+    ? "|" + refAnchorCompo.linkLabel + "|"
+    : "";
   return `${buildFlowId(id)} -->${textOnArrow}${buildFlowId(targetId)}`;
 }

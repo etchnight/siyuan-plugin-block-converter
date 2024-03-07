@@ -6,7 +6,12 @@ import {
   queryFirstChildBlock,
   queryRefInfoById,
 } from "../subMod/siyuanPlugin-common/siyuan-api/query";
-import { buildFlowEdge, buildFlowNode } from "./libs/str2mermaid";
+import {
+  buildFlowEdge,
+  buildFlowNode,
+  RefAnchorCompo,
+  searchComp,
+} from "./libs/str2mermaid";
 export default class PluginTableImporter extends Plugin {
   private blockIconEventBindThis = this.blockIconEvent.bind(this);
   async onload() {
@@ -43,9 +48,9 @@ export default class PluginTableImporter extends Plugin {
       iconHTML: "",
       label: "生成流程图",
       click: async () => {
-        let flowchartText = `
-        %%{init: {"flowchart": {"htmlLabels": false}} }%%
-        flowchart LR`;
+        let flowchartText =
+          `%%{init: {"flowchart": {"htmlLabels": false}} }%%\n` +
+          `flowchart LR`;
         let count = 0;
         let startBlock = await queryBlockById(blockId);
         if (startBlock.type === "i") {
@@ -58,13 +63,13 @@ export default class PluginTableImporter extends Plugin {
           const id = block.id;
           idList.push(id);
           const refInfos = await queryRefInfoById(id);
-          let flowRefs: string[] = [];
+          let flowRefs: RefAnchorCompo[] = [];
           for (let item of refInfos) {
-            console.log(item.content);
-            if (item.content.search(/(\[.*?\]|)(-&gt;|&gt;-)/) === 0) {
+            const refInfoCompo = searchComp(item.content);
+            if (refInfoCompo.arrow) {
               flowchartText +=
-                "\n" + buildFlowEdge(id, item.def_block_id, item.content);
-              flowRefs.push(item.content);
+                "\n" + buildFlowEdge(id, item.def_block_id, refInfoCompo);
+              flowRefs.push(refInfoCompo);
               if (!idList.includes(item.def_block_id)) {
                 let defBlock = await queryBlockById(item.def_block_id);
                 queue.push(defBlock);
