@@ -71,6 +71,10 @@ export function buildFlowNode(
   }
   //markdown转义
   markdown = markdown.replace(/(\"|\')/g, "#quot;");
+  //兜底
+  if (!markdown) {
+    markdown = " ";
+  }
   //节点形状
   const prefix = flowRefs.length > 1 ? "{{" : "[";
   const suffix = flowRefs.length > 1 ? "}}" : "]";
@@ -92,6 +96,8 @@ function buildFlowEdge(
   if (labelCompo[0] === Ekeyword.event) {
     textOnArrow = labelCompo.slice(1).join(":");
     arrow = "-.->";
+  } else {
+    textOnArrow = labelCompo[0];
   }
   textOnArrow = textOnArrow ? "|" + textOnArrow + "|" : "";
   let newId = buildFlowId(id);
