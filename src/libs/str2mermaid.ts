@@ -2,7 +2,7 @@ enum EReg {
   括号左 = "\\(|（",
   括号右 = "\\)|）",
   右箭头 = "-&gt;",
-  左箭头 = "&gt;-",
+  左箭头 = "&lt;-",
   方括号左 = "\\[|【",
   方括号右 = "\\]|】",
 }
@@ -85,5 +85,11 @@ export function buildFlowEdge(
     arrow = "-.->";
   }
   textOnArrow = textOnArrow ? "|" + textOnArrow + "|" : "";
-  return `${buildFlowId(id)} ${arrow}${textOnArrow}${buildFlowId(targetId)}`;
+  let newId = buildFlowId(id);
+  let newTargetId = buildFlowId(targetId);
+  if (!refAnchorCompo.arrow.startsWith("-")) {
+    [newId, newTargetId] = [newTargetId, newId];
+  }
+
+  return `${newId}${arrow}${textOnArrow}${newTargetId}`;
 }

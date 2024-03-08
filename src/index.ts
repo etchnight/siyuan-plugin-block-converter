@@ -63,6 +63,9 @@ export default class PluginTableImporter extends Plugin {
           const id = block.id;
           idList.push(id);
           const refInfos = await queryRefInfoById(id);
+          //console.log(refInfos)
+
+          //const defInfos = await queryDefInfoById(id);
           let flowRefs: RefAnchorCompo[] = [];
           for (let item of refInfos) {
             const refInfoCompo = searchComp(item.content);
