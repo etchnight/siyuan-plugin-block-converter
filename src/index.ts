@@ -7,7 +7,7 @@ import {
   queryRefInfoById,
 } from "../subMod/siyuanPlugin-common/siyuan-api/query";
 import {
-  buildFlowEdge,
+  buildFlowEdges,
   buildFlowNode,
   RefAnchorCompo,
   searchComp,
@@ -70,8 +70,11 @@ export default class PluginTableImporter extends Plugin {
           for (let item of refInfos) {
             const refInfoCompo = searchComp(item.content);
             if (refInfoCompo.arrow) {
-              flowchartText +=
-                "\n" + buildFlowEdge(id, item.def_block_id, refInfoCompo);
+              flowchartText += buildFlowEdges(
+                id,
+                item.def_block_id,
+                item.content
+              );
               flowRefs.push(refInfoCompo);
               if (!idList.includes(item.def_block_id)) {
                 let defBlock = await queryBlockById(item.def_block_id);
@@ -79,7 +82,8 @@ export default class PluginTableImporter extends Plugin {
               }
             }
           }
-          flowchartText += "\n" + buildFlowNode(id, block.content, flowRefs);
+          flowchartText +=
+            "\n" + buildFlowNode(id, block.content, flowRefs);
         }
         //console.log(flowchartText);
         await insertBlock({

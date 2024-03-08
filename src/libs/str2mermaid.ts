@@ -28,6 +28,7 @@ export function searchComp(str: string) {
       label: "",
       arrow: "",
       linkLabel: "",
+      matchtext: "",
     };
   }
   const matchResult = str.match(reg);
@@ -37,41 +38,49 @@ export function searchComp(str: string) {
     label: matchResult[2] || "",
     arrow: matchResult[4] || "",
     linkLabel: matchResult[7] || "",
+    matchtext: matchResult[0] || "",
   };
 }
 
 export type RefAnchorCompo = ReturnType<typeof searchComp>;
-
+/**
+ *
+ * @param id
+ * @returns a+块id去除横杠+数字
+ */
 function buildFlowId(id: BlockId) {
-  return "a" + id.replace("-", "");
+  let result = "a" + id.replace("-", "");
+  if (id.length === 22) {
+    result += "0";
+  }
+  return result;
 }
 export function buildFlowNode(
   id: BlockId,
   markdown: string,
   flowRefs: RefAnchorCompo[]
 ) {
-  let result = markdown;
   //去除流程图链接文本
   for (let ref of flowRefs) {
     if (ref.label) {
-      result = ref.label;
+      markdown = ref.label;
       break;
     } else {
-      result = result.replace(ref.input, "");
+      markdown = markdown.replace(ref.input, "");
     }
   }
   //markdown转义
-  result = result.replace(/(\"|\')/g, "#quot;");
+  markdown = markdown.replace(/(\"|\')/g, "#quot;");
   //节点形状
   const prefix = flowRefs.length > 1 ? "{{" : "[";
   const suffix = flowRefs.length > 1 ? "}}" : "]";
-  return buildFlowId(id) + `${prefix}\"\`${result}\`\"${suffix}`;
+  return buildFlowId(id) + `${prefix}\"\`${markdown}\`\"${suffix}`;
 }
 /**
  *
  * @returns   ` A-->|text|B`;
  */
-export function buildFlowEdge(
+function buildFlowEdge(
   id: BlockId,
   targetId: BlockId,
   refAnchorCompo: RefAnchorCompo
@@ -90,6 +99,45 @@ export function buildFlowEdge(
   if (!refAnchorCompo.arrow.startsWith("-")) {
     [newId, newTargetId] = [newTargetId, newId];
   }
-
   return `${newId}${arrow}${textOnArrow}${newTargetId}`;
+}
+/**
+ * @param content  `block.content`
+ * - `[自身]->(线上文字)[然后]->（event）第三步`
+ * - 第一个之后的[]虽为可选，但没有的话会产生无文本节点
+ * @returns
+ * - `自身-->|线上文字|然后`
+ * - `然后-.->第三步的节点`
+ */
+export function buildFlowEdges(
+  id: BlockId,
+  targetId: BlockId,
+  content: string
+) {
+  let count = 0;
+  let refInfoCompo = searchComp(content);
+  let lastRefInfoCompo: RefAnchorCompo;
+  let result: string[] = [];
+  let safeCount = 0;
+  while (safeCount < 100 && refInfoCompo.arrow) {
+    safeCount++;
+    if (count === 0) {
+      result.push(buildFlowEdge(id, id + (count + 1), refInfoCompo));
+    } else {
+      result.push(buildFlowNode(id + count, "", [refInfoCompo]));
+      result.push(buildFlowEdge(id + (count - 1), id + count, refInfoCompo));
+    }
+    count++;
+    content = content.substring(refInfoCompo.matchtext.length);
+    lastRefInfoCompo = refInfoCompo;
+    refInfoCompo = searchComp(content);
+  }
+  //最后一个更正
+  result[result.length - 1] = buildFlowEdge(
+    id + (count - 1),
+    targetId,
+    lastRefInfoCompo
+  );
+  //console.log(result);
+  return "\n" + result.join("\n");
 }
