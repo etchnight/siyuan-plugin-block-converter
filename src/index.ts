@@ -50,7 +50,7 @@ export default class PluginTableImporter extends Plugin {
       click: async () => {
         let flowchartText =
           `%%{init: {"flowchart": {"htmlLabels": false}} }%%\n` +
-          `flowchart LR`;
+          `flowchart TB`;
         let count = 0;
         let startBlock = await queryBlockById(blockId);
         if (startBlock.type === "i") {
