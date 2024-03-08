@@ -1,3 +1,17 @@
+## [0.1.2](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v0.1.1...v0.1.2) (2024-03-08)
+
+
+### Bug Fixes
+
+* **流程图生成器:** 修复非event节点线上文字不显示、无markdown内容节点显示错误 ([564d3f9](https://github.com/etchnight/siyuan-plugin-table-importer/commit/564d3f987ba01a236965c48cff95985c5058b5ec))
+
+
+### Features
+
+* **流程图生成器:** 支持在一个链接中创建一组节点和线 ([d223b1e](https://github.com/etchnight/siyuan-plugin-table-importer/commit/d223b1e3ad2a6a1e181ce766e0eed9094dcd91f4))
+
+
+
 ## [0.1.1](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v0.1.0...v0.1.1) (2024-03-08)
 
 
