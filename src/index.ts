@@ -9,9 +9,11 @@ import {
 import {
   buildFlowEdges,
   buildFlowNode,
+  modifyFlowchart,
   RefAnchorCompo,
   searchComp,
 } from "./libs/str2mermaid";
+import { TreeTools } from "../subMod/js-utility-function/src/tree";
 export default class PluginTableImporter extends Plugin {
   private blockIconEventBindThis = this.blockIconEvent.bind(this);
   async onload() {
@@ -48,33 +50,39 @@ export default class PluginTableImporter extends Plugin {
       iconHTML: "",
       label: "生成流程图",
       click: async () => {
-        let flowchartText =
-          `%%{init: {"flowchart": {"htmlLabels": false}} }%%\n` +
-          `flowchart TB`;
+        let flowchart: Array<string | string[] | string[][]> = [
+          `%%{init: {"flowchart": {"htmlLabels": false}} }%%`,
+          `flowchart TB`,
+        ];
         let count = 0;
         let startBlock = await queryBlockById(blockId);
         if (startBlock.type === "i") {
           startBlock = await queryFirstChildBlock(startBlock);
         }
         let queue = [startBlock]; //未完成队列
-        let idList = []; //已完成的，防止重复
+        let idList: BlockId[] = []; //已完成的，防止重复
+        let edges: {
+          preId: BlockId;
+          id: BlockId;
+          flowchart: string[][];
+        }[] = [];
         while (queue.length !== 0 && count < 100) {
+          //let edges: Array<string | string[] | string[][]> = [];
           let block = queue.pop();
           const id = block.id;
           idList.push(id);
           const refInfos = await queryRefInfoById(id);
           //console.log(refInfos)
-
           //const defInfos = await queryDefInfoById(id);
           let flowRefs: RefAnchorCompo[] = [];
           for (let item of refInfos) {
             const refInfoCompo = searchComp(item.content);
             if (refInfoCompo.arrow) {
-              flowchartText += buildFlowEdges(
-                id,
-                item.def_block_id,
-                item.content
-              );
+              edges.push({
+                preId: id,
+                flowchart: buildFlowEdges(id, item.def_block_id, item.content),
+                id: item.def_block_id,
+              });
               flowRefs.push(refInfoCompo);
               if (!idList.includes(item.def_block_id)) {
                 let defBlock = await queryBlockById(item.def_block_id);
@@ -82,13 +90,19 @@ export default class PluginTableImporter extends Plugin {
               }
             }
           }
-          flowchartText +=
-            "\n" + buildFlowNode(id, block.content, flowRefs);
+          flowchart.push(buildFlowNode(id, block.content, flowRefs));
         }
-        //console.log(flowchartText);
+        const treeTools = new TreeTools({ pid: "preId" });
+        const edgeTree = treeTools.fromList(edges);
+        treeTools.forEach(edgeTree, (e) => {
+          flowchart.push(e.flowchart);
+        });
+        let result = flowchart.flat(Infinity) as string[];
+        //console.log(result);
+        modifyFlowchart(result);
         await insertBlock({
           dataType: "markdown",
-          data: "```" + "mermaid" + "\n" + flowchartText + "\n" + "```",
+          data: "```mermaid\n" + result.join("\n") + "\n```",
           previousID: blockId,
         });
       },
