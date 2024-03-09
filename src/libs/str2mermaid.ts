@@ -12,36 +12,38 @@ enum Ekeyword {
   end = "end",
 }
 export function searchComp(str: string) {
-  const reg = new RegExp(
-    `(${EReg.方括号左}?)` +
-      `(.*?)` +
-      `(${EReg.方括号右}?)` +
-      `(${EReg.右箭头}|${EReg.左箭头})` +
-      "(" +
-      `(${EReg.括号左})` +
-      `(.*?)` +
-      `(${EReg.括号右})` +
+  str = str.trimStart();
+  let result = {
+    input: str,
+    label: "",
+    arrow: "",
+    linkLabel: "",
+    matchtext: "",
+  };
+  const reg = new RegExp( //0
+    "(" + //1
+      `(${EReg.方括号左})` + //2
+      `(.*?)` + //3
+      `(${EReg.方括号右})` + //4
+      ")?" +
+      `(${EReg.右箭头}|${EReg.左箭头})` + //5
+      "(" + //6
+      `(${EReg.括号左})` + //7
+      `(.*?)` + //8
+      `(${EReg.括号右})` + //9
       ")?"
   );
   const index = str.search(reg);
-  if (index !== 0) {
-    return {
-      input: str,
-      label: "",
-      arrow: "",
-      linkLabel: "",
-      matchtext: "",
-    };
+  if (index === 0) {
+    const matchResult = str.match(reg);
+    //console.log(matchResult);
+    result.label = matchResult[3] || "";
+    result.arrow = matchResult[5] || "";
+    result.linkLabel = matchResult[8] || "";
+    result.matchtext = matchResult[0] || "";
   }
-  const matchResult = str.match(reg);
   //console.log(matchResult);
-  return {
-    input: str,
-    label: matchResult[2] || "",
-    arrow: matchResult[4] || "",
-    linkLabel: matchResult[7] || "",
-    matchtext: matchResult[0] || "",
-  };
+  return result;
 }
 
 export type RefAnchorCompo = ReturnType<typeof searchComp>;
