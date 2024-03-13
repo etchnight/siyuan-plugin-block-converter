@@ -1,10 +1,11 @@
-import { Plugin, Menu, Protyle } from "siyuan";
+import { Plugin, Menu, Protyle, IMenuItemOption } from "siyuan";
 import { buildSyTableBlocks } from "./libs/tableTransfer";
 import { insertBlock } from "../subMod/siyuanPlugin-common/siyuan-api/block";
 import {
   queryBlockById,
   queryFirstChildBlock,
   queryRefInfoById,
+  requestQuerySQL,
 } from "../subMod/siyuanPlugin-common/siyuan-api/query";
 import {
   buildFlowEdges,
@@ -16,8 +17,15 @@ import {
 import { TreeTools } from "../subMod/js-utility-function/src/tree";
 export default class PluginTableImporter extends Plugin {
   private blockIconEventBindThis = this.blockIconEvent.bind(this);
+  private blockCustomCopySubmenu: IMenuItemOption[] = [];
+  private detail: {
+    menu: Menu;
+    blockElements: [HTMLElement];
+    protyle: Protyle;
+  };
   async onload() {
     this.eventBus.on("click-blockicon", this.blockIconEventBindThis);
+    this.buildsubMenu();
     console.log(this.i18n.helloPlugin);
   }
 
@@ -32,8 +40,10 @@ export default class PluginTableImporter extends Plugin {
   }: {
     detail: { menu: Menu; blockElements: [HTMLElement]; protyle: Protyle };
   }) {
+    this.detail = detail;
     this.htmlBlock2tableBlock(detail);
     this.block2flowchart(detail);
+    this.blockCustomCopy(detail);
   }
 
   private async block2flowchart(detail: {
@@ -153,6 +163,64 @@ export default class PluginTableImporter extends Plugin {
           blockId = res[0].doOperations[0].id;
         }
       },
+    });
+  };
+  private async buildsubMenu() {
+    let submenu: IMenuItemOption[] = [];
+    const jsBlocks = //todo
+      (await requestQuerySQL(`SELECT * FROM blocks WHERE blocks.type='c' 
+        AND blocks.root_id='20240313201953-gac4jbg'`)) as Block[];
+    const submenuBlocks = jsBlocks.filter((e) => {
+      return e.markdown.startsWith("```js");
+    });
+    for (let block of submenuBlocks) {
+      const func = new Function(
+        "input",
+        "i",
+        ` 
+            const { title, name, content, markdown,id } = input;
+            ${block.content}
+          `
+      );
+      submenu.push({
+        label: block.name || block.content,
+        type: "submenu",
+        click: async () => {
+          const input = await Promise.all(
+            this.detail.blockElements.map(async (e) => {
+              const id = e.getAttribute("data-node-id");
+              const block = await queryBlockById(id);
+              const doc = await queryBlockById(block.root_id);
+              return {
+                title: doc.content,
+                name: block.name,
+                content: block.content,
+                markdown: block.markdown,
+                id: block.id,
+              };
+            })
+          );
+          let result = "";
+          for (let i = 0; i < input.length; i++) {
+            result += func(input[i], i);
+          }
+          console.log(input);
+          console.log(result);
+        },
+      });
+    }
+    this.blockCustomCopySubmenu = submenu;
+  }
+  private blockCustomCopy = async (detail: {
+    menu: Menu;
+    blockElements: [HTMLElement];
+    protyle: Protyle;
+  }) => {
+    detail.menu.addItem({
+      iconHTML: "",
+      label: "自定义复制",
+      id: "blockCustomCopy",
+      submenu: this.blockCustomCopySubmenu,
     });
   };
 }
