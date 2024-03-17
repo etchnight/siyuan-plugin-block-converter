@@ -1,3 +1,13 @@
+# [0.2.0](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v0.1.3...v0.2.0) (2024-03-17)
+
+
+### Features
+
+* **自定义复制:** 增加块自定义复制功能 ([96e13ca](https://github.com/etchnight/siyuan-plugin-table-importer/commit/96e13ca959954cba5c46db062a4126f414e420be))
+* **自定义块复制:** 增加设置js块所在文档功能 ([b33b19b](https://github.com/etchnight/siyuan-plugin-table-importer/commit/b33b19babeeef6ac1241733569c8b009f2afed94))
+
+
+
 
 ## [0.1.3](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v0.1.2...v0.1.3) (2024-03-09)
 
