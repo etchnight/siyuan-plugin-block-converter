@@ -32,3 +32,57 @@
     - end:与 sub 成对出现，表示子图结束，会自动追加忘记添加的 end，但如此渲染出的流程图极有可能不正确
 - 支持中文字符`【】（）`
 - 支持在一个链接中创建一组节点和线，如`[A]->(线上文字1)[B]->(线上文字2)其他内容`会解析为`A-->|线上文字1|B-->|线上文字2|下一步`
+
+## 自定义块复制
+
+在思源中编写 js 代码，复制块时将把块内容按指定方法处理后再写入剪贴板。
+
+> 例如
+>
+> 块文本：第一条 中华人民共和国民事诉讼法以宪法为根据，结合我国民事审判工作的经验和实际情况制定。
+>
+> 自定义复制输出文本：((20230330223862-9fh0nui '《民事诉讼法》第一条'))
+
+### 使用方法
+
+1. 在插件设置中设置 js 代码所在文档。
+2. 在上述文档中编写 js 代码，如：
+
+   ```js
+   const matchGroup = content.match(/(第)(.*?)(条)(?= )/);
+   let result = "";
+   if (!matchGroup) {
+     result = `((${id} '《${title}》${content.substring(0, 5)}'))`;
+   } else {
+     result = `((${id} '《${title}》${matchGroup[0]}'))`;
+   }
+   return result;
+   ```
+
+- 必须要有 return 语句
+- 必须使用代码块，并明确表示是 js 代码
+- 可以给块设置‘命名’以方便区分
+- 支持直接使用的字段
+  - id:块 Id
+  - title：块所在文档名
+  - name：块命名
+  - markdown：块 markdow 文本
+  - content：块文本，去除了 markdown 标记
+  - input：整个 block 信息，详见思源笔记用户指南/请从这里开始/搜索进阶/数据库表
+  - index:复制多个块时，块索引，内部使用`result += func(input, i);`对内容进行拼接(`func(input, i)`为本步骤中编写的 js 代码)
+
+3. 点击要复制的块的块标->插件->自定义复制
+
+### 内部实现
+
+```js
+//block js代码所在块
+const func = new Function(
+  "input",
+  "index",
+  ` 
+  const { title, name, content, markdown,id } = input;
+  ${block.content}
+  `
+);
+```
