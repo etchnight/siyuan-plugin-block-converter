@@ -7,7 +7,11 @@ import {
   showMessage,
 } from "siyuan";
 import { buildSyTableBlocks } from "./libs/tableTransfer";
-import { insertBlock } from "../subMod/siyuanPlugin-common/siyuan-api/block";
+import {
+  insertBlock,
+  updateBlock,
+  IResdoOperations,
+} from "../subMod/siyuanPlugin-common/siyuan-api/block";
 import {
   queryBlockById,
   queryFirstChildBlock,
@@ -24,10 +28,14 @@ import {
 import { TreeTools } from "../subMod/js-utility-function/src/tree";
 import { textEle } from "../subMod/siyuanPlugin-common/component/setting";
 const STORAGE_NAME = "config";
-type config = { blockCusCopyJsRootId: BlockId };
+type config = {
+  blockCusCopyJsRootId: BlockId;
+  blockCusUpdateJsRootId: BlockId;
+};
 export default class PluginTableImporter extends Plugin {
   private blockIconEventBindThis = this.blockIconEvent.bind(this);
   private blockCustomCopySubmenus: IMenuItemOption[] = [];
+  private blockCustomUpdateSubmenus: IMenuItemOption[] = [];
   private detail: {
     menu: Menu;
     blockElements: [HTMLElement];
@@ -38,6 +46,7 @@ export default class PluginTableImporter extends Plugin {
   } = {
     config: {
       blockCusCopyJsRootId: "",
+      blockCusUpdateJsRootId: "",
     },
   };
   async onload() {
@@ -46,6 +55,7 @@ export default class PluginTableImporter extends Plugin {
     this.buildSetting();
 
     this.blockCustomCopySubmenu();
+    this.blockCustomUpdateSubmenu();
     //console.log(this.data);
     console.log(this.i18n.helloPlugin);
   }
@@ -57,9 +67,11 @@ export default class PluginTableImporter extends Plugin {
   }
   private buildSetting() {
     const blockCusCopyJsRootId = textEle();
+    const blockCusUpdateJsRootId = textEle();
     this.setting = new Setting({
       confirmCallback: async () => {
         this.data.config.blockCusCopyJsRootId = blockCusCopyJsRootId.value;
+        this.data.config.blockCusUpdateJsRootId = blockCusUpdateJsRootId.value;
         await this.saveData(STORAGE_NAME, this.data.config);
         window.location.reload();
       },
@@ -69,6 +81,13 @@ export default class PluginTableImporter extends Plugin {
       createActionElement: () => {
         blockCusCopyJsRootId.value = this.data.config.blockCusCopyJsRootId;
         return blockCusCopyJsRootId;
+      },
+    });
+    this.setting.addItem({
+      title: "自定义块更新-js所在文档",
+      createActionElement: () => {
+        blockCusUpdateJsRootId.value = this.data.config.blockCusUpdateJsRootId;
+        return blockCusUpdateJsRootId;
       },
     });
   }
@@ -81,6 +100,7 @@ export default class PluginTableImporter extends Plugin {
     this.htmlBlock2tableBlock(detail);
     this.block2flowchart(detail);
     this.blockCustomCopy(detail);
+    this.blockCustomUpdate(detail);
   }
 
   private async block2flowchart(detail: {
@@ -222,6 +242,7 @@ export default class PluginTableImporter extends Plugin {
       submenu.push({
         label: block.name || block.content,
         type: "submenu",
+
         click: async () => {
           const input = await Promise.all(
             this.detail.blockElements.map(async (e) => {
@@ -261,6 +282,105 @@ export default class PluginTableImporter extends Plugin {
       label: "自定义复制",
       id: "blockCustomCopy",
       submenu: this.blockCustomCopySubmenus,
+    });
+  };
+  private async blockCustomUpdateSubmenu() {
+    let submenu: IMenuItemOption[] = [];
+    const jsBlocks = //todo
+      (await requestQuerySQL(`SELECT * FROM blocks WHERE blocks.type='c' 
+        AND blocks.root_id='${this.data.config.blockCusUpdateJsRootId}'`)) as Block[];
+    const submenuBlocks = jsBlocks.filter((e) => {
+      return e.markdown.startsWith("```js");
+    });
+    for (let block of submenuBlocks) {
+      const func = new Function(
+        "input",
+        "index",
+        ` 
+            const { title, name, content, markdown,id } = input;
+            ${block.content}
+          `
+      );
+      submenu.push({
+        label: block.name || block.content,
+        type: "submenu",
+        click: async () => {
+          const input = await Promise.all(
+            this.detail.blockElements.map(async (e) => {
+              const id = e.getAttribute("data-node-id");
+              const block = await queryBlockById(id);
+              const doc = await queryBlockById(block.root_id);
+              return {
+                ...block,
+                title: doc.content,
+              };
+            })
+          );
+          const lute = window.Lute.New();
+          for (let i = 0; i < input.length; i++) {
+            //console.log(input[i]);
+            const result = func(input[i], i) as string;
+            if (!result) {
+              continue;
+            }
+            if (!result.trim()) {
+              continue;
+            }
+            //console.log(result);
+            const domStr = lute.Md2BlockDOM(result);
+            const dom = document.createElement("div");
+            dom.innerHTML = domStr;
+            //console.log(dom);
+            let updateFlag = false;
+            let preBlockId = input[i].id;
+            for (let block of dom.children) {
+              //console.log(block);
+              if (!updateFlag) {
+                await updateBlock({
+                  dataType: "dom",
+                  id: input[i].id,
+                  data: block.outerHTML,
+                });
+                updateFlag = true;
+              } else {
+                let res: IResdoOperations[];
+                //const blockType = dom.getAttribute("data-type") as NodeType;
+                /*                 if (blockType === "NodeThematicBreak") {
+                  res = await insertBlock({
+                    dataType: "markdown",
+                    previousID: "preBlockId",
+                    data: "---",
+                  });
+                } else { */
+                res = await insertBlock({
+                  dataType: "dom",
+                  previousID: preBlockId,
+                  data: block.outerHTML,
+                });
+                //}
+                //console.log(res);
+                if (!res) {
+                  continue;
+                }
+                preBlockId = res[0]?.doOperations[0]?.id || preBlockId;
+              }
+            }
+          }
+        },
+      });
+    }
+    this.blockCustomUpdateSubmenus = submenu;
+  }
+  private blockCustomUpdate = async (detail: {
+    menu: Menu;
+    blockElements: [HTMLElement];
+    protyle: Protyle;
+  }) => {
+    detail.menu.addItem({
+      iconHTML: "",
+      label: "自定义更新",
+      id: "blockCustomUpdate",
+      submenu: this.blockCustomUpdateSubmenus,
     });
   };
 }
