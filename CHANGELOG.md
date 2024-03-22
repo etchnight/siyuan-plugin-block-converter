@@ -1,3 +1,12 @@
+## [0.2.1](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v0.2.0...v0.2.1) (2024-03-22)
+
+
+### Features
+
+* **自定义块更新:** 新增 自定义块更新 工具 ([b1d4bb9](https://github.com/etchnight/siyuan-plugin-table-importer/commit/b1d4bb9f6f6963b4a0057146f20635d9dabd0a0c))
+
+
+
 # [0.2.0](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v0.1.3...v0.2.0) (2024-03-17)
 
 
