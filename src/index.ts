@@ -9,8 +9,8 @@ import {
 import { buildSyTableBlocks } from "./libs/tableTransfer";
 import {
   insertBlock,
-  updateBlock,
   IResdoOperations,
+  updateBlockWithAttr,
 } from "../subMod/siyuanPlugin-common/siyuan-api/block";
 import {
   queryBlockById,
@@ -317,26 +317,36 @@ export default class PluginTableImporter extends Plugin {
             })
           );
           const lute = window.Lute.New();
-          for (let i = 0; i < input.length; i++) {
-            //console.log(input[i]);
-            const result = func(input[i], i) as string;
+          const outputDoms = input.map((e, i) => {
+            const result = func(e, i) as string;
             if (!result) {
-              continue;
+              return;
             }
             if (!result.trim()) {
-              continue;
+              return;
             }
-            //console.log(result);
             const domStr = lute.Md2BlockDOM(result);
             const dom = document.createElement("div");
             dom.innerHTML = domStr;
-            //console.log(dom);
+            return dom;
+          });
+          const sumCount = outputDoms.reduce((pre, cur) => {
+            if (!cur) {
+              return pre;
+            }
+            return pre + cur.childElementCount;
+          }, 0);
+          let count = 0;
+          for (let i = 0; i < outputDoms.length; i++) {
+            const dom = outputDoms[i];
+            if (!dom) {
+              continue;
+            }
             let updateFlag = false;
             let preBlockId = input[i].id;
             for (let block of dom.children) {
-              //console.log(block);
               if (!updateFlag) {
-                await updateBlock({
+                await updateBlockWithAttr({
                   dataType: "dom",
                   id: input[i].id,
                   data: block.outerHTML,
@@ -344,28 +354,22 @@ export default class PluginTableImporter extends Plugin {
                 updateFlag = true;
               } else {
                 let res: IResdoOperations[];
-                //const blockType = dom.getAttribute("data-type") as NodeType;
-                /*                 if (blockType === "NodeThematicBreak") {
-                  res = await insertBlock({
-                    dataType: "markdown",
-                    previousID: "preBlockId",
-                    data: "---",
-                  });
-                } else { */
                 res = await insertBlock({
                   dataType: "dom",
                   previousID: preBlockId,
                   data: block.outerHTML,
                 });
-                //}
                 //console.log(res);
                 if (!res) {
                   continue;
                 }
                 preBlockId = res[0]?.doOperations[0]?.id || preBlockId;
               }
+              count++;
+              showMessage(`已完成${count}/${sumCount}`);
             }
           }
+          showMessage(`已完成${count}/${sumCount}`);
         },
       });
     }
