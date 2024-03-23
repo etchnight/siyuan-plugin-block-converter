@@ -318,6 +318,18 @@ export default class PluginTableImporter extends Plugin {
             })
           );
           const lute = window.Lute.New();
+          lute.SetBlockRef(true);
+          lute.SetHeadingAnchor(true);
+          lute.SetHeadingID(true);
+          lute.SetIndentCodeBlock(true);
+          lute.SetInlineMathAllowDigitAfterOpenMarker(true);
+          lute.SetKramdownIAL(true);
+          lute.SetMark(true);
+          lute.SetProtyleWYSIWYG(true);
+          lute.SetSub(true);
+          lute.SetSup(true);
+          lute.SetTag(true);
+          lute.SetSuperBlock(true);
           const outputDoms = input.map((e, i) => {
             const result = func(e, i) as {
               markdown?: string;
@@ -329,10 +341,10 @@ export default class PluginTableImporter extends Plugin {
             const { markdown, attrs } = result;
             const dom = document.createElement("div");
             if (markdown && markdown.trim()) {
-              const domStr = lute.Md2BlockDOM(markdown);
+              let domStr = lute.Md2BlockDOM(markdown);
+              domStr;
               dom.innerHTML = domStr;
             }
-            console.log(dom)
             return { dom: dom, attrs: attrs };
           });
           let count = 0;

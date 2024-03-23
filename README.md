@@ -111,4 +111,7 @@ const func = new Function(
   attr?: { [key: string]: string };
 };
 ```
-其中，markdown表示更新后的块内容，attr表示更新后的属性
+其中，markdown表示更新后的块内容，attr表示更新后的属性。
+
+注意事项：
+- 可以将一个块更新为多个块，但只有第一个块会继承或更新属性
