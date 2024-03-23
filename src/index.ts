@@ -27,6 +27,7 @@ import {
 } from "./libs/str2mermaid";
 import { TreeTools } from "../subMod/js-utility-function/src/tree";
 import { textEle } from "../subMod/siyuanPlugin-common/component/setting";
+import { setBlockAttrs } from "../subMod/siyuanPlugin-common/siyuan-api/attr";
 const STORAGE_NAME = "config";
 type config = {
   blockCusCopyJsRootId: BlockId;
@@ -318,30 +319,25 @@ export default class PluginTableImporter extends Plugin {
           );
           const lute = window.Lute.New();
           const outputDoms = input.map((e, i) => {
-            const result = func(e, i) as string;
+            const result = func(e, i) as {
+              markdown?: string;
+              attrs?: { [key: string]: string };
+            };
             if (!result) {
               return;
             }
-            if (!result.trim()) {
-              return;
-            }
-            const domStr = lute.Md2BlockDOM(result);
+            const { markdown, attrs } = result;
             const dom = document.createElement("div");
-            dom.innerHTML = domStr;
-            return dom;
-          });
-          const sumCount = outputDoms.reduce((pre, cur) => {
-            if (!cur) {
-              return pre;
+            if (markdown && markdown.trim()) {
+              const domStr = lute.Md2BlockDOM(markdown);
+              dom.innerHTML = domStr;
             }
-            return pre + cur.childElementCount;
-          }, 0);
+            console.log(dom)
+            return { dom: dom, attrs: attrs };
+          });
           let count = 0;
           for (let i = 0; i < outputDoms.length; i++) {
-            const dom = outputDoms[i];
-            if (!dom) {
-              continue;
-            }
+            const { dom, attrs } = outputDoms[i];
             let updateFlag = false;
             let preBlockId = input[i].id;
             for (let block of dom.children) {
@@ -365,11 +361,16 @@ export default class PluginTableImporter extends Plugin {
                 }
                 preBlockId = res[0]?.doOperations[0]?.id || preBlockId;
               }
-              count++;
-              showMessage(`已完成${count}/${sumCount}`);
             }
+            if (attrs) {
+              await setBlockAttrs({
+                id: input[i].id,
+                attrs: attrs,
+              });
+            }
+            count++;
+            showMessage(`已完成${count}/${outputDoms.length}`);
           }
-          showMessage(`已完成${count}/${sumCount}`);
         },
       });
     }
