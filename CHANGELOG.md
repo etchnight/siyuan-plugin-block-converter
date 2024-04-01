@@ -1,3 +1,29 @@
+## [0.2.2](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v0.2.1...v0.2.2) (2024-04-01)
+
+
+### Bug Fixes
+
+* **自定义块更新:** 更新块时保留块属性 ([f7d9acb](https://github.com/etchnight/siyuan-plugin-table-importer/commit/f7d9acb4011d91ba0bd7a9e4ed8d4071b2d82675))
+* **自定义块更新:** 修复引用、上标等不能正常转换问题 ([84faeeb](https://github.com/etchnight/siyuan-plugin-table-importer/commit/84faeeb9586217316e2e8d05b41597751ec1aa27))
+
+
+### Features
+
+* **自定义块更新:** 可以更新属性 ([860dc8c](https://github.com/etchnight/siyuan-plugin-table-importer/commit/860dc8c502b4b46521ecd97ed6f11fed05163b35))
+
+
+### Reverts
+
+* **流程图生成器:** 移除 流程图生成器 ([8b84e17](https://github.com/etchnight/siyuan-plugin-table-importer/commit/8b84e170ab7d246be60324a78c241fb0e2fadfea))
+
+
+### BREAKING CHANGES
+
+* **流程图生成器:** 移除插件中 block2flowchart
+* **自定义块更新:** 之前js return值为markdown文本
+
+
+
 ## [0.2.1](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v0.2.0...v0.2.1) (2024-03-22)
 
 
@@ -12,7 +38,7 @@
 
 ### Features
 
-* **自定义复制:** 增加块自定义复制功能 ([96e13ca](https://github.com/etchnight/siyuan-plugin-table-importer/commit/96e13ca959954cba5c46db062a4126f414e420be))
+* **自定义块复制:** 增加块自定义复制功能 ([96e13ca](https://github.com/etchnight/siyuan-plugin-table-importer/commit/96e13ca959954cba5c46db062a4126f414e420be))
 * **自定义块复制:** 增加设置js块所在文档功能 ([b33b19b](https://github.com/etchnight/siyuan-plugin-table-importer/commit/b33b19babeeef6ac1241733569c8b009f2afed94))
 
 

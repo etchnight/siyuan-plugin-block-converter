@@ -2,7 +2,7 @@
   "name": "siyuan-plugin-block-converter",
   "author": "dualwind",
   "url": "https://github.com/etchnight/siyuan-plugin-block-converter",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "minAppVersion": "2.9.0",
   "backends": ["windows", "linux", "darwin"],
   "frontends": ["desktop", "desktop-window"],
@@ -21,5 +21,5 @@
   "funding": {
     "custom": []
   },
-  "keywords": ["plugin", "table", "表格", "流程图", "flowChart"]
+  "keywords": ["plugin", "table", "表格", "转换", "自定义复制","自定义更新"]
 }
