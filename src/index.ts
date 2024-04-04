@@ -1,11 +1,4 @@
-import {
-  Plugin,
-  Menu,
-  Protyle,
-  IMenuItemOption,
-  Setting,
-  showMessage,
-} from "siyuan";
+import { Plugin, Menu, Protyle, IMenuItemOption, showMessage } from "siyuan";
 import { buildSyTableBlocks } from "./libs/tableTransfer";
 import {
   insertBlock,
@@ -16,13 +9,40 @@ import {
   queryBlockById,
   requestQuerySQL,
 } from "../subMod/siyuanPlugin-common/siyuan-api/query";
-import { textEle } from "../subMod/siyuanPlugin-common/component/setting";
+import { buildSetting } from "../subMod/siyuanPlugin-common/component/setting";
 import { setBlockAttrs } from "../subMod/siyuanPlugin-common/siyuan-api/attr";
 const STORAGE_NAME = "config";
-type config = {
-  blockCusCopyJsRootId: BlockId;
-  blockCusUpdateJsRootId: BlockId;
+const DefaultDATA = {
+  config: {
+    isHtmlBlock2table: {
+      type: "switch",
+      title: "表格转换-是否开启",
+      value: true,
+    },
+    isBlockCusCopy: {
+      type: "switch",
+      title: "自定义块复制-是否开启",
+      value: true,
+    },
+    blockCusCopyJsRootId: {
+      type: "input",
+      title: "自定义块复制-js所在文档",
+      value: "",
+    },
+
+    isBlockCusUpdate: {
+      type: "switch",
+      title: "自定义块更新-是否开启",
+      value: true,
+    },
+    blockCusUpdateJsRootId: {
+      type: "input",
+      title: "自定义块更新-js所在文档",
+      value: "",
+    },
+  },
 };
+
 export default class PluginTableImporter extends Plugin {
   private blockIconEventBindThis = this.blockIconEvent.bind(this);
   private blockCustomCopySubmenus: IMenuItemOption[] = [];
@@ -32,23 +52,33 @@ export default class PluginTableImporter extends Plugin {
     blockElements: [HTMLElement];
     protyle: Protyle;
   };
-  public data: {
-    config: config;
-  } = {
-    config: {
-      blockCusCopyJsRootId: "",
-      blockCusUpdateJsRootId: "",
-    },
-  };
+  public data = structuredClone(DefaultDATA);
   async onload() {
     this.eventBus.on("click-blockicon", this.blockIconEventBindThis);
     await this.loadData(STORAGE_NAME);
-    this.buildSetting();
+    //*兼容性改变,v0.2.2 => v0.2.3 遗留问题，原因：loadData 将覆盖默认值
+    if (
+      typeof this.data.config.blockCusCopyJsRootId === typeof "" ||
+      typeof this.data.config.blockCusUpdateJsRootId === typeof ""
+    ) {
+      const blockCusCopyJsRootId = this.data.config
+        .blockCusCopyJsRootId as unknown as string;
+      const blockCusUpdateJsRootId = this.data.config
+        .blockCusUpdateJsRootId as unknown as string;
+      this.data = DefaultDATA;
+      this.data.config.blockCusUpdateJsRootId.value = blockCusUpdateJsRootId;
+      this.data.config.blockCusCopyJsRootId.value = blockCusCopyJsRootId;
+    }
 
-    this.blockCustomCopySubmenu();
-    this.blockCustomUpdateSubmenu();
+    buildSetting(this.data.config, {
+      storageName: STORAGE_NAME,
+      isReload: true,
+      plugin: this,
+    });
+
+    this.data.config.isBlockCusCopy.value && this.initBlockCustomCopy();
+    this.data.config.isBlockCusUpdate.value && this.initBlockCustomUpdate();
     //console.log(this.data);
-    console.log(this.i18n.helloPlugin);
   }
 
   onLayoutReady() {}
@@ -56,45 +86,20 @@ export default class PluginTableImporter extends Plugin {
   onunload() {
     this.eventBus.off("click-blockicon", this.blockIconEventBindThis);
   }
-  private buildSetting() {
-    const blockCusCopyJsRootId = textEle();
-    const blockCusUpdateJsRootId = textEle();
-    this.setting = new Setting({
-      confirmCallback: async () => {
-        this.data.config.blockCusCopyJsRootId = blockCusCopyJsRootId.value;
-        this.data.config.blockCusUpdateJsRootId = blockCusUpdateJsRootId.value;
-        await this.saveData(STORAGE_NAME, this.data.config);
-        window.location.reload();
-      },
-    });
-    this.setting.addItem({
-      title: "自定义块复制-js所在文档",
-      createActionElement: () => {
-        blockCusCopyJsRootId.value = this.data.config.blockCusCopyJsRootId;
-        return blockCusCopyJsRootId;
-      },
-    });
-    this.setting.addItem({
-      title: "自定义块更新-js所在文档",
-      createActionElement: () => {
-        blockCusUpdateJsRootId.value = this.data.config.blockCusUpdateJsRootId;
-        return blockCusUpdateJsRootId;
-      },
-    });
-  }
+
   private blockIconEvent({
     detail,
   }: {
     detail: { menu: Menu; blockElements: [HTMLElement]; protyle: Protyle };
   }) {
     this.detail = detail;
-    this.htmlBlock2tableBlock(detail);
+    this.data.config.isHtmlBlock2table.value &&
+      this.htmlBlock2tableBlock(detail);
     //this.block2flowchart(detail);
-    this.blockCustomCopy(detail);
-    this.blockCustomUpdate(detail);
+    this.data.config.isBlockCusCopy.value && this.blockCustomCopy(detail);
+    this.data.config.isBlockCusUpdate.value && this.blockCustomUpdate(detail);
   }
 
-  
   private htmlBlock2tableBlock = (detail: {
     menu: Menu;
     blockElements: [HTMLElement];
@@ -142,11 +147,15 @@ export default class PluginTableImporter extends Plugin {
       },
     });
   };
-  private async blockCustomCopySubmenu() {
+  private async initBlockCustomCopy() {
+    if (!this.data.config.blockCusCopyJsRootId.value) {
+      this.blockCustomCopySubmenus = [];
+      return;
+    }
     let submenu: IMenuItemOption[] = [];
     const jsBlocks = //todo
       (await requestQuerySQL(`SELECT * FROM blocks WHERE blocks.type='c' 
-        AND blocks.root_id='${this.data.config.blockCusCopyJsRootId}'`)) as Block[];
+        AND blocks.root_id='${this.data.config.blockCusCopyJsRootId.value}'`)) as Block[];
     const submenuBlocks = jsBlocks.filter((e) => {
       return e.markdown.startsWith("```js");
     });
@@ -204,11 +213,16 @@ export default class PluginTableImporter extends Plugin {
       submenu: this.blockCustomCopySubmenus,
     });
   };
-  private async blockCustomUpdateSubmenu() {
+  private async initBlockCustomUpdate() {
+    if (!this.data.config.blockCusUpdateJsRootId.value) {
+      this.blockCustomUpdateSubmenus = [];
+      return;
+    }
     let submenu: IMenuItemOption[] = [];
+
     const jsBlocks = //todo
       (await requestQuerySQL(`SELECT * FROM blocks WHERE blocks.type='c' 
-        AND blocks.root_id='${this.data.config.blockCusUpdateJsRootId}'`)) as Block[];
+        AND blocks.root_id='${this.data.config.blockCusUpdateJsRootId.value}'`)) as Block[];
     const submenuBlocks = jsBlocks.filter((e) => {
       return e.markdown.startsWith("```js");
     });
