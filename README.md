@@ -88,7 +88,7 @@ function chineseToNum(chnStr) {
 }
 ```
 
-![这是图片](./docs/法条复制.gif)
+![这是图片](./asset/法条复制.gif)
 
 ## 自定义块更新
 
@@ -136,4 +136,4 @@ result = result + "\r\n---\r\n";
 return { markdown: result, attrs: { name: "", alias: "" } };
 ```
 
-![这是图片](./docs/法条更新.gif)
+![这是图片](./asset/法条更新.gif)

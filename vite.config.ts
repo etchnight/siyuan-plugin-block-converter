@@ -44,7 +44,7 @@ export default defineConfig({
                     dest: "./",
                 },
                 {
-                    src: "./docs",
+                    src: "./asset",
                     dest: "./",
                 }
             ],
