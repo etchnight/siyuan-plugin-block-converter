@@ -1,3 +1,17 @@
+## [0.2.3](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v0.2.2...v0.2.3) (2024-04-04)
+
+
+### Bug Fixes
+
+* **表格插入助手:** 修复丢失单元格纯文字节点问题 ([e7b8da9](https://github.com/etchnight/siyuan-plugin-table-importer/commit/e7b8da9ef3f91b0b99161a306af48259128691ba))
+
+
+### Features
+
+* 增加设置 ([5fc2c16](https://github.com/etchnight/siyuan-plugin-table-importer/commit/5fc2c163e92216e513af0bd5064f4a482cdd5eb4))
+
+
+
 ## [0.2.2](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v0.2.1...v0.2.2) (2024-04-01)
 
 

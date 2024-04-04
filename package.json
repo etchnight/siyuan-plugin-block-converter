@@ -1,8 +1,8 @@
 {
   "name": "siyuan-plugin-block-converter",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "type": "module",
-  "description": "Provide a series of block conversion tools, such as HTML table block to Siyuan table block, block to Mermaid flow chart",
+  "description": "Provide a series of block conversion tools, such as HTML table block to Siyuan table block",
   "repository": "",
   "homepage": "",
   "author": "",
