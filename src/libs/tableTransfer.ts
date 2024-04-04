@@ -167,19 +167,30 @@ function rebuildTableSection(body: HTMLTableSectionElement, ishead?: boolean) {
       return "";
     }
     let contentList = [];
-    const blockLikes = ["block", "block ", " block"];
-    for (let ele of td.children) {
-      let display = window.getComputedStyle(ele).display;
-      const flagList = blockLikes.map((e) => {
-        return display.indexOf(e);
-      });
-      if (Math.max(...flagList) !== -1) {
-        contentList.push(ele.textContent);
-      } else {
-        contentList[contentList.length - 1] += ele.textContent;
+    //const blockLikes = ["block", "block ", " block"];
+    for (let ele of td.childNodes) {
+      switch (ele.nodeType) {
+        case Node.ELEMENT_NODE:
+          const ele2 = ele as Element;
+          let display = window.getComputedStyle(ele2).display;
+          /*           const flagList = blockLikes.map((e) => {
+            return display.indexOf(e);
+          });
+          if (Math.max(...flagList) !== -1) { */
+          if (display.search("block") !== -1) {
+            contentList.push((ele2.innerText || "") + "<br>");
+          } else {
+            contentList.push(ele2.innerText || "");
+          }
+          break;
+        case Node.TEXT_NODE:
+          contentList.push(ele.textContent);
+          break;
+        default:
+          break;
       }
     }
-    return contentList.join("<br>");
+    return contentList.join("");
   }
 }
 
@@ -233,8 +244,8 @@ function buildColgroupByComputedWidth(
 }
 
 /**
- * 
- * @param newTable 
+ *
+ * @param newTable
  * @returns 生成的 colgroup 是以 `width : xx% ;` 形式计的
  */
 export function buildColgroupByContent(newTable: HTMLTableElement) {
