@@ -1,8 +1,7 @@
-import { Plugin, Menu, Protyle, IMenuItemOption, showMessage } from "siyuan";
+import { Plugin, Menu, IMenuItemOption, showMessage } from "siyuan";
 import { buildSyTableBlocks } from "./libs/tableTransfer";
 import {
   insertBlock,
-  IResdoOperations,
   updateBlockWithAttr,
 } from "../subMod/siyuanPlugin-common/siyuan-api/block";
 import {
@@ -11,6 +10,7 @@ import {
 } from "../subMod/siyuanPlugin-common/siyuan-api/query";
 import { buildSetting } from "../subMod/siyuanPlugin-common/component/setting";
 import { setBlockAttrs } from "../subMod/siyuanPlugin-common/siyuan-api/attr";
+import { IProtyle } from "../subMod/siyuanPlugin-common/types/global-siyuan";
 const STORAGE_NAME = "config";
 const DefaultDATA = {
   config: {
@@ -50,7 +50,7 @@ export default class PluginTableImporter extends Plugin {
   private detail: {
     menu: Menu;
     blockElements: [HTMLElement];
-    protyle: Protyle;
+    protyle: IProtyle;
   };
   public data = structuredClone(DefaultDATA);
   async onload() {
@@ -90,7 +90,7 @@ export default class PluginTableImporter extends Plugin {
   private blockIconEvent({
     detail,
   }: {
-    detail: { menu: Menu; blockElements: [HTMLElement]; protyle: Protyle };
+    detail: { menu: Menu; blockElements: [HTMLElement]; protyle: IProtyle };
   }) {
     this.detail = detail;
     this.data.config.isHtmlBlock2table.value &&
@@ -103,7 +103,7 @@ export default class PluginTableImporter extends Plugin {
   private htmlBlock2tableBlock = (detail: {
     menu: Menu;
     blockElements: [HTMLElement];
-    protyle: Protyle;
+    protyle: IProtyle;
   }) => {
     if (detail.blockElements.length !== 1) {
       return;
@@ -204,7 +204,7 @@ export default class PluginTableImporter extends Plugin {
   private blockCustomCopy = async (detail: {
     menu: Menu;
     blockElements: [HTMLElement];
-    protyle: Protyle;
+    protyle: IProtyle;
   }) => {
     detail.menu.addItem({
       iconHTML: "",
@@ -235,88 +235,100 @@ export default class PluginTableImporter extends Plugin {
             ${block.content}
           `
       );
+      const transform = async () => {
+        const input = await Promise.all(
+          this.detail.blockElements.map(async (e) => {
+            const id = e.getAttribute("data-node-id");
+            const block = await queryBlockById(id);
+            const doc = await queryBlockById(block.root_id);
+            return {
+              ...block,
+              title: doc.content,
+            };
+          })
+        );
+        const lute = this.detail.protyle.lute;
+        /*         const lute = window.Lute.New();
+        lute.SetBlockRef(true);
+        lute.SetHeadingAnchor(true);
+        lute.SetHeadingID(true);
+        lute.SetIndentCodeBlock(true);
+        lute.SetInlineMathAllowDigitAfterOpenMarker(true);
+        lute.SetKramdownIAL(true);
+        lute.SetMark(true);
+        lute.SetProtyleWYSIWYG(true);
+        lute.SetSub(true);
+        lute.SetSup(true);
+        lute.SetTag(true);
+        lute.SetSuperBlock(true); */
+        const outputDoms = input.map((e, i) => {
+          const result = func(e, i) as {
+            markdown?: string;
+            attrs?: { [key: string]: string };
+          };
+          if (!result) {
+            return;
+          }
+          const { markdown, attrs } = result;
+          const dom = document.createElement("div");
+          if (markdown && markdown.trim()) {
+            let domStr = lute.Md2BlockDOM(markdown);
+            domStr;
+            dom.innerHTML = domStr;
+          }
+          return { dom: dom, attrs: attrs };
+        });
+        let count = 0;
+        for (let i = 0; i < outputDoms.length; i++) {
+          const { dom, attrs } = outputDoms[i];
+          let updateFlag = false;
+          let preBlockId = input[i].id;
+          for (let block of dom.children) {
+            if (!updateFlag) {
+              await updateBlockWithAttr({
+                dataType: "dom",
+                id: input[i].id,
+                data: block.outerHTML,
+              });
+              updateFlag = true;
+            } else {
+              let res = await insertBlock({
+                dataType: "dom",
+                previousID: preBlockId,
+                data: block.outerHTML,
+              });
+              //console.log(res);
+              if (!res) {
+                continue;
+              }
+              preBlockId = res[0]?.doOperations[0]?.id || preBlockId;
+            }
+          }
+          if (attrs) {
+            await setBlockAttrs({
+              id: input[i].id,
+              attrs: attrs,
+            });
+          }
+          count++;
+          showMessage(`已完成${count}/${outputDoms.length}`);
+        }
+      };
+
       submenu.push({
         label: block.name || block.content,
         type: "submenu",
-        click: async () => {
-          const input = await Promise.all(
-            this.detail.blockElements.map(async (e) => {
-              const id = e.getAttribute("data-node-id");
-              const block = await queryBlockById(id);
-              const doc = await queryBlockById(block.root_id);
-              return {
-                ...block,
-                title: doc.content,
-              };
-            })
-          );
-          const lute = window.Lute.New();
-          lute.SetBlockRef(true);
-          lute.SetHeadingAnchor(true);
-          lute.SetHeadingID(true);
-          lute.SetIndentCodeBlock(true);
-          lute.SetInlineMathAllowDigitAfterOpenMarker(true);
-          lute.SetKramdownIAL(true);
-          lute.SetMark(true);
-          lute.SetProtyleWYSIWYG(true);
-          lute.SetSub(true);
-          lute.SetSup(true);
-          lute.SetTag(true);
-          lute.SetSuperBlock(true);
-          const outputDoms = input.map((e, i) => {
-            const result = func(e, i) as {
-              markdown?: string;
-              attrs?: { [key: string]: string };
-            };
-            if (!result) {
-              return;
-            }
-            const { markdown, attrs } = result;
-            const dom = document.createElement("div");
-            if (markdown && markdown.trim()) {
-              let domStr = lute.Md2BlockDOM(markdown);
-              domStr;
-              dom.innerHTML = domStr;
-            }
-            return { dom: dom, attrs: attrs };
-          });
-          let count = 0;
-          for (let i = 0; i < outputDoms.length; i++) {
-            const { dom, attrs } = outputDoms[i];
-            let updateFlag = false;
-            let preBlockId = input[i].id;
-            for (let block of dom.children) {
-              if (!updateFlag) {
-                await updateBlockWithAttr({
-                  dataType: "dom",
-                  id: input[i].id,
-                  data: block.outerHTML,
-                });
-                updateFlag = true;
-              } else {
-                let res: IResdoOperations[];
-                res = await insertBlock({
-                  dataType: "dom",
-                  previousID: preBlockId,
-                  data: block.outerHTML,
-                });
-                //console.log(res);
-                if (!res) {
-                  continue;
-                }
-                preBlockId = res[0]?.doOperations[0]?.id || preBlockId;
-              }
-            }
-            if (attrs) {
-              await setBlockAttrs({
-                id: input[i].id,
-                attrs: attrs,
-              });
-            }
-            count++;
-            showMessage(`已完成${count}/${outputDoms.length}`);
-          }
-        },
+        icon: "",
+        submenu: [
+          {
+            label: "转换为无序列表后更新",
+            icon: "",
+            click: () => {
+              console.log(this.detail.protyle.getInstance());
+            },
+          },
+        ],
+        click: transform,
       });
     }
     this.blockCustomUpdateSubmenus = submenu;
@@ -324,7 +336,7 @@ export default class PluginTableImporter extends Plugin {
   private blockCustomUpdate = async (detail: {
     menu: Menu;
     blockElements: [HTMLElement];
-    protyle: Protyle;
+    protyle: IProtyle;
   }) => {
     detail.menu.addItem({
       iconHTML: "",
