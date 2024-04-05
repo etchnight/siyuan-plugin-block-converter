@@ -1,6 +1,16 @@
-import { Plugin, Menu, IMenuItemOption, showMessage } from "siyuan";
+import {
+  Plugin,
+  Menu,
+  IMenuItemOption,
+  showMessage,
+  Protyle,
+  IWebSocketData,
+  TTurnIntoOne,
+  TTurnIntoOneSub,
+} from "siyuan";
 import { buildSyTableBlocks } from "./libs/tableTransfer";
 import {
+  Transaction,
   insertBlock,
   updateBlockWithAttr,
 } from "../subMod/siyuanPlugin-common/siyuan-api/block";
@@ -163,6 +173,7 @@ export default class PluginTableImporter extends Plugin {
       const func = new Function(
         "input",
         "index",
+        "inputArray",
         ` 
             const { title, name, content, markdown,id } = input;
             ${block.content}
@@ -171,7 +182,6 @@ export default class PluginTableImporter extends Plugin {
       submenu.push({
         label: block.name || block.content,
         type: "submenu",
-
         click: async () => {
           const input = await Promise.all(
             this.detail.blockElements.map(async (e) => {
@@ -181,16 +191,12 @@ export default class PluginTableImporter extends Plugin {
               return {
                 ...block,
                 title: doc.content,
-                //name: block.name,
-                //content: block.content,
-                //markdown: block.markdown,
-                //id: block.id,
               };
             })
           );
           let result = "";
           for (let i = 0; i < input.length; i++) {
-            result += func(input[i], i);
+            result += func(input[i], i, input);
           }
           //console.log(input);
           await navigator.clipboard.writeText(result);
@@ -230,6 +236,7 @@ export default class PluginTableImporter extends Plugin {
       const func = new Function(
         "input",
         "index",
+        "inputArray",
         ` 
             const { title, name, content, markdown,id } = input;
             ${block.content}
@@ -261,8 +268,8 @@ export default class PluginTableImporter extends Plugin {
         lute.SetSup(true);
         lute.SetTag(true);
         lute.SetSuperBlock(true); */
-        const outputDoms = input.map((e, i) => {
-          const result = func(e, i) as {
+        const outputDoms = input.map((e, i, array) => {
+          const result = func(e, i, array) as {
             markdown?: string;
             attrs?: { [key: string]: string };
           };
@@ -318,17 +325,8 @@ export default class PluginTableImporter extends Plugin {
       submenu.push({
         label: block.name || block.content,
         type: "submenu",
-        icon: "",
-        submenu: [
-          {
-            label: "转换为无序列表后更新",
-            icon: "",
-            click: () => {
-              console.log(this.detail.protyle.getInstance());
-            },
-          },
-        ],
-        click: transform,
+        iconHTML: "",
+        click: () => transform(),
       });
     }
     this.blockCustomUpdateSubmenus = submenu;

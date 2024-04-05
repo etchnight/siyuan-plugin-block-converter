@@ -43,7 +43,8 @@
   - markdown：块 markdow 文本
   - content：块文本，去除了 markdown 标记
   - input：整个 block 信息，详见思源笔记用户指南/请从这里开始/搜索进阶/数据库表
-  - index:复制多个块时，块索引，内部使用`result += func(input, i);`对内容进行拼接(`func(input, i)`为本步骤中编写的 js 代码)
+  - index: 复制多个块时，块索引，内部使用`result += func(input, i);`对内容进行拼接(`func(input, i)`为本步骤中编写的 js 代码)
+  - inputArray(v0.2.4 新增): 复制多个块时，包含所有块`input`的列表
 
 3. 刷新界面(控制台运行`location.reload()`，即不支持热更新)
 4. 点击要复制的块的块标->插件->自定义复制
@@ -55,6 +56,7 @@
 const func = new Function(
   "input",
   "index",
+  "inputArray",
   ` 
   const { title, name, content, markdown,id } = input;
   ${block.content}
@@ -114,6 +116,7 @@ function chineseToNum(chnStr) {
 注意事项：
 
 - 可以将一个块更新为多个块，但只有第一个块会继承或更新属性
+- v0.2.4 新增 `inputArray` 变量(详见 自定义块复制 部分)，可以利用其将多个块更新为一个块，但是如果任何块返回 `markdown` 内容为空，为保证数据安全，不会主动将其清空
 
 ### 示例
 
