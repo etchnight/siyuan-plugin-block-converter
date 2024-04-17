@@ -1,3 +1,13 @@
+## [0.2.4](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v0.2.3...v0.2.4) (2024-04-17)
+
+
+### Features
+
+* **自定义块复制,自定义块更新:** 自定义函数新增inputArray变量 ([94e6134](https://github.com/etchnight/siyuan-plugin-table-importer/commit/94e6134ac028f7fea1eaf109adde2a83cfbd4ccd))
+* **自定义块复制/自定义块更新:** 支持已有脚本热更新 ([3d19b8c](https://github.com/etchnight/siyuan-plugin-table-importer/commit/3d19b8cf8990e9148cbc4772da78627475be3c98))
+
+
+
 ## [0.2.3](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v0.2.2...v0.2.3) (2024-04-04)
 
 
