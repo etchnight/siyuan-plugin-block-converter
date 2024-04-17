@@ -1,16 +1,6 @@
-import {
-  Plugin,
-  Menu,
-  IMenuItemOption,
-  showMessage,
-  Protyle,
-  IWebSocketData,
-  TTurnIntoOne,
-  TTurnIntoOneSub,
-} from "siyuan";
+import { Plugin, Menu, IMenuItemOption, showMessage } from "siyuan";
 import { buildSyTableBlocks } from "./libs/tableTransfer";
 import {
-  Transaction,
   insertBlock,
   updateBlockWithAttr,
 } from "../subMod/siyuanPlugin-common/siyuan-api/block";
@@ -21,6 +11,7 @@ import {
 import { buildSetting } from "../subMod/siyuanPlugin-common/component/setting";
 import { setBlockAttrs } from "../subMod/siyuanPlugin-common/siyuan-api/attr";
 import { IProtyle } from "../subMod/siyuanPlugin-common/types/global-siyuan";
+import { Block } from "../subMod/siyuanPlugin-common/types/siyuan-api";
 const STORAGE_NAME = "config";
 const DefaultDATA = {
   config: {
@@ -167,20 +158,13 @@ export default class PluginTableImporter extends Plugin {
       (await requestQuerySQL(`SELECT * FROM blocks WHERE blocks.type='c' 
         AND blocks.root_id='${this.data.config.blockCusCopyJsRootId.value}'`)) as Block[];
     const submenuBlocks = jsBlocks.filter((e) => {
-      return e.markdown.startsWith("```js");
-    });
-    for (let block of submenuBlocks) {
-      const func = new Function(
-        "input",
-        "index",
-        "inputArray",
-        ` 
-            const { title, name, content, markdown,id } = input;
-            ${block.content}
-          `
+      return (
+        e.markdown.startsWith("```js") || e.markdown.startsWith("```javascript")
       );
+    });
+    for (let jsBlock of submenuBlocks) {
       submenu.push({
-        label: block.name || block.content,
+        label: jsBlock.name || jsBlock.content,
         type: "submenu",
         click: async () => {
           const input = await Promise.all(
@@ -193,6 +177,16 @@ export default class PluginTableImporter extends Plugin {
                 title: doc.content,
               };
             })
+          );
+          const currentJsBlock = await queryBlockById(jsBlock.id);
+          const func = new Function(
+            "input",
+            "index",
+            "inputArray",
+            ` 
+                const { title, name, content, markdown,id } = input;
+                ${currentJsBlock.content}
+              `
           );
           let result = "";
           for (let i = 0; i < input.length; i++) {
@@ -230,18 +224,11 @@ export default class PluginTableImporter extends Plugin {
       (await requestQuerySQL(`SELECT * FROM blocks WHERE blocks.type='c' 
         AND blocks.root_id='${this.data.config.blockCusUpdateJsRootId.value}'`)) as Block[];
     const submenuBlocks = jsBlocks.filter((e) => {
-      return e.markdown.startsWith("```js");
-    });
-    for (let block of submenuBlocks) {
-      const func = new Function(
-        "input",
-        "index",
-        "inputArray",
-        ` 
-            const { title, name, content, markdown,id } = input;
-            ${block.content}
-          `
+      return (
+        e.markdown.startsWith("```js") || e.markdown.startsWith("```javascript")
       );
+    });
+    for (let jsBlock of submenuBlocks) {
       const transform = async () => {
         const input = await Promise.all(
           this.detail.blockElements.map(async (e) => {
@@ -268,6 +255,16 @@ export default class PluginTableImporter extends Plugin {
         lute.SetSup(true);
         lute.SetTag(true);
         lute.SetSuperBlock(true); */
+        const currentJsBlock = await queryBlockById(jsBlock.id);
+        const func = new Function(
+          "input",
+          "index",
+          "inputArray",
+          ` 
+              const { title, name, content, markdown,id } = input;
+              ${currentJsBlock.content}
+            `
+        );
         const outputDoms = input.map((e, i, array) => {
           const result = func(e, i, array) as {
             markdown?: string;
@@ -323,7 +320,7 @@ export default class PluginTableImporter extends Plugin {
       };
 
       submenu.push({
-        label: block.name || block.content,
+        label: jsBlock.name || jsBlock.content,
         type: "submenu",
         iconHTML: "",
         click: () => transform(),
