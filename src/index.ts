@@ -43,7 +43,6 @@ const DefaultDATA = {
     },
   },
 };
-
 export default class PluginTableImporter extends Plugin {
   private blockIconEventBindThis = this.blockIconEvent.bind(this);
   private blockCustomCopySubmenus: IMenuItemOption[] = [];
@@ -159,7 +158,9 @@ export default class PluginTableImporter extends Plugin {
         AND blocks.root_id='${this.data.config.blockCusCopyJsRootId.value}'`)) as Block[];
     const submenuBlocks = jsBlocks.filter((e) => {
       return (
-        e.markdown.startsWith("```js") || e.markdown.startsWith("```javascript")
+        e.markdown.startsWith("```js") ||
+        e.markdown.startsWith("```javascript") ||
+        e.markdown.startsWith("```JavaScript")
       );
     });
     for (let jsBlock of submenuBlocks) {
@@ -225,7 +226,9 @@ export default class PluginTableImporter extends Plugin {
         AND blocks.root_id='${this.data.config.blockCusUpdateJsRootId.value}'`)) as Block[];
     const submenuBlocks = jsBlocks.filter((e) => {
       return (
-        e.markdown.startsWith("```js") || e.markdown.startsWith("```javascript")
+        e.markdown.startsWith("```js") ||
+        e.markdown.startsWith("```javascript") ||
+        e.markdown.startsWith("```JavaScript")
       );
     });
     for (let jsBlock of submenuBlocks) {

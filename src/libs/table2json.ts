@@ -1,5 +1,5 @@
 //备用，将生成的表格元素转换为.sy格式，不在插件中使用
-import { SyTableCell } from "../../subMod/siyuanPlugin-common/types/syFile";
+import { SyTableCell } from "../../subMod/siyuanPlugin-common/types/siyuan-file";
 const id = "20240126220746-gybnvza"; //*注意修改为新建文档中表格块的id
 
 export function table2json(newTable) {

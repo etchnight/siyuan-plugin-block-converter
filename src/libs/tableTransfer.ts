@@ -1,3 +1,5 @@
+import { BlockId } from "../../subMod/siyuanPlugin-common/types/siyuan-api";
+
 export function buildSyTableBlocks(
   ele: HTMLElement,
   fullWidth?: string,
