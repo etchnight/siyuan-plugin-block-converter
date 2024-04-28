@@ -12,6 +12,10 @@ import { buildSetting } from "../subMod/siyuanPlugin-common/component/setting";
 import { setBlockAttrs } from "../subMod/siyuanPlugin-common/siyuan-api/attr";
 import { IProtyle } from "../subMod/siyuanPlugin-common/types/global-siyuan";
 import { Block } from "../subMod/siyuanPlugin-common/types/siyuan-api";
+import {
+  EHintType,
+  buildBlock,
+} from "../subMod/siyuanPlugin-common/component/blockEle";
 const STORAGE_NAME = "config";
 const DefaultDATA = {
   config: {
@@ -41,6 +45,11 @@ const DefaultDATA = {
       title: "自定义块更新-js所在文档",
       value: "",
     },
+    isPaste2HtmlBLock: {
+      type: "switch",
+      title: "粘贴为html块-是否开启",
+      value: true,
+    },
   },
 };
 export default class PluginTableImporter extends Plugin {
@@ -56,6 +65,7 @@ export default class PluginTableImporter extends Plugin {
   async onload() {
     this.eventBus.on("click-blockicon", this.blockIconEventBindThis);
     await this.loadData(STORAGE_NAME);
+    this.data.config = Object.assign(DefaultDATA.config, this.data.config);
     //*兼容性改变,v0.2.2 => v0.2.3 遗留问题，原因：loadData 将覆盖默认值
     if (
       typeof this.data.config.blockCusCopyJsRootId === typeof "" ||
@@ -79,6 +89,7 @@ export default class PluginTableImporter extends Plugin {
     this.data.config.isBlockCusCopy.value && this.initBlockCustomCopy();
     this.data.config.isBlockCusUpdate.value && this.initBlockCustomUpdate();
     //console.log(this.data);
+    //this.eventBus.on("open-menu-content", this.openMenuContentEvent);
   }
 
   onLayoutReady() {}
@@ -98,8 +109,41 @@ export default class PluginTableImporter extends Plugin {
     //this.block2flowchart(detail);
     this.data.config.isBlockCusCopy.value && this.blockCustomCopy(detail);
     this.data.config.isBlockCusUpdate.value && this.blockCustomUpdate(detail);
+    this.data.config.isPaste2HtmlBLock.value && this.paste2HtmlBLock(detail);
   }
 
+  private paste2HtmlBLock = async (detail: {
+    menu: Menu;
+    blockElements: [HTMLElement];
+    protyle: IProtyle;
+  }) => {
+    detail.menu.addItem({
+      iconHTML: "",
+      label: "粘贴为html块",
+      click: async () => {
+        const content = await navigator.clipboard.read().then((e) => e[0]);
+        if (!content.types.includes("text/html")) {
+          console.log(content.types);
+          showMessage("未在剪贴板中发现html格式文本", undefined, "error");
+          return;
+        }
+        const blob = await content.getType("text/html");
+        const html = await blob.text();
+        const block = buildBlock(EHintType.html, html, detail.protyle.lute);
+        //console.log({ block });
+        const lastBlockEle =
+          detail.blockElements[detail.blockElements.length - 1];
+        const blockId = lastBlockEle.getAttribute("data-node-id");
+        block.setAttribute("data-node-id", blockId);
+        await insertBlock({
+          dataType: "dom",
+          previousID: blockId,
+          data: block.outerHTML,
+        });
+        //content[0].types
+      },
+    });
+  };
   private htmlBlock2tableBlock = (detail: {
     menu: Menu;
     blockElements: [HTMLElement];
