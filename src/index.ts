@@ -129,12 +129,12 @@ export default class PluginTableImporter extends Plugin {
         }
         const blob = await content.getType("text/html");
         const html = await blob.text();
-        const block = buildBlock(EHintType.html, html, detail.protyle.lute);
-        //console.log({ block });
+        const block = buildBlock(html, detail.protyle.lute, EHintType.html);
+        //console.log({ blockHtml: block });
         const lastBlockEle =
           detail.blockElements[detail.blockElements.length - 1];
         const blockId = lastBlockEle.getAttribute("data-node-id");
-        block.setAttribute("data-node-id", blockId);
+        //block.setAttribute("data-node-id", blockId);
         await insertBlock({
           dataType: "dom",
           previousID: blockId,
