@@ -122,6 +122,8 @@ function chineseToNum(chnStr) {
 
 ### 示例
 
+#### 示例1：将段落块转换为多级列表
+
 以下代码将把文本块按一定规则转化为列表块，并清除原有的别名和命名。
 
 ```js
@@ -142,6 +144,14 @@ return { markdown: result, attrs: { name: "", alias: "" } };
 ```
 
 ![这是图片](./asset/法条更新.gif)
+
+#### 示例2：作为模板使用
+
+以下代码生成一个嵌入块，该嵌入块将汇总其父级块的所有反向链接。
+
+```js
+return {markdown:`{{SELECT * FROM blocks WHERE id IN(SELECT block_id FROM refs WHERE def_block_id='${input.parent_id}')}}`}
+```
 
 ## 粘贴为 HTML 块
 
