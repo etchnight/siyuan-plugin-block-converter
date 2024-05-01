@@ -16,6 +16,7 @@ import {
   EHintType,
   buildBlock,
 } from "../subMod/siyuanPlugin-common/component/blockEle";
+const PluginName = "siyuan-plugin-block-converter"; //用于id等
 const STORAGE_NAME = "config";
 const DefaultDATA = {
   config: {
@@ -53,17 +54,17 @@ const DefaultDATA = {
   },
 };
 export default class PluginTableImporter extends Plugin {
-  private blockIconEventBindThis = this.blockIconEvent.bind(this);
+  //private blockIconEventBindThis = this.blockIconEvent.bind(this);
   private blockCustomCopySubmenus: IMenuItemOption[] = [];
   private blockCustomUpdateSubmenus: IMenuItemOption[] = [];
   private detail: {
     menu: Menu;
-    blockElements: [HTMLElement];
+    blockElements: HTMLElement[];
     protyle: IProtyle;
-  };
+  } = { menu: undefined, blockElements: [], protyle: undefined };
   public data = structuredClone(DefaultDATA);
   async onload() {
-    this.eventBus.on("click-blockicon", this.blockIconEventBindThis);
+    this.eventBus.on("click-blockicon", this.blockIconEvent);
     await this.loadData(STORAGE_NAME);
     this.data.config = Object.assign(DefaultDATA.config, this.data.config);
     //*兼容性改变,v0.2.2 => v0.2.3 遗留问题，原因：loadData 将覆盖默认值
@@ -95,14 +96,14 @@ export default class PluginTableImporter extends Plugin {
   onLayoutReady() {}
 
   onunload() {
-    this.eventBus.off("click-blockicon", this.blockIconEventBindThis);
+    this.eventBus.off("click-blockicon", this.blockIconEvent);
   }
 
-  private blockIconEvent({
+  private blockIconEvent = ({
     detail,
   }: {
     detail: { menu: Menu; blockElements: [HTMLElement]; protyle: IProtyle };
-  }) {
+  }) => {
     this.detail = detail;
     this.data.config.isHtmlBlock2table.value &&
       this.htmlBlock2tableBlock(detail);
@@ -110,7 +111,7 @@ export default class PluginTableImporter extends Plugin {
     this.data.config.isBlockCusCopy.value && this.blockCustomCopy(detail);
     this.data.config.isBlockCusUpdate.value && this.blockCustomUpdate(detail);
     this.data.config.isPaste2HtmlBLock.value && this.paste2HtmlBLock(detail);
-  }
+  };
 
   private paste2HtmlBLock = async (detail: {
     menu: Menu;
@@ -208,39 +209,62 @@ export default class PluginTableImporter extends Plugin {
       );
     });
     for (let jsBlock of submenuBlocks) {
+      const copy = async () => {
+        const input = await Promise.all(
+          this.detail.blockElements.map(async (e) => {
+            const id = e.getAttribute("data-node-id");
+            const block = await queryBlockById(id);
+            const doc = await queryBlockById(block.root_id);
+            return {
+              ...block,
+              title: doc.content,
+            };
+          })
+        );
+        const currentJsBlock = await queryBlockById(jsBlock.id);
+        const func = new Function(
+          "input",
+          "index",
+          "inputArray",
+          ` 
+              const { title, name, content, markdown,id } = input;
+              ${currentJsBlock.content}
+            `
+        );
+        let result = "";
+        for (let i = 0; i < input.length; i++) {
+          result += func(input[i], i, input);
+        }
+        //console.log(input);
+        await navigator.clipboard.writeText(result);
+        showMessage(`${result}已写入剪贴板`);
+        //console.log(result);
+      };
+      const funcLable = jsBlock.name || jsBlock.content.substring(0, 20);
       submenu.push({
-        label: jsBlock.name || jsBlock.content,
+        label: funcLable,
         type: "submenu",
-        click: async () => {
-          const input = await Promise.all(
-            this.detail.blockElements.map(async (e) => {
-              const id = e.getAttribute("data-node-id");
-              const block = await queryBlockById(id);
-              const doc = await queryBlockById(block.root_id);
-              return {
-                ...block,
-                title: doc.content,
-              };
-            })
-          );
-          const currentJsBlock = await queryBlockById(jsBlock.id);
-          const func = new Function(
-            "input",
-            "index",
-            "inputArray",
-            ` 
-                const { title, name, content, markdown,id } = input;
-                ${currentJsBlock.content}
-              `
-          );
-          let result = "";
-          for (let i = 0; i < input.length; i++) {
-            result += func(input[i], i, input);
+        click: copy,
+      });
+
+      this.addCommand({
+        langKey: PluginName + encodeURIComponent(funcLable),
+        langText: "自定义块复制-" + funcLable,
+        hotkey: "",
+        editorCallback: (protyle) => {
+          Object.assign(this.detail, {
+            blockElements: Array.from(
+              protyle.wysiwyg.element.querySelectorAll(
+                ".protyle-wysiwyg--select"
+              )
+            ),
+            protyle,
+          });
+          if (this.detail.blockElements.length > 0) {
+            copy();
+          } else {
+            showMessage("未选择任何块");
           }
-          //console.log(input);
-          await navigator.clipboard.writeText(result);
-          showMessage(`${result}已写入剪贴板`);
-          //console.log(result);
         },
       });
     }
@@ -365,12 +389,32 @@ export default class PluginTableImporter extends Plugin {
           showMessage(`已完成${count}/${outputDoms.length}`);
         }
       };
-
+      const funcLable = jsBlock.name || jsBlock.content.substring(0, 20);
       submenu.push({
-        label: jsBlock.name || jsBlock.content,
+        label: funcLable,
         type: "submenu",
         iconHTML: "",
         click: () => transform(),
+      });
+      this.addCommand({
+        langKey: PluginName + encodeURIComponent(funcLable),
+        langText: "自定义块更新-" + funcLable,
+        hotkey: "",
+        editorCallback: (protyle) => {
+          Object.assign(this.detail, {
+            blockElements: Array.from(
+              protyle.wysiwyg.element.querySelectorAll(
+                ".protyle-wysiwyg--select"
+              )
+            ),
+            protyle,
+          });
+          if (this.detail.blockElements.length > 0) {
+            transform();
+          } else {
+            showMessage("未选择任何块");
+          }
+        },
       });
     }
     this.blockCustomUpdateSubmenus = submenu;
