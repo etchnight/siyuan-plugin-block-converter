@@ -1,3 +1,18 @@
+## [0.2.6](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v0.2.5...v0.2.6) (2024-05-02)
+
+
+### Bug Fixes
+
+* **粘贴为 html 块:** 更新buildBlock ([06d5cda](https://github.com/etchnight/siyuan-plugin-table-importer/commit/06d5cda6963546efddd61d35e650690ded67c940))
+
+
+### Features
+
+* **自定义块复制、自定义块更新:** 支持自定义快捷键 ([a41dd1f](https://github.com/etchnight/siyuan-plugin-table-importer/commit/a41dd1f62029b471ce6da8a1bf53fa9f9cda2b18))
+* **自定义块更新:** 支持撤销 ([d61f0a9](https://github.com/etchnight/siyuan-plugin-table-importer/commit/d61f0a9191d047a8ea2d58fb0b7b44100d01132e))
+
+
+
 ## [0.2.5](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v0.2.4...v0.2.5) (2024-04-28)
 
 ### Features
