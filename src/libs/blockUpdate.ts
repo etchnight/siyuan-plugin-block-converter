@@ -10,7 +10,7 @@ import {
   TTurnIntoOneSub,
   showMessage,
 } from "siyuan";
-import { Transaction } from "../../subMod/siyuanPlugin-common/siyuan-api/block";
+import { TransactionRes } from "../../subMod/siyuanPlugin-common/siyuan-api/block";
 
 /**
  * * 前处理后的监听函数，会监听以下两个事件
@@ -19,7 +19,7 @@ import { Transaction } from "../../subMod/siyuanPlugin-common/siyuan-api/block";
  */
 const updateBlockEles = async (e: CustomEvent<IWebSocketData>) => {
   if (e.detail.cmd === "transactions") {
-    const result = e.detail.data as Transaction[];
+    const result = e.detail.data as TransactionRes[];
     const id = result[0].doOperations.find((e) => {
       return e.action == "insert";
     }).id;

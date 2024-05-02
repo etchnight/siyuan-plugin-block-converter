@@ -1,4 +1,4 @@
-import { Plugin, Menu, IMenuItemOption, showMessage } from "siyuan";
+import { Plugin, Menu, IMenuItemOption, showMessage, IOperation } from "siyuan";
 import { buildSyTableBlocks } from "./libs/tableTransfer";
 import {
   insertBlock,
@@ -89,7 +89,6 @@ export default class PluginTableImporter extends Plugin {
 
     this.data.config.isBlockCusCopy.value && this.initBlockCustomCopy();
     this.data.config.isBlockCusUpdate.value && this.initBlockCustomUpdate();
-    //console.log(this.data);
     //this.eventBus.on("open-menu-content", this.openMenuContentEvent);
   }
 
@@ -131,7 +130,6 @@ export default class PluginTableImporter extends Plugin {
         const blob = await content.getType("text/html");
         const html = await blob.text();
         const block = buildBlock(html, detail.protyle.lute, EHintType.html);
-        //console.log({ blockHtml: block });
         const lastBlockEle =
           detail.blockElements[detail.blockElements.length - 1];
         const blockId = lastBlockEle.getAttribute("data-node-id");
@@ -235,10 +233,8 @@ export default class PluginTableImporter extends Plugin {
         for (let i = 0; i < input.length; i++) {
           result += func(input[i], i, input);
         }
-        //console.log(input);
         await navigator.clipboard.writeText(result);
         showMessage(`${result}已写入剪贴板`);
-        //console.log(result);
       };
       const funcLable = jsBlock.name || jsBlock.content.substring(0, 20);
       submenu.push({
@@ -313,19 +309,6 @@ export default class PluginTableImporter extends Plugin {
           })
         );
         const lute = this.detail.protyle.lute;
-        /*         const lute = window.Lute.New();
-        lute.SetBlockRef(true);
-        lute.SetHeadingAnchor(true);
-        lute.SetHeadingID(true);
-        lute.SetIndentCodeBlock(true);
-        lute.SetInlineMathAllowDigitAfterOpenMarker(true);
-        lute.SetKramdownIAL(true);
-        lute.SetMark(true);
-        lute.SetProtyleWYSIWYG(true);
-        lute.SetSub(true);
-        lute.SetSup(true);
-        lute.SetTag(true);
-        lute.SetSuperBlock(true); */
         const currentJsBlock = await queryBlockById(jsBlock.id);
         const func = new Function(
           "input",
@@ -346,33 +329,44 @@ export default class PluginTableImporter extends Plugin {
           }
           const { markdown, attrs } = result;
           const dom = document.createElement("div");
+          const oldDom = document.createElement("div");
+          oldDom.innerHTML = lute.Md2BlockDOM(e.markdown);
           if (markdown && markdown.trim()) {
-            let domStr = lute.Md2BlockDOM(markdown);
-            domStr;
-            dom.innerHTML = domStr;
+            dom.innerHTML = lute.Md2BlockDOM(markdown);
+            (dom.firstChild as HTMLDivElement).setAttribute(
+              "data-node-id",
+              input[i].id
+            );
           }
-          return { dom: dom, attrs: attrs };
+          return { dom, attrs, oldDom };
         });
         let count = 0;
         for (let i = 0; i < outputDoms.length; i++) {
-          const { dom, attrs } = outputDoms[i];
+          const { dom, attrs, oldDom } = outputDoms[i];
           let updateFlag = false;
           let preBlockId = input[i].id;
           for (let block of dom.children) {
             if (!updateFlag) {
-              await updateBlockWithAttr({
-                dataType: "dom",
-                id: input[i].id,
-                data: block.outerHTML,
-              });
+              await updateBlockWithAttr(
+                {
+                  dataType: "dom",
+                  id: input[i].id,
+                  data: block.outerHTML,
+                },
+                this.detail.protyle,
+                oldDom.innerHTML
+              );
+
               updateFlag = true;
             } else {
-              let res = await insertBlock({
-                dataType: "dom",
-                previousID: preBlockId,
-                data: block.outerHTML,
-              });
-              //console.log(res);
+              let res = await insertBlock(
+                {
+                  dataType: "dom",
+                  previousID: preBlockId,
+                  data: block.outerHTML,
+                },
+                this.detail.protyle
+              );
               if (!res) {
                 continue;
               }
@@ -385,6 +379,7 @@ export default class PluginTableImporter extends Plugin {
               attrs: attrs,
             });
           }
+          //console.log(this.detail.protyle);
           count++;
           showMessage(`已完成${count}/${outputDoms.length}`);
         }
