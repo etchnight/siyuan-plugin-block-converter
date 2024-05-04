@@ -382,6 +382,7 @@ export default class PluginTableImporter extends Plugin {
           //console.log(this.detail.protyle);
           count++;
           showMessage(`已完成${count}/${outputDoms.length}`);
+          console.log(this.detail.protyle)
         }
       };
       const funcLable = jsBlock.name || jsBlock.content.substring(0, 20);
