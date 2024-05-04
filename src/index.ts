@@ -1,4 +1,4 @@
-import { Plugin, Menu, IMenuItemOption, showMessage, IOperation } from "siyuan";
+import { Plugin, Menu, IMenuItemOption, showMessage } from "siyuan";
 import { buildSyTableBlocks } from "./libs/tableTransfer";
 import {
   insertBlock,
@@ -53,6 +53,7 @@ const DefaultDATA = {
     },
   },
 };
+
 export default class PluginTableImporter extends Plugin {
   //private blockIconEventBindThis = this.blockIconEvent.bind(this);
   private blockCustomCopySubmenus: IMenuItemOption[] = [];
@@ -123,7 +124,7 @@ export default class PluginTableImporter extends Plugin {
       click: async () => {
         const content = await navigator.clipboard.read().then((e) => e[0]);
         if (!content.types.includes("text/html")) {
-          console.log(content.types);
+          console.warn(content.types);
           showMessage("未在剪贴板中发现html格式文本", undefined, "error");
           return;
         }
@@ -173,14 +174,14 @@ export default class PluginTableImporter extends Plugin {
           return;
         }
         const fullWidth = window.getComputedStyle(selectElement).width;
-        let tableBlocks = buildSyTableBlocks(
+        const tableBlocks = buildSyTableBlocks(
           shadow,
           fullWidth,
           window.Lute.NewNodeID()
         );
         //替换或插入表格
-        for (let html of tableBlocks) {
-          let res = await insertBlock({
+        for (const html of tableBlocks) {
+          const res = await insertBlock({
             dataType: "dom",
             data: html,
             previousID: blockId,
@@ -195,7 +196,7 @@ export default class PluginTableImporter extends Plugin {
       this.blockCustomCopySubmenus = [];
       return;
     }
-    let submenu: IMenuItemOption[] = [];
+    const submenu: IMenuItemOption[] = [];
     const jsBlocks = //todo
       (await requestQuerySQL(`SELECT * FROM blocks WHERE blocks.type='c' 
         AND blocks.root_id='${this.data.config.blockCusCopyJsRootId.value}'`)) as Block[];
@@ -206,7 +207,7 @@ export default class PluginTableImporter extends Plugin {
         e.markdown.startsWith("```JavaScript")
       );
     });
-    for (let jsBlock of submenuBlocks) {
+    for (const jsBlock of submenuBlocks) {
       const copy = async () => {
         const input = await Promise.all(
           this.detail.blockElements.map(async (e) => {
@@ -283,7 +284,7 @@ export default class PluginTableImporter extends Plugin {
       this.blockCustomUpdateSubmenus = [];
       return;
     }
-    let submenu: IMenuItemOption[] = [];
+    const submenu: IMenuItemOption[] = [];
 
     const jsBlocks = //todo
       (await requestQuerySQL(`SELECT * FROM blocks WHERE blocks.type='c' 
@@ -295,7 +296,7 @@ export default class PluginTableImporter extends Plugin {
         e.markdown.startsWith("```JavaScript")
       );
     });
-    for (let jsBlock of submenuBlocks) {
+    for (const jsBlock of submenuBlocks) {
       const transform = async () => {
         const input = await Promise.all(
           this.detail.blockElements.map(async (e) => {
@@ -345,7 +346,7 @@ export default class PluginTableImporter extends Plugin {
           const { dom, attrs, oldDom } = outputDoms[i];
           let updateFlag = false;
           let preBlockId = input[i].id;
-          for (let block of dom.children) {
+          for (const block of dom.children) {
             if (!updateFlag) {
               await updateBlockWithAttr(
                 {
@@ -359,7 +360,7 @@ export default class PluginTableImporter extends Plugin {
 
               updateFlag = true;
             } else {
-              let res = await insertBlock(
+              const res = await insertBlock(
                 {
                   dataType: "dom",
                   previousID: preBlockId,
@@ -382,7 +383,7 @@ export default class PluginTableImporter extends Plugin {
           //console.log(this.detail.protyle);
           count++;
           showMessage(`已完成${count}/${outputDoms.length}`);
-          console.log(this.detail.protyle)
+          //console.log(this.detail.protyle)
         }
       };
       const funcLable = jsBlock.name || jsBlock.content.substring(0, 20);

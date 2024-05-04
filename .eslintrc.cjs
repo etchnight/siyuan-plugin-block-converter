@@ -2,25 +2,14 @@ module.exports = {
   extends: [
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended",
-    "plugin:svelte/recommended",
-    "turbo",
     "prettier",
   ],
 
   parser: "@typescript-eslint/parser",
 
-  overrides: [
-    {
-      files: ["*.svelte"],
-      parser: "svelte-eslint-parser",
-      // Parse the script in `.svelte` as TypeScript by adding the following configuration.
-      parserOptions: {
-        parser: "@typescript-eslint/parser",
-      },
-    },
-  ],
+  overrides: [],
 
-  plugins: ["@typescript-eslint", "prettier"],
+  plugins: ["@typescript-eslint"],
 
   rules: {
     // Note: you must disable the base rule as it can report incorrect errors
@@ -33,6 +22,7 @@ module.exports = {
     "@typescript-eslint/no-unused-vars": "off",
     "@typescript-eslint/no-explicit-any": "off",
     "turbo/no-undeclared-env-vars": "off",
-    "prettier/prettier": "error",
+    //"prettier/prettier": "error",
+    "no-console": ["error", { allow: ["warn", "error"] }],
   },
-}
+};
