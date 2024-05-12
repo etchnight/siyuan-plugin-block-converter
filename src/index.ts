@@ -221,7 +221,10 @@ export default class PluginTableImporter extends Plugin {
           })
         );
         const currentJsBlock = await queryBlockById(jsBlock.id);
-        const func = new Function(
+        const AsyncFunction = Object.getPrototypeOf(
+          async function () {}
+        ).constructor;
+        const func = new AsyncFunction(
           "input",
           "index",
           "inputArray",
@@ -232,7 +235,7 @@ export default class PluginTableImporter extends Plugin {
         );
         let result = "";
         for (let i = 0; i < input.length; i++) {
-          result += func(input[i], i, input);
+          result += await func(input[i], i, input);
         }
         await navigator.clipboard.writeText(result);
         showMessage(`${result}已写入剪贴板`);
@@ -311,7 +314,10 @@ export default class PluginTableImporter extends Plugin {
         );
         const lute = this.detail.protyle.lute;
         const currentJsBlock = await queryBlockById(jsBlock.id);
-        const func = new Function(
+        const AsyncFunction = Object.getPrototypeOf(
+          async function () {}
+        ).constructor;
+        const func = new AsyncFunction(
           "input",
           "index",
           "inputArray",
@@ -320,27 +326,29 @@ export default class PluginTableImporter extends Plugin {
               ${currentJsBlock.content}
             `
         );
-        const outputDoms = input.map((e, i, array) => {
-          const result = func(e, i, array) as {
-            markdown?: string;
-            attrs?: { [key: string]: string };
-          };
-          if (!result) {
-            return;
-          }
-          const { markdown, attrs } = result;
-          const dom = document.createElement("div");
-          const oldDom = document.createElement("div");
-          oldDom.innerHTML = lute.Md2BlockDOM(e.markdown);
-          if (markdown && markdown.trim()) {
-            dom.innerHTML = lute.Md2BlockDOM(markdown);
-            (dom.firstChild as HTMLDivElement).setAttribute(
-              "data-node-id",
-              input[i].id
-            );
-          }
-          return { dom, attrs, oldDom };
-        });
+        const outputDoms = await Promise.all(
+          input.map(async (e, i, array) => {
+            const result = (await func(e, i, array)) as {
+              markdown?: string;
+              attrs?: { [key: string]: string };
+            };
+            if (!result) {
+              return;
+            }
+            const { markdown, attrs } = result;
+            const dom = document.createElement("div");
+            const oldDom = document.createElement("div");
+            oldDom.innerHTML = lute.Md2BlockDOM(e.markdown);
+            if (markdown && markdown.trim()) {
+              dom.innerHTML = lute.Md2BlockDOM(markdown);
+              (dom.firstChild as HTMLDivElement).setAttribute(
+                "data-node-id",
+                input[i].id
+              );
+            }
+            return { dom, attrs, oldDom };
+          })
+        );
         let count = 0;
         for (let i = 0; i < outputDoms.length; i++) {
           const { dom, attrs, oldDom } = outputDoms[i];
