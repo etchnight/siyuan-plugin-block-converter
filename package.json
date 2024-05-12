@@ -1,6 +1,6 @@
 {
   "name": "siyuan-plugin-block-converter",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "type": "module",
   "description": "Provide a series of block conversion tools, such as HTML table block to Siyuan table block",
   "repository": "",

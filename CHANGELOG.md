@@ -1,3 +1,17 @@
+## [0.2.7](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v0.2.6...v0.2.7) (2024-05-12)
+
+
+### Bug Fixes
+
+* **自定义块更新:** 修复undo时更新块不正确问题 ([1eff47e](https://github.com/etchnight/siyuan-plugin-table-importer/commit/1eff47e32588a9ae342e9d4e70f9807a8db0df9e))
+
+
+### Features
+
+* **自定义块更新、自定义块复制:** 支持异步 ([6b322f3](https://github.com/etchnight/siyuan-plugin-table-importer/commit/6b322f30dbe0450ae26cb698c03dff9a5e06862c))
+
+
+
 ## [0.2.6](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v0.2.5...v0.2.6) (2024-05-02)
 
 
