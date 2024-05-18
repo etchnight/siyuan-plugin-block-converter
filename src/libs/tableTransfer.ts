@@ -6,13 +6,16 @@ export function buildSyTableBlocks(
   id?: BlockId
 ) {
   const tablesEles = buildSyTables(ele);
-  let result: string[] = [];
-  for (let newTable of tablesEles) {
-    let tempEle = document.createElement("div");
+  if (!tablesEles) {
+    return [];
+  }
+  const result: string[] = [];
+  for (const newTable of tablesEles) {
+    const tempEle = document.createElement("div");
     tempEle.appendChild(newTable);
     const colWidthList = reComputeWidth(newTable, fullWidth);
     //todo 很多参数是随便copy过来的，但是目前未发现问题
-    const html = `<div data-node-index="16" data-type="NodeTable" class="table"
+    const html = `<div  data-type="NodeTable" class="table"
     colgroup="${colWidthList.join("|")}"
     ${id ? "data-node-id='" + id + "'" : ""}
     >
@@ -27,7 +30,7 @@ ${newTable.outerHTML}
   <div class="table__select"></div>
 </div>
 </div>
-<div class="protyle-attr" contenteditable="false">​</div>
+<div class="protyle-attr" contenteditable="false"></div>
 </div>`;
     result.push(html.replace(/\n/g, ""));
   }
@@ -35,11 +38,11 @@ ${newTable.outerHTML}
 }
 export function reComputeWidth(newTable: HTMLTableElement, fullWidth?: string) {
   const colgroup = newTable.querySelector("colgroup")?.querySelectorAll("col");
-  let colWidthList: string[] = [];
-  for (let col of colgroup) {
+  const colWidthList: string[] = [];
+  for (const col of colgroup) {
     let width = col.style.width;
     if (fullWidth && width.indexOf("%") !== -1) {
-      let unit = fullWidth.replace(/[0-9]/g, "").replace(".", "");
+      const unit = fullWidth.replace(/[0-9]/g, "").replace(".", "");
       width =
         Math.round((parseFloat(width) * parseFloat(fullWidth)) / 100) + unit;
     }
@@ -51,27 +54,30 @@ export function reComputeWidth(newTable: HTMLTableElement, fullWidth?: string) {
   return colWidthList;
 }
 function buildSyTables(ele: HTMLElement) {
-  let tables = ele.querySelectorAll("table");
-  let results: HTMLTableElement[] = [];
-  for (let table of tables) {
-    let newTable = document.createElement("table");
+  let tables = Array.from(ele.querySelectorAll("table"));
+  if (tables.length === 0 && ele.tagName.toLowerCase() === "table") {
+    tables = [ele as HTMLTableElement];
+  }
+  const results: HTMLTableElement[] = [];
+  for (const table of tables) {
+    const newTable = document.createElement("table");
     newTable.contentEditable = "true";
     newTable.spellcheck = false;
     //let table = tableSource.cloneNode(true)
-    let head = table.tHead;
+    const head = table.tHead;
     head ? newTable.appendChild(rebuildTableSection(head, true)) : null;
 
-    let bodys = table.tBodies;
-    for (let body of bodys) {
+    const bodys = table.tBodies;
+    for (const body of bodys) {
       newTable.appendChild(rebuildTableSection(body));
     }
     //无head强制加head
     if (!head) {
-      let head = document.createElement("thead");
+      const head = document.createElement("thead");
       let rowCount = 1; //表头应该有的行数
       for (let i = 0; i < rowCount; i++) {
-        let tr = newTable.tBodies[0].rows[i];
-        for (let td of tr.cells) {
+        const tr = newTable.tBodies[0].rows[i];
+        for (const td of tr.cells) {
           if (i + td.rowSpan > rowCount) {
             rowCount = i + td.rowSpan;
           }
@@ -79,7 +85,7 @@ function buildSyTables(ele: HTMLElement) {
       }
       //剪切行到head
       for (let i = 0; i < rowCount; i++) {
-        let tr = newTable.tBodies[0].rows[0];
+        const tr = newTable.tBodies[0].rows[0];
         head.appendChild(tr);
       }
       newTable.insertBefore(head, newTable.tBodies[0]);
@@ -96,15 +102,15 @@ function buildSyTables(ele: HTMLElement) {
 function rebuildTableSection(body: HTMLTableSectionElement, ishead?: boolean) {
   const bodyClone = body.cloneNode(true) as HTMLTableSectionElement;
   //插入空白单元格
-  let tdStr = ishead ? "th" : "td";
-  let noneCell = document.createElement(tdStr);
+  const tdStr = ishead ? "th" : "td";
+  const noneCell = document.createElement(tdStr);
   noneCell.className = "fn__none";
   for (let i = 0; i < bodyClone.rows.length; i++) {
-    let tr = bodyClone.rows[i];
+    const tr = bodyClone.rows[i];
     removeAttr(tr);
     let k = 0;
     for (let j = 0; j < tr.cells.length; j++) {
-      let td = tr.cells[j];
+      const td = tr.cells[j];
       td.innerHTML = getContent(body.rows[i].cells[k]).replace(/\s+/g, "");
       removeAttr(td);
       //*会导致 tr.cells.length 变化
@@ -127,10 +133,10 @@ function rebuildTableSection(body: HTMLTableSectionElement, ishead?: boolean) {
   }
   //不规范表格每行用fn__none补位
   let maxCellCount = 0;
-  for (let tr of bodyClone.rows) {
+  for (const tr of bodyClone.rows) {
     maxCellCount = Math.max(tr.cells.length, maxCellCount);
   }
-  for (let tr of bodyClone.rows) {
+  for (const tr of bodyClone.rows) {
     let count = 0;
     while (tr.cells.length < maxCellCount && count < 100) {
       tr.appendChild(noneCell.cloneNode());
@@ -168,13 +174,13 @@ function rebuildTableSection(body: HTMLTableSectionElement, ishead?: boolean) {
     if (!td.innerText) {
       return "";
     }
-    let contentList = [];
+    const contentList = [];
     //const blockLikes = ["block", "block ", " block"];
-    for (let ele of td.childNodes) {
+    for (const ele of td.childNodes) {
       switch (ele.nodeType) {
-        case Node.ELEMENT_NODE:
-          const ele2 = ele as Element;
-          let display = window.getComputedStyle(ele2).display;
+        case Node.ELEMENT_NODE: {
+          const ele2 = ele as HTMLElement;
+          const display = window.getComputedStyle(ele2).display;
           /*           const flagList = blockLikes.map((e) => {
             return display.indexOf(e);
           });
@@ -185,6 +191,7 @@ function rebuildTableSection(body: HTMLTableSectionElement, ishead?: boolean) {
             contentList.push(ele2.innerText || "");
           }
           break;
+        }
         case Node.TEXT_NODE:
           contentList.push(ele.textContent);
           break;
@@ -198,7 +205,7 @@ function rebuildTableSection(body: HTMLTableSectionElement, ishead?: boolean) {
 
 function removeAttr(ele: HTMLElement) {
   if (ele.className !== "fn__none") {
-    for (let attr of ele.attributes) {
+    for (const attr of ele.attributes) {
       if (attr.name !== "colspan" && attr.name !== "rowspan") {
         ele.removeAttribute(attr.name);
       }
@@ -213,14 +220,14 @@ function buildColgroupByComputedWidth(
   table: HTMLTableElement,
   newTable: HTMLTableElement
 ) {
-  let colgroup = document.createElement("colgroup");
-  let widthArr = [];
+  const colgroup = document.createElement("colgroup");
+  const widthArr = [];
   widthArr[newTable.rows[0].cells.length - 1] = 0; //确定长度
   let i = 0;
-  for (let tr of newTable.rows) {
+  for (const tr of newTable.rows) {
     let index = 0;
     let j = 0;
-    for (let td of tr.cells) {
+    for (const td of tr.cells) {
       if (td.className !== "fn__none") {
         if (td.colSpan == 1) {
           try {
@@ -237,8 +244,8 @@ function buildColgroupByComputedWidth(
     }
     i++;
   }
-  for (let width of widthArr) {
-    let col = document.createElement("col");
+  for (const width of widthArr) {
+    const col = document.createElement("col");
     col.style.width = width;
     colgroup.appendChild(col);
   }
@@ -251,15 +258,15 @@ function buildColgroupByComputedWidth(
  * @returns 生成的 colgroup 是以 `width : xx% ;` 形式计的
  */
 export function buildColgroupByContent(newTable: HTMLTableElement) {
-  let colgroup = document.createElement("colgroup");
-  let tdContentLengthArr: number[] = [
+  const colgroup = document.createElement("colgroup");
+  const tdContentLengthArr: number[] = [
     ...Array(newTable.rows[0].cells.length),
   ].map(() => {
     return 0;
   });
-  for (let tr of newTable.rows) {
+  for (const tr of newTable.rows) {
     let i = 0;
-    for (let td of tr.cells) {
+    for (const td of tr.cells) {
       for (let m = 0; m < td.colSpan; m++) {
         //取最大值而非合计值
         //contentLengthArr[i + m] += td.innerText .length / td.colSpan;
@@ -276,14 +283,14 @@ export function buildColgroupByContent(newTable: HTMLTableElement) {
     }
   }
   let sumLength = 0;
-  for (let item of tdContentLengthArr) {
+  for (const item of tdContentLengthArr) {
     sumLength += item;
   }
   const widthArr = tdContentLengthArr.map((e) => {
     return e / sumLength;
   });
-  for (let width of widthArr) {
-    let col = document.createElement("col");
+  for (const width of widthArr) {
+    const col = document.createElement("col");
     col.style.width = `${width * 100}%`;
     colgroup.appendChild(col);
   }

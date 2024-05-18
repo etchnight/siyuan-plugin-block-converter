@@ -1,4 +1,4 @@
-import { Plugin, Menu, IMenuItemOption, showMessage, Protyle } from "siyuan";
+import { Plugin, Menu, IMenuItemOption, showMessage } from "siyuan";
 import { buildSyTableBlocks } from "./libs/tableTransfer";
 import {
   insertBlock,
@@ -11,18 +11,19 @@ import {
 import { buildSetting } from "../subMod/siyuanPlugin-common/component/setting";
 import { setBlockAttrs } from "../subMod/siyuanPlugin-common/siyuan-api/attr";
 import { IProtyle } from "../subMod/siyuanPlugin-common/types/global-siyuan";
-import { Block } from "../subMod/siyuanPlugin-common/types/siyuan-api";
+import { Block, BlockId } from "../subMod/siyuanPlugin-common/types/siyuan-api";
 import {
   EHintType,
   buildBlock,
 } from "../subMod/siyuanPlugin-common/component/blockEle";
+import TurndownService from "turndown";
 const PluginName = "siyuan-plugin-block-converter"; //用于id等
 const STORAGE_NAME = "config";
 const DefaultDATA = {
   config: {
-    isHtmlBlock2table: {
+    isCustomPaste: {
       type: "switch",
-      title: "表格转换-是否开启",
+      title: "自定义粘贴-是否开启",
       value: true,
     },
     isBlockCusCopy: {
@@ -46,10 +47,15 @@ const DefaultDATA = {
       title: "自定义块更新-js所在文档",
       value: "",
     },
+    isHtmlBlock2table: {
+      type: "switch",
+      title: "表格转换-是否开启",
+      value: false,
+    },
     isPaste2HtmlBLock: {
       type: "switch",
       title: "粘贴为html块-是否开启",
-      value: true,
+      value: false,
     },
   },
 };
@@ -91,6 +97,18 @@ export default class PluginTableImporter extends Plugin {
 
     this.data.config.isBlockCusCopy.value && this.initBlockCustomCopy();
     this.data.config.isBlockCusUpdate.value && this.initBlockCustomUpdate();
+    this.data.config.isCustomPaste.value &&
+      this.addCommand({
+        langKey: PluginName + "customPaste",
+        langText: "自定义粘贴",
+        hotkey: "",
+        editorCallback: (protyle) => {
+          const block = getCurrentBlock();
+          if (block) {
+            customPaste(block.getAttribute("data-node-id"), protyle);
+          }
+        },
+      });
     //this.eventBus.on("open-menu-content", this.openMenuContentEvent);
   }
 
@@ -112,8 +130,22 @@ export default class PluginTableImporter extends Plugin {
     this.data.config.isBlockCusCopy.value && this.blockCustomCopy(detail);
     this.data.config.isBlockCusUpdate.value && this.blockCustomUpdate(detail);
     this.data.config.isPaste2HtmlBLock.value && this.paste2HtmlBLock(detail);
+    this.data.config.isCustomPaste.value &&
+      detail.menu.addItem({
+        iconHTML: "",
+        label: "自定义粘贴",
+        click(_element, _event) {
+          const lastEle = detail.blockElements[detail.blockElements.length - 1];
+          const id = lastEle.getAttribute("data-node-id");
+          customPaste(id, detail.protyle);
+        },
+      });
   };
 
+  /**
+   * @deprecated
+   * @param detail
+   */
   private paste2HtmlBLock = async (detail: {
     menu: Menu;
     blockElements: [HTMLElement];
@@ -145,6 +177,7 @@ export default class PluginTableImporter extends Plugin {
       },
     });
   };
+  /**@deprecated*/
   private htmlBlock2tableBlock = (detail: {
     menu: Menu;
     blockElements: [HTMLElement];
@@ -456,6 +489,42 @@ function getCurrentBlock() {
     nodeElement = nodeElement.parentElement;
   }
   if ((nodeElement as HTMLElement).hasAttribute("data-node-id")) {
-    return nodeElement;
+    return nodeElement as HTMLElement;
+  }
+}
+
+async function customPaste(previousId: BlockId, protyle: IProtyle) {
+  const content = await navigator.clipboard.read().then((e) => e[0]);
+  const blob = await content.getType("text/html");
+  const html = await blob.text();
+  const turndownService = new TurndownService();
+  turndownService.addRule("strikethrough", {
+    filter: ["table"],
+    replacement: function (_content, node, _options) {
+      const tables = buildSyTableBlocks(node as HTMLElement);
+      return tables[0];
+    },
+  });
+  const markdown = turndownService.turndown(html);
+  const isBlock = (text: string) => {
+    const div = document.createElement("div");
+    div.innerHTML = text;
+    if (div.firstElementChild) {
+      if (div.firstElementChild.hasAttribute("data-type")) {
+        return true;
+      }
+    }
+    return false;
+  };
+  for (const line of markdown.split(/[(\r\n)\r\n]+/)) {
+    const res = await insertBlock(
+      {
+        dataType: isBlock(line) ? "dom" : "markdown",
+        data: line,
+        previousID: previousId,
+      },
+      protyle
+    );
+    previousId = res[0].doOperations[0].id;
   }
 }
