@@ -501,7 +501,13 @@ async function customPaste(previousId: BlockId, protyle: IProtyle) {
   turndownService.addRule("strikethrough", {
     filter: ["table"],
     replacement: function (_content, node, _options) {
-      const tables = buildSyTableBlocks(node as HTMLElement);
+      const container =
+        protyle.contentElement.querySelector(".protyle-wysiwyg") ||
+        protyle.contentElement;
+      const style = getComputedStyle(container);
+      //todo 计算宽度其实复杂，回头单独提出来，这里简化了
+      const width = parseFloat(style.width) - 60 + "px";
+      const tables = buildSyTableBlocks(node as HTMLElement, width);
       return tables[0];
     },
   });
