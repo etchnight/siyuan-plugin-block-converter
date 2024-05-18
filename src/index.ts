@@ -1,4 +1,4 @@
-import { Plugin, Menu, IMenuItemOption, showMessage } from "siyuan";
+import { Plugin, Menu, IMenuItemOption, showMessage, Protyle } from "siyuan";
 import { buildSyTableBlocks } from "./libs/tableTransfer";
 import {
   insertBlock,
@@ -64,6 +64,7 @@ export default class PluginTableImporter extends Plugin {
     protyle: IProtyle;
   } = { menu: undefined, blockElements: [], protyle: undefined };
   public data = structuredClone(DefaultDATA);
+
   async onload() {
     this.eventBus.on("click-blockicon", this.blockIconEvent);
     await this.loadData(STORAGE_NAME);
@@ -260,6 +261,9 @@ export default class PluginTableImporter extends Plugin {
             ),
             protyle,
           });
+          if (this.detail.blockElements.length === 0) {
+            Object.assign(this.detail, { blockElements: [getCurrentBlock()] });
+          }
           if (this.detail.blockElements.length > 0) {
             copy();
           } else {
@@ -414,6 +418,9 @@ export default class PluginTableImporter extends Plugin {
             ),
             protyle,
           });
+          if (this.detail.blockElements.length === 0) {
+            Object.assign(this.detail, { blockElements: [getCurrentBlock()] });
+          }
           if (this.detail.blockElements.length > 0) {
             transform();
           } else {
@@ -436,4 +443,19 @@ export default class PluginTableImporter extends Plugin {
       submenu: this.blockCustomUpdateSubmenus,
     });
   };
+}
+function getCurrentBlock() {
+  let nodeElement = getSelection().anchorNode;
+  while (nodeElement.nodeType !== 1 && nodeElement.parentElement) {
+    nodeElement = nodeElement.parentElement;
+  }
+  while (
+    !(nodeElement as HTMLElement).hasAttribute("data-node-id") &&
+    nodeElement.parentElement
+  ) {
+    nodeElement = nodeElement.parentElement;
+  }
+  if ((nodeElement as HTMLElement).hasAttribute("data-node-id")) {
+    return nodeElement;
+  }
 }
