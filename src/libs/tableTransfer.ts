@@ -14,24 +14,24 @@ export function buildSyTableBlocks(
     const tempEle = document.createElement("div");
     tempEle.appendChild(newTable);
     const colWidthList = reComputeWidth(newTable, fullWidth);
-    //todo 很多参数是随便copy过来的，但是目前未发现问题
-    const html = `<div  data-type="NodeTable" class="table"
+    //todo 很多参数是随便copy过来的
+    const html = `<div 
+    data-type="NodeTable"
+    class="table"
     colgroup="${colWidthList.join("|")}"
     ${id ? "data-node-id='" + id + "'" : ""}
+    style=""
+    data-node-index="1"
     >
-<div contenteditable="false">
-${newTable.outerHTML}
-<div class="protyle-action__table">
-  <div
-    class="table__resize"
-    data-col-index="2"
-    style="height: 117px; left: 178px; display: block"
-  ></div>
-  <div class="table__select"></div>
-</div>
-</div>
-<div class="protyle-attr" contenteditable="false"></div>
-</div>`;
+    <div contenteditable="false" style="">
+    ${newTable.outerHTML}
+    <div class="protyle-action__table">
+      <div class="table__resize" data-col-index="0"></div>
+      <div class="table__select"></div>
+    </div>
+    </div>
+    <div class="protyle-attr" contenteditable="false"></div>
+    </div>`;
     result.push(html.replace(/\n/g, ""));
   }
   return result;

@@ -2,6 +2,7 @@ import { Plugin, Menu, IMenuItemOption, showMessage } from "siyuan";
 import { buildSyTableBlocks } from "./libs/tableTransfer";
 import {
   insertBlock,
+  updateBlock,
   updateBlockWithAttr,
 } from "../subMod/siyuanPlugin-common/siyuan-api/block";
 import {
@@ -522,15 +523,46 @@ async function customPaste(previousId: BlockId, protyle: IProtyle) {
     }
     return false;
   };
+  const getDataType = (text: string) => {
+    const div = document.createElement("div");
+    div.innerHTML = text;
+    return div.firstElementChild.getAttribute("data-type");
+  };
   for (const line of markdown.split(/[(\r\n)\r\n]+/)) {
-    const res = await insertBlock(
-      {
-        dataType: isBlock(line) ? "dom" : "markdown",
-        data: line,
-        previousID: previousId,
-      },
-      protyle
-    );
-    previousId = res[0].doOperations[0].id;
+    if (isBlock(line) && getDataType(line) === "NodeTable") {
+      //* 表格需要先插入再更新，否则交互不正确
+      const res = await insertBlock(
+        {
+          dataType: "markdown",
+          data: `||||
+          | --| --| --|
+          ||||
+          ||||`,
+          previousID: previousId,
+        },
+        protyle
+      );
+      previousId = res[0].doOperations[0].id;
+      //todo 无法保留宽度信息
+      const res2 = await updateBlock(
+        {
+          dataType: "dom",
+          data: line,
+          id: previousId,
+        },
+        protyle
+      );
+      previousId = res2[0].doOperations[0].id;
+    } else {
+      const res = await insertBlock(
+        {
+          dataType: isBlock(line) ? "dom" : "markdown",
+          data: line,
+          previousID: previousId,
+        },
+        protyle
+      );
+      previousId = res[0].doOperations[0].id;
+    }
   }
 }
