@@ -44,7 +44,7 @@
    - 必须使用代码块，并明确表示是 js 代码
    - 可以给块设置‘命名’以方便区分
    - 支持直接使用的字段：
-     - id:块 Id
+     - id: 块 Id
      - title：块所在文档名
      - name：块命名
      - markdown：块 markdow 文本
@@ -57,6 +57,7 @@
 4. 点击要复制的块的块标->插件->自定义复制
 
 - v0.2.6 以上版本：支持设置自定义快捷键
+- 函数内`Lute`与`window.Lute`不同，为编辑器内使用的Lute实例（而非Lute类,不需要调用Lute.New()）
 
 ### 内部实现
 
@@ -67,7 +68,7 @@ const func = new Function(
   "index",
   "inputArray",
   ` 
-  const { title, name, content, markdown,id } = input;
+  let { title, name, content, markdown,id } = input;
   ${block.content}
   `
 );

@@ -263,14 +263,15 @@ export default class PluginTableImporter extends Plugin {
           "input",
           "index",
           "inputArray",
+          "Lute",
           ` 
-              const { title, name, content, markdown,id } = input;
+              let { title, name, content, markdown,id } = input;
               ${currentJsBlock.content}
             `
         );
         let result = "";
         for (let i = 0; i < input.length; i++) {
-          result += await func(input[i], i, input);
+          result += await func(input[i], i, input, this.detail.protyle.lute);
         }
         await navigator.clipboard.writeText(result);
         showMessage(`${result}已写入剪贴板`);
@@ -359,14 +360,15 @@ export default class PluginTableImporter extends Plugin {
           "input",
           "index",
           "inputArray",
+          "Lute",
           ` 
-              const { title, name, content, markdown,id } = input;
+              let { title, name, content, markdown,id } = input;
               ${currentJsBlock.content}
             `
         );
         const outputDoms = await Promise.all(
           input.map(async (e, i, array) => {
-            const result = (await func(e, i, array)) as {
+            const result = (await func(e, i, array, lute)) as {
               markdown?: string;
               attrs?: { [key: string]: string };
             };
