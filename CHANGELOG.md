@@ -1,3 +1,19 @@
+## [0.2.8](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v0.2.7...v0.2.8) (2024-05-19)
+
+
+### Bug Fixes
+
+* **自定义块粘贴:** 修正 表格交互不正确 ([2a8050c](https://github.com/etchnight/siyuan-plugin-table-importer/commit/2a8050cdea7df8e5e79d6d095b87523854b080fc))
+* **自定义块粘贴:** 优化表格宽度 ([563a5e3](https://github.com/etchnight/siyuan-plugin-table-importer/commit/563a5e399696fd1b47e14fada354ee6eca05780f))
+
+
+### Features
+
+* **自定义块复制/自定义块更新:** 未选中块时，将光标所在块视为选中的块 ([296319e](https://github.com/etchnight/siyuan-plugin-table-importer/commit/296319e6affa480b2e9efd62cd5b77a31351fbfe))
+* **自定义块粘贴:** 新模块，整合 表格插入助手 和 粘贴为 Html 块 ([83eaafc](https://github.com/etchnight/siyuan-plugin-table-importer/commit/83eaafcd465ab384bb36c204c4d7d5dbf7785fb2)), closes [#5](https://github.com/etchnight/siyuan-plugin-table-importer/issues/5)
+
+
+
 ## [0.2.7](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v0.2.6...v0.2.7) (2024-05-12)
 
 
