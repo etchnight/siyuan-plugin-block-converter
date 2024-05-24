@@ -62,7 +62,7 @@
 ### 内部实现
 
 ```js
-//block js代码所在块
+//block js 代码所在块
 const func = new Function(
   "input",
   "index",

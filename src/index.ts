@@ -1,4 +1,10 @@
-import { Plugin, Menu, IMenuItemOption, showMessage } from "siyuan";
+import {
+  Plugin,
+  Menu,
+  IMenuItemOption,
+  showMessage,
+  IWebSocketData,
+} from "siyuan";
 import { buildSyTableBlocks } from "./libs/tableTransfer";
 import {
   insertBlock,
@@ -65,6 +71,7 @@ export default class PluginTableImporter extends Plugin {
   //private blockIconEventBindThis = this.blockIconEvent.bind(this);
   private blockCustomCopySubmenus: IMenuItemOption[] = [];
   private blockCustomUpdateSubmenus: IMenuItemOption[] = [];
+  private waitting = false; //判断是否应该等待
   private detail: {
     menu: Menu;
     blockElements: HTMLElement[];
@@ -111,14 +118,23 @@ export default class PluginTableImporter extends Plugin {
         },
       });
     //this.eventBus.on("open-menu-content", this.openMenuContentEvent);
+    this.eventBus.on("ws-main", this.switchWait);
   }
 
   onLayoutReady() {}
 
   onunload() {
     this.eventBus.off("click-blockicon", this.blockIconEvent);
+    this.eventBus.off("ws-main", this.switchWait);
   }
-
+  private switchWait = ({ detail }: { detail: IWebSocketData }) => {
+    if (detail.cmd === "transactions") {
+      this.waitting = true;
+    }
+    if (detail.cmd === "databaseIndexCommit" && this.waitting === true) {
+      this.waitting = false;
+    }
+  };
   private blockIconEvent = ({
     detail,
   }: {
@@ -340,6 +356,11 @@ export default class PluginTableImporter extends Plugin {
     });
     for (const jsBlock of submenuBlocks) {
       const transform = async () => {
+        while (this.waitting) {
+          await new Promise<void>((resolve, reject) => {
+            setTimeout(resolve, 100);
+          });
+        }
         const input = await Promise.all(
           this.detail.blockElements.map(async (e) => {
             const id = e.getAttribute("data-node-id");
