@@ -357,7 +357,7 @@ export default class PluginTableImporter extends Plugin {
     for (const jsBlock of submenuBlocks) {
       const transform = async () => {
         while (this.waitting) {
-          await new Promise<void>((resolve, reject) => {
+          await new Promise<void>((resolve, _reject) => {
             setTimeout(resolve, 100);
           });
         }
