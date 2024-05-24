@@ -332,7 +332,7 @@ export default class PluginTableImporter extends Plugin {
   }) => {
     detail.menu.addItem({
       iconHTML: "",
-      label: "自定义复制",
+      label: this.i18n.BlockCustomCopy.name,
       id: "blockCustomCopy",
       submenu: this.blockCustomCopySubmenus,
     });
@@ -495,7 +495,7 @@ export default class PluginTableImporter extends Plugin {
   }) => {
     detail.menu.addItem({
       iconHTML: "",
-      label: "自定义更新",
+      label: this.i18n.BlockCustomUpdate.name,
       id: "blockCustomUpdate",
       submenu: this.blockCustomUpdateSubmenus,
     });
