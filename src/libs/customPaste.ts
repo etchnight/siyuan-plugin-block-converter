@@ -1,38 +1,33 @@
 import TurndownService from "turndown";
-import { insertBlock, updateBlock } from "../../subMod/siyuanPlugin-common/siyuan-api/block";
+import {
+  insertBlock,
+  updateBlock,
+} from "../../subMod/siyuanPlugin-common/siyuan-api/block";
 import { BlockId } from "../../subMod/siyuanPlugin-common/types/siyuan-api";
 import { IProtyle } from "../../subMod/siyuanPlugin-common/types/global-siyuan";
 import { buildSyTableBlocks } from "./tableTransfer";
+import { getJsBlocks } from "./common";
 
-export async function customPaste(previousId: BlockId, protyle: IProtyle) {
+export async function customPaste(
+  previousId: BlockId,
+  protyle: IProtyle,
+  docId?: BlockId
+) {
   const content = await navigator.clipboard.read().then((e) => e[0]);
   const blob = await content.getType("text/html");
   const html = await blob.text();
+  console.warn(`[customPaste]`, { html });
   const turndownService = new TurndownService();
-  turndownService.addRule("strikethrough", {
-    filter: ["table"],
-    replacement: function (_content, node, _options) {
-      const container =
-        protyle.contentElement.querySelector(".protyle-wysiwyg") ||
-        protyle.contentElement;
-      const style = getComputedStyle(container);
-      //todo 计算宽度其实复杂，回头单独提出来，这里简化了
-      const width = parseFloat(style.width) - 60 + "px";
-      const tables = buildSyTableBlocks(node as HTMLElement, width);
-      return tables[0];
-    },
-  });
-  const markdown = turndownService.turndown(html);
-  const isBlock = (text: string) => {
-    const div = document.createElement("div");
-    div.innerHTML = text;
-    if (div.firstElementChild) {
-      if (div.firstElementChild.hasAttribute("data-type")) {
-        return true;
-      }
+  addTableRule(turndownService, protyle);
+  if (docId) {
+    const rules = await getCustomRule(docId);
+    let count = 0;
+    for (const rule of rules) {
+      count++;
+      turndownService.addRule("rule" + count, rule);
     }
-    return false;
-  };
+  }
+  const markdown = turndownService.turndown(html);
   const getDataType = (text: string) => {
     const div = document.createElement("div");
     div.innerHTML = text;
@@ -40,29 +35,7 @@ export async function customPaste(previousId: BlockId, protyle: IProtyle) {
   };
   for (const line of markdown.split(/[(\r\n)\r\n]+/)) {
     if (isBlock(line) && getDataType(line) === "NodeTable") {
-      //* 表格需要先插入再更新，否则交互不正确
-      const res = await insertBlock(
-        {
-          dataType: "markdown",
-          data: `||||
-            | --| --| --|
-            ||||
-            ||||`,
-          previousID: previousId,
-        },
-        protyle
-      );
-      previousId = res[0].doOperations[0].id;
-      //todo 无法保留宽度信息
-      const res2 = await updateBlock(
-        {
-          dataType: "dom",
-          data: line,
-          id: previousId,
-        },
-        protyle
-      );
-      previousId = res2[0].doOperations[0].id;
+      previousId = await tableInsert(previousId, protyle, line);
     } else {
       const res = await insertBlock(
         {
@@ -75,4 +48,95 @@ export async function customPaste(previousId: BlockId, protyle: IProtyle) {
       previousId = res[0].doOperations[0].id;
     }
   }
+}
+async function getCustomRule(docId: BlockId) {
+  const ruleBlocks = await getJsBlocks(docId);
+  const rules = ruleBlocks.map((ruleBlock) => {
+    const func = new Function(`return ${ruleBlock.content}`);
+    const rule = func();
+    return rule as TurndownService.Rule;
+  });
+  return rules.filter((e) => {
+    if (!e) {
+      return false;
+    }
+    if (!e.filter && !e.replacement) {
+      return false;
+    }
+    if (typeof e.replacement !== "function") {
+      return false;
+    }
+    const filterType = typeof e.filter;
+    if (
+      filterType !== "string" &&
+      filterType !== "object" &&
+      filterType !== "function"
+    ) {
+      return false;
+    }
+    return true;
+  });
+}
+
+function isBlock(text: string) {
+  const div = document.createElement("div");
+  div.innerHTML = text;
+  if (div.firstElementChild) {
+    if (div.firstElementChild.hasAttribute("data-type")) {
+      return true;
+    }
+  }
+  return false;
+}
+/**
+ * 默认规则——将表格转换为思源表格
+ */
+function addTableRule(turndownService: TurndownService, protyle: IProtyle) {
+  turndownService.addRule("table", {
+    filter: ["table"],
+    replacement: function (_content, node, _options) {
+      const container =
+        protyle.contentElement.querySelector(".protyle-wysiwyg") ||
+        protyle.contentElement;
+      const style = getComputedStyle(container);
+      //todo 计算宽度其实复杂，回头单独提出来，这里简化了
+      const width = parseFloat(style.width) - 60 + "px";
+      const tables = buildSyTableBlocks(node as HTMLElement, width);
+      return tables[0];
+    },
+  });
+}
+
+/**
+ * 针对table的特殊插入方式
+ */
+async function tableInsert(
+  previousId: BlockId,
+  protyle: IProtyle,
+  line: string
+) {
+  //* 表格需要先插入再更新，否则交互不正确
+  const res = await insertBlock(
+    {
+      dataType: "markdown",
+      data: `||||
+        | --| --| --|
+        ||||
+        ||||`,
+      previousID: previousId,
+    },
+    protyle
+  );
+  previousId = res[0].doOperations[0].id;
+  //todo 无法保留宽度信息
+  const res2 = await updateBlock(
+    {
+      dataType: "dom",
+      data: line,
+      id: previousId,
+    },
+    protyle
+  );
+  previousId = res2[0].doOperations[0].id;
+  return previousId;
 }

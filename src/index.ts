@@ -20,6 +20,11 @@ const DefaultDATA = {
       title: "自定义粘贴-是否开启",
       value: true,
     },
+    customPasteJsRootId: {
+      type: "input",
+      title: "自定义粘贴-js所在文档",
+      value: "",
+    },
     isBlockCusCopy: {
       type: "switch",
       title: "自定义块复制-是否开启",
@@ -67,18 +72,7 @@ export default class PluginBlockConverter extends Plugin {
     });
     this.data.config.isBlockCusCopy.value && this.initBlockCustomCopy();
     this.data.config.isBlockCusUpdate.value && this.initBlockCustomUpdate();
-    this.data.config.isCustomPaste.value &&
-      this.addCommand({
-        langKey: PluginName + "customPaste",
-        langText: "自定义粘贴",
-        hotkey: "",
-        editorCallback: (protyle) => {
-          const block = getCurrentBlock();
-          if (block) {
-            customPaste(block.getAttribute("data-node-id"), protyle);
-          }
-        },
-      });
+    this.data.config.isCustomPaste.value && this.initCustomPaste();
     //this.eventBus.on("open-menu-content", this.openMenuContentEvent);
   }
 
@@ -96,7 +90,8 @@ export default class PluginBlockConverter extends Plugin {
     //*v0.2.9 => v0.3.0 遗留问题，由于移除模块，设置项将出现残留
     {
       for (const key of Object.keys(DefaultDATA.config)) {
-        DefaultDATA.config[key] = this.data.config[key];
+        DefaultDATA.config[key] =
+          this.data.config[key] || DefaultDATA.config[key];
       }
       this.data.config = DefaultDATA.config;
     }
@@ -130,16 +125,39 @@ export default class PluginBlockConverter extends Plugin {
     this.detail = detail;
     this.data.config.isBlockCusCopy.value && this.addCustomCopyMenu(detail);
     this.data.config.isBlockCusUpdate.value && this.addCustomUpdateMenu(detail);
-    this.data.config.isCustomPaste.value &&
-      detail.menu.addItem({
-        iconHTML: "",
-        label: "自定义粘贴",
-        click(_element, _event) {
-          const lastEle = detail.blockElements[detail.blockElements.length - 1];
-          const id = lastEle.getAttribute("data-node-id");
-          customPaste(id, detail.protyle);
-        },
-      });
+    this.data.config.isCustomPaste.value && this.addCustomPasteMenu(detail);
+  };
+
+  private initCustomPaste = async () => {
+    const docId = this.data.config.customPasteJsRootId;
+    this.addCommand({
+      langKey: PluginName + "customPaste",
+      langText: "自定义粘贴",
+      hotkey: "",
+      editorCallback: (protyle) => {
+        const block = getCurrentBlock();
+        if (block) {
+          customPaste(block.getAttribute("data-node-id"), protyle, docId.value);
+        }
+      },
+    });
+  };
+
+  private addCustomPasteMenu = async (detail: {
+    menu: Menu;
+    blockElements: [HTMLElement];
+    protyle: IProtyle;
+  }) => {
+    const docId = this.data.config.customPasteJsRootId;
+    detail.menu.addItem({
+      iconHTML: "",
+      label: "自定义粘贴",
+      click(_element, _event) {
+        const lastEle = detail.blockElements[detail.blockElements.length - 1];
+        const id = lastEle.getAttribute("data-node-id");
+        customPaste(id, detail.protyle, docId.value);
+      },
+    });
   };
 
   private async initBlockCustomCopy() {

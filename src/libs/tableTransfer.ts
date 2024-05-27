@@ -32,7 +32,7 @@ export function buildSyTableBlocks(
     </div>
     <div class="protyle-attr" contenteditable="false"></div>
     </div>`;
-    result.push(html.replace(/\n/g, ""));
+    result.push(html.replace(/[(\r\n)\r\n]+/g, ""));
   }
   return result;
 }
