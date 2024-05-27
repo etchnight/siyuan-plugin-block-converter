@@ -67,7 +67,7 @@ const DefaultDATA = {
   },
 };
 
-export default class PluginTableImporter extends Plugin {
+export default class PluginBlockConverter extends Plugin {
   //private blockIconEventBindThis = this.blockIconEvent.bind(this);
   private blockCustomCopySubmenus: IMenuItemOption[] = [];
   private blockCustomUpdateSubmenus: IMenuItemOption[] = [];
