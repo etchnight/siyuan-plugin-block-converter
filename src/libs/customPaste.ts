@@ -6,7 +6,8 @@ import {
 import { BlockId } from "../../subMod/siyuanPlugin-common/types/siyuan-api";
 import { IProtyle } from "../../subMod/siyuanPlugin-common/types/global-siyuan";
 import { buildSyTableBlocks } from "./tableTransfer";
-import { getJsBlocks } from "./common";
+import { getInsertId, getJsBlocks } from "./common";
+import { showMessage } from "siyuan";
 
 export async function customPaste(
   previousId: BlockId,
@@ -33,6 +34,7 @@ export async function customPaste(
     div.innerHTML = text;
     return div.firstElementChild.getAttribute("data-type");
   };
+  let count = 0;
   for (const line of markdown.split(/[(\r\n)\r\n]+/)) {
     if (isBlock(line) && getDataType(line) === "NodeTable") {
       previousId = await tableInsert(previousId, protyle, line);
@@ -45,8 +47,10 @@ export async function customPaste(
         },
         protyle
       );
-      previousId = res[0].doOperations[0].id;
+      previousId = getInsertId(res);
     }
+    count++;
+    showMessage(`已完成${count}/${markdown.length}`);
   }
 }
 async function getCustomRule(docId: BlockId) {

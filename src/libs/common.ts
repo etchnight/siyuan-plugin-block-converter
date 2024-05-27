@@ -5,6 +5,7 @@ import {
   BlockId,
 } from "../../subMod/siyuanPlugin-common/types/siyuan-api";
 import { IProtyle } from "../../subMod/siyuanPlugin-common/types/global-siyuan";
+import { TransactionRes } from "../../subMod/siyuanPlugin-common/siyuan-api/block";
 
 export async function getJsBlocks(docId: BlockId) {
   const jsBlocks = //todo
@@ -36,7 +37,7 @@ export function getCurrentBlock() {
   }
 }
 export function getSelectedBlocks(
-  protyle: IProtyle,//todo 与detail.protyle是否相同
+  protyle: IProtyle, //todo 与detail.protyle是否相同
   detail: {
     menu: Menu;
     blockElements: HTMLElement[];
@@ -53,4 +54,18 @@ export function getSelectedBlocks(
     Object.assign(detail, { blockElements: [getCurrentBlock()] });
   }
   return detail;
+}
+
+/**
+ * 执行insert Block 操作后，获取插入块的id
+ * @param res
+ */
+export function getInsertId(res: TransactionRes[]) {
+  let previousId = res[0].doOperations[0].id;
+  if (!previousId) {
+    const div = document.createElement("div");
+    div.innerHTML = res[0].doOperations[0].data;
+    previousId = div.firstElementChild.getAttribute("data-node-id");
+  }
+  return previousId;
 }
