@@ -9,21 +9,14 @@ import { buildSyTableBlocks } from "./libs/tableTransfer";
 import {
   insertBlock,
   updateBlock,
-  updateBlockWithAttr,
 } from "../subMod/siyuanPlugin-common/siyuan-api/block";
-import {
-  queryBlockById,
-  requestQuerySQL,
-} from "../subMod/siyuanPlugin-common/siyuan-api/query";
 import { buildSetting } from "../subMod/siyuanPlugin-common/component/setting";
-import { setBlockAttrs } from "../subMod/siyuanPlugin-common/siyuan-api/attr";
 import { IProtyle } from "../subMod/siyuanPlugin-common/types/global-siyuan";
-import { Block, BlockId } from "../subMod/siyuanPlugin-common/types/siyuan-api";
-import {
-  EHintType,
-  buildBlock,
-} from "../subMod/siyuanPlugin-common/component/blockEle";
+import { BlockId } from "../subMod/siyuanPlugin-common/types/siyuan-api";
 import TurndownService from "turndown";
+import { buildCopy } from "./libs/customCopy";
+import { buildTransform } from "./libs/customUpdate";
+import { getCurrentBlock, getJsBlocks, getSelectedBlocks } from "./libs/common";
 const PluginName = "siyuan-plugin-block-converter"; //用于id等
 const STORAGE_NAME = "config";
 const DefaultDATA = {
@@ -43,7 +36,6 @@ const DefaultDATA = {
       title: "自定义块复制-js所在文档",
       value: "",
     },
-
     isBlockCusUpdate: {
       type: "switch",
       title: "自定义块更新-是否开启",
@@ -53,16 +45,6 @@ const DefaultDATA = {
       type: "input",
       title: "自定义块更新-js所在文档",
       value: "",
-    },
-    isHtmlBlock2table: {
-      type: "switch",
-      title: "表格转换-是否开启",
-      value: false,
-    },
-    isPaste2HtmlBLock: {
-      type: "switch",
-      title: "粘贴为html块-是否开启",
-      value: false,
     },
   },
 };
@@ -82,7 +64,14 @@ export default class PluginBlockConverter extends Plugin {
   async onload() {
     this.eventBus.on("click-blockicon", this.blockIconEvent);
     await this.loadData(STORAGE_NAME);
-    this.data.config = Object.assign(DefaultDATA.config, this.data.config);
+    //*v0.2.9 => v0.3.0 遗留问题，由于移除模块，设置项将出现残留
+    {
+      //this.data.config = Object.assign(DefaultDATA.config, this.data.config);
+      for (const key of Object.keys(DefaultDATA.config)) {
+        DefaultDATA.config[key] = this.data.config[key];
+      }
+      this.data.config = DefaultDATA.config;
+    }
     //*兼容性改变,v0.2.2 => v0.2.3 遗留问题，原因：loadData 将覆盖默认值
     if (
       typeof this.data.config.blockCusCopyJsRootId === typeof "" ||
@@ -96,13 +85,11 @@ export default class PluginBlockConverter extends Plugin {
       this.data.config.blockCusUpdateJsRootId.value = blockCusUpdateJsRootId;
       this.data.config.blockCusCopyJsRootId.value = blockCusCopyJsRootId;
     }
-
     buildSetting(this.data.config, {
       storageName: STORAGE_NAME,
       isReload: true,
       plugin: this,
     });
-
     this.data.config.isBlockCusCopy.value && this.initBlockCustomCopy();
     this.data.config.isBlockCusUpdate.value && this.initBlockCustomUpdate();
     this.data.config.isCustomPaste.value &&
@@ -141,12 +128,8 @@ export default class PluginBlockConverter extends Plugin {
     detail: { menu: Menu; blockElements: [HTMLElement]; protyle: IProtyle };
   }) => {
     this.detail = detail;
-    this.data.config.isHtmlBlock2table.value &&
-      this.htmlBlock2tableBlock(detail);
-    //this.block2flowchart(detail);
     this.data.config.isBlockCusCopy.value && this.blockCustomCopy(detail);
     this.data.config.isBlockCusUpdate.value && this.blockCustomUpdate(detail);
-    this.data.config.isPaste2HtmlBLock.value && this.paste2HtmlBLock(detail);
     this.data.config.isCustomPaste.value &&
       detail.menu.addItem({
         iconHTML: "",
@@ -159,144 +142,22 @@ export default class PluginBlockConverter extends Plugin {
       });
   };
 
-  /**
-   * @deprecated
-   * @param detail
-   */
-  private paste2HtmlBLock = async (detail: {
-    menu: Menu;
-    blockElements: [HTMLElement];
-    protyle: IProtyle;
-  }) => {
-    detail.menu.addItem({
-      iconHTML: "",
-      label: "粘贴为html块",
-      click: async () => {
-        const content = await navigator.clipboard.read().then((e) => e[0]);
-        if (!content.types.includes("text/html")) {
-          console.warn(content.types);
-          showMessage("未在剪贴板中发现html格式文本", undefined, "error");
-          return;
-        }
-        const blob = await content.getType("text/html");
-        const html = await blob.text();
-        const block = buildBlock(html, detail.protyle.lute, EHintType.html);
-        const lastBlockEle =
-          detail.blockElements[detail.blockElements.length - 1];
-        const blockId = lastBlockEle.getAttribute("data-node-id");
-        //block.setAttribute("data-node-id", blockId);
-        await insertBlock({
-          dataType: "dom",
-          previousID: blockId,
-          data: block.outerHTML,
-        });
-        //content[0].types
-      },
-    });
-  };
-  /**@deprecated*/
-  private htmlBlock2tableBlock = (detail: {
-    menu: Menu;
-    blockElements: [HTMLElement];
-    protyle: IProtyle;
-  }) => {
-    if (detail.blockElements.length !== 1) {
-      return;
-    }
-    const selectElement = detail.blockElements[0];
-    if (selectElement.getAttribute("data-type") !== "NodeHTMLBlock") {
-      return;
-    }
-    const protyleHtml = selectElement.querySelector("protyle-html");
-    //const html = protyleHtml?.getAttribute("data-content");
-    //直接使用shadow
-    const shadow = protyleHtml.shadowRoot.querySelector("div");
-
-    if (!shadow.querySelector("table")) {
-      return;
-    }
-    detail.menu.addItem({
-      iconHTML: "",
-      label: this.i18n.blockMenuName,
-      click: async () => {
-        let blockId = selectElement.getAttribute("data-node-id");
-        if (!blockId) {
-          console.error("获取块id失败");
-          return;
-        }
-        const fullWidth = window.getComputedStyle(selectElement).width;
-        const tableBlocks = buildSyTableBlocks(
-          shadow,
-          fullWidth,
-          window.Lute.NewNodeID()
-        );
-        //替换或插入表格
-        for (const html of tableBlocks) {
-          const res = await insertBlock({
-            dataType: "dom",
-            data: html,
-            previousID: blockId,
-          });
-          blockId = res[0].doOperations[0].id;
-        }
-      },
-    });
-  };
   private async initBlockCustomCopy() {
     if (!this.data.config.blockCusCopyJsRootId.value) {
       this.blockCustomCopySubmenus = [];
       return;
     }
     const submenu: IMenuItemOption[] = [];
-    const jsBlocks = //todo
-      (await requestQuerySQL(`SELECT * FROM blocks WHERE blocks.type='c' 
-        AND blocks.root_id='${this.data.config.blockCusCopyJsRootId.value}'`)) as Block[];
-    const submenuBlocks = jsBlocks.filter((e) => {
-      return (
-        e.markdown.startsWith("```js") ||
-        e.markdown.startsWith("```javascript") ||
-        e.markdown.startsWith("```JavaScript")
-      );
-    });
+    const submenuBlocks = await getJsBlocks(
+      this.data.config.blockCusCopyJsRootId.value
+    );
     for (const jsBlock of submenuBlocks) {
-      const copy = async () => {
-        const input = await Promise.all(
-          this.detail.blockElements.map(async (e) => {
-            const id = e.getAttribute("data-node-id");
-            const block = await queryBlockById(id);
-            const doc = await queryBlockById(block.root_id);
-            return {
-              ...block,
-              title: doc.content,
-            };
-          })
-        );
-        const currentJsBlock = await queryBlockById(jsBlock.id);
-        const AsyncFunction = Object.getPrototypeOf(
-          async function () {}
-        ).constructor;
-        const func = new AsyncFunction(
-          "input",
-          "index",
-          "inputArray",
-          "Lute",
-          ` 
-              let { title, name, content, markdown,id } = input;
-              ${currentJsBlock.content}
-            `
-        );
-        let result = "";
-        for (let i = 0; i < input.length; i++) {
-          result += await func(input[i], i, input, this.detail.protyle.lute);
-        }
-        await navigator.clipboard.writeText(result);
-        showMessage(`${result}已写入剪贴板`);
-      };
+      const copy = buildCopy(jsBlock);
       const funcLable = jsBlock.name || jsBlock.content.substring(0, 20);
       submenu.push({
         label: funcLable,
         type: "submenu",
-        click: copy,
+        click: () => copy(this.detail),
       });
 
       this.addCommand({
@@ -304,19 +165,9 @@ export default class PluginBlockConverter extends Plugin {
         langText: "自定义块复制-" + funcLable,
         hotkey: "",
         editorCallback: (protyle) => {
-          Object.assign(this.detail, {
-            blockElements: Array.from(
-              protyle.wysiwyg.element.querySelectorAll(
-                ".protyle-wysiwyg--select"
-              )
-            ),
-            protyle,
-          });
-          if (this.detail.blockElements.length === 0) {
-            Object.assign(this.detail, { blockElements: [getCurrentBlock()] });
-          }
+          this.detail = getSelectedBlocks(protyle, this.detail);
           if (this.detail.blockElements.length > 0) {
-            copy();
+            copy(this.detail);
           } else {
             showMessage("未选择任何块");
           }
@@ -337,149 +188,45 @@ export default class PluginBlockConverter extends Plugin {
       submenu: this.blockCustomCopySubmenus,
     });
   };
+
   private async initBlockCustomUpdate() {
     if (!this.data.config.blockCusUpdateJsRootId.value) {
       this.blockCustomUpdateSubmenus = [];
       return;
     }
     const submenu: IMenuItemOption[] = [];
-
-    const jsBlocks = //todo
-      (await requestQuerySQL(`SELECT * FROM blocks WHERE blocks.type='c' 
-        AND blocks.root_id='${this.data.config.blockCusUpdateJsRootId.value}'`)) as Block[];
-    const submenuBlocks = jsBlocks.filter((e) => {
-      return (
-        e.markdown.startsWith("```js") ||
-        e.markdown.startsWith("```javascript") ||
-        e.markdown.startsWith("```JavaScript")
-      );
-    });
+    const submenuBlocks = await getJsBlocks(
+      this.data.config.blockCusUpdateJsRootId.value
+    );
     for (const jsBlock of submenuBlocks) {
-      const transform = async () => {
-        while (this.waitting) {
-          await new Promise<void>((resolve, _reject) => {
-            setTimeout(resolve, 100);
-          });
-        }
-        const input = await Promise.all(
-          this.detail.blockElements.map(async (e) => {
-            const id = e.getAttribute("data-node-id");
-            const block = await queryBlockById(id);
-            const doc = await queryBlockById(block.root_id);
-            return {
-              ...block,
-              title: doc.content,
-            };
-          })
-        );
-        const lute = this.detail.protyle.lute;
-        const currentJsBlock = await queryBlockById(jsBlock.id);
-        const AsyncFunction = Object.getPrototypeOf(
-          async function () {}
-        ).constructor;
-        const func = new AsyncFunction(
-          "input",
-          "index",
-          "inputArray",
-          "Lute",
-          ` 
-              let { title, name, content, markdown,id } = input;
-              ${currentJsBlock.content}
-            `
-        );
-        const outputDoms = await Promise.all(
-          input.map(async (e, i, array) => {
-            const result = (await func(e, i, array, lute)) as {
-              markdown?: string;
-              attrs?: { [key: string]: string };
-            };
-            if (!result) {
-              return;
-            }
-            const { markdown, attrs } = result;
-            const dom = document.createElement("div");
-            const oldDom = document.createElement("div");
-            oldDom.innerHTML = lute.Md2BlockDOM(e.markdown);
-            if (markdown && markdown.trim()) {
-              dom.innerHTML = lute.Md2BlockDOM(markdown);
-              (dom.firstChild as HTMLDivElement).setAttribute(
-                "data-node-id",
-                input[i].id
-              );
-            }
-            return { dom, attrs, oldDom };
-          })
-        );
-        let count = 0;
-        for (let i = 0; i < outputDoms.length; i++) {
-          const { dom, attrs, oldDom } = outputDoms[i];
-          let updateFlag = false;
-          let preBlockId = input[i].id;
-          for (const block of dom.children) {
-            if (!updateFlag) {
-              await updateBlockWithAttr(
-                {
-                  dataType: "dom",
-                  id: input[i].id,
-                  data: block.outerHTML,
-                },
-                this.detail.protyle,
-                oldDom.innerHTML
-              );
-
-              updateFlag = true;
-            } else {
-              const res = await insertBlock(
-                {
-                  dataType: "dom",
-                  previousID: preBlockId,
-                  data: block.outerHTML,
-                },
-                this.detail.protyle
-              );
-              if (!res) {
-                continue;
-              }
-              preBlockId = res[0]?.doOperations[0]?.id || preBlockId;
-            }
-          }
-          if (attrs) {
-            await setBlockAttrs({
-              id: input[i].id,
-              attrs: attrs,
-            });
-          }
-          //console.log(this.detail.protyle);
-          count++;
-          showMessage(`已完成${count}/${outputDoms.length}`);
-          //console.log(this.detail.protyle)
-        }
-      };
+      const transform = buildTransform(jsBlock);
       const funcLable = jsBlock.name || jsBlock.content.substring(0, 20);
       submenu.push({
         label: funcLable,
         type: "submenu",
         iconHTML: "",
-        click: () => transform(),
+        click: async () => {
+          while (this.waitting) {
+            await new Promise<void>((resolve, _reject) => {
+              setTimeout(resolve, 100);
+            });
+          }
+          transform(this.detail);
+        },
       });
       this.addCommand({
         langKey: PluginName + encodeURIComponent(funcLable),
         langText: "自定义块更新-" + funcLable,
         hotkey: "",
-        editorCallback: (protyle) => {
-          Object.assign(this.detail, {
-            blockElements: Array.from(
-              protyle.wysiwyg.element.querySelectorAll(
-                ".protyle-wysiwyg--select"
-              )
-            ),
-            protyle,
-          });
-          if (this.detail.blockElements.length === 0) {
-            Object.assign(this.detail, { blockElements: [getCurrentBlock()] });
-          }
+        editorCallback: async (protyle) => {
+          this.detail = getSelectedBlocks(protyle, this.detail);
           if (this.detail.blockElements.length > 0) {
-            transform();
+            while (this.waitting) {
+              await new Promise<void>((resolve, _reject) => {
+                setTimeout(resolve, 100);
+              });
+            }
+            transform(this.detail);
           } else {
             showMessage("未选择任何块");
           }
@@ -500,21 +247,6 @@ export default class PluginBlockConverter extends Plugin {
       submenu: this.blockCustomUpdateSubmenus,
     });
   };
-}
-function getCurrentBlock() {
-  let nodeElement = getSelection().anchorNode;
-  while (nodeElement.nodeType !== 1 && nodeElement.parentElement) {
-    nodeElement = nodeElement.parentElement;
-  }
-  while (
-    !(nodeElement as HTMLElement).hasAttribute("data-node-id") &&
-    nodeElement.parentElement
-  ) {
-    nodeElement = nodeElement.parentElement;
-  }
-  if ((nodeElement as HTMLElement).hasAttribute("data-node-id")) {
-    return nodeElement as HTMLElement;
-  }
 }
 
 async function customPaste(previousId: BlockId, protyle: IProtyle) {
