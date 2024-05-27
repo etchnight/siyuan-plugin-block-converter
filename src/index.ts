@@ -5,18 +5,12 @@ import {
   showMessage,
   IWebSocketData,
 } from "siyuan";
-import { buildSyTableBlocks } from "./libs/tableTransfer";
-import {
-  insertBlock,
-  updateBlock,
-} from "../subMod/siyuanPlugin-common/siyuan-api/block";
 import { buildSetting } from "../subMod/siyuanPlugin-common/component/setting";
 import { IProtyle } from "../subMod/siyuanPlugin-common/types/global-siyuan";
-import { BlockId } from "../subMod/siyuanPlugin-common/types/siyuan-api";
-import TurndownService from "turndown";
 import { buildCopy } from "./libs/customCopy";
 import { buildTransform } from "./libs/customUpdate";
 import { getCurrentBlock, getJsBlocks, getSelectedBlocks } from "./libs/common";
+import { customPaste } from "./libs/customPaste";
 const PluginName = "siyuan-plugin-block-converter"; //用于id等
 const STORAGE_NAME = "config";
 const DefaultDATA = {
@@ -63,28 +57,9 @@ export default class PluginBlockConverter extends Plugin {
 
   async onload() {
     this.eventBus.on("click-blockicon", this.blockIconEvent);
+    this.eventBus.on("ws-main", this.switchWait);
     await this.loadData(STORAGE_NAME);
-    //*v0.2.9 => v0.3.0 遗留问题，由于移除模块，设置项将出现残留
-    {
-      //this.data.config = Object.assign(DefaultDATA.config, this.data.config);
-      for (const key of Object.keys(DefaultDATA.config)) {
-        DefaultDATA.config[key] = this.data.config[key];
-      }
-      this.data.config = DefaultDATA.config;
-    }
-    //*兼容性改变,v0.2.2 => v0.2.3 遗留问题，原因：loadData 将覆盖默认值
-    if (
-      typeof this.data.config.blockCusCopyJsRootId === typeof "" ||
-      typeof this.data.config.blockCusUpdateJsRootId === typeof ""
-    ) {
-      const blockCusCopyJsRootId = this.data.config
-        .blockCusCopyJsRootId as unknown as string;
-      const blockCusUpdateJsRootId = this.data.config
-        .blockCusUpdateJsRootId as unknown as string;
-      this.data = DefaultDATA;
-      this.data.config.blockCusUpdateJsRootId.value = blockCusUpdateJsRootId;
-      this.data.config.blockCusCopyJsRootId.value = blockCusCopyJsRootId;
-    }
+    this.updateConfig();
     buildSetting(this.data.config, {
       storageName: STORAGE_NAME,
       isReload: true,
@@ -105,7 +80,6 @@ export default class PluginBlockConverter extends Plugin {
         },
       });
     //this.eventBus.on("open-menu-content", this.openMenuContentEvent);
-    this.eventBus.on("ws-main", this.switchWait);
   }
 
   onLayoutReady() {}
@@ -114,6 +88,32 @@ export default class PluginBlockConverter extends Plugin {
     this.eventBus.off("click-blockicon", this.blockIconEvent);
     this.eventBus.off("ws-main", this.switchWait);
   }
+  /**
+   * 设置 this.data.config，包含兼容性老版本处理
+   */
+  private updateConfig = () => {
+    //this.data.config = Object.assign(DefaultDATA.config, this.data.config);
+    //*v0.2.9 => v0.3.0 遗留问题，由于移除模块，设置项将出现残留
+    {
+      for (const key of Object.keys(DefaultDATA.config)) {
+        DefaultDATA.config[key] = this.data.config[key];
+      }
+      this.data.config = DefaultDATA.config;
+    }
+    //*兼容性改变,v0.2.2 => v0.2.3 遗留问题，原因：loadData 将覆盖默认值
+    if (
+      typeof this.data.config.blockCusCopyJsRootId === typeof "" ||
+      typeof this.data.config.blockCusUpdateJsRootId === typeof ""
+    ) {
+      const blockCusCopyJsRootId = this.data.config
+        .blockCusCopyJsRootId as unknown as string;
+      const blockCusUpdateJsRootId = this.data.config
+        .blockCusUpdateJsRootId as unknown as string;
+      this.data = DefaultDATA;
+      this.data.config.blockCusUpdateJsRootId.value = blockCusUpdateJsRootId;
+      this.data.config.blockCusCopyJsRootId.value = blockCusCopyJsRootId;
+    }
+  };
   private switchWait = ({ detail }: { detail: IWebSocketData }) => {
     if (detail.cmd === "transactions") {
       this.waitting = true;
@@ -128,8 +128,8 @@ export default class PluginBlockConverter extends Plugin {
     detail: { menu: Menu; blockElements: [HTMLElement]; protyle: IProtyle };
   }) => {
     this.detail = detail;
-    this.data.config.isBlockCusCopy.value && this.blockCustomCopy(detail);
-    this.data.config.isBlockCusUpdate.value && this.blockCustomUpdate(detail);
+    this.data.config.isBlockCusCopy.value && this.addCustomCopyMenu(detail);
+    this.data.config.isBlockCusUpdate.value && this.addCustomUpdateMenu(detail);
     this.data.config.isCustomPaste.value &&
       detail.menu.addItem({
         iconHTML: "",
@@ -176,7 +176,7 @@ export default class PluginBlockConverter extends Plugin {
     }
     this.blockCustomCopySubmenus = submenu;
   }
-  private blockCustomCopy = async (detail: {
+  private addCustomCopyMenu = async (detail: {
     menu: Menu;
     blockElements: [HTMLElement];
     protyle: IProtyle;
@@ -235,7 +235,7 @@ export default class PluginBlockConverter extends Plugin {
     }
     this.blockCustomUpdateSubmenus = submenu;
   }
-  private blockCustomUpdate = async (detail: {
+  private addCustomUpdateMenu = async (detail: {
     menu: Menu;
     blockElements: [HTMLElement];
     protyle: IProtyle;
@@ -247,77 +247,4 @@ export default class PluginBlockConverter extends Plugin {
       submenu: this.blockCustomUpdateSubmenus,
     });
   };
-}
-
-async function customPaste(previousId: BlockId, protyle: IProtyle) {
-  const content = await navigator.clipboard.read().then((e) => e[0]);
-  const blob = await content.getType("text/html");
-  const html = await blob.text();
-  const turndownService = new TurndownService();
-  turndownService.addRule("strikethrough", {
-    filter: ["table"],
-    replacement: function (_content, node, _options) {
-      const container =
-        protyle.contentElement.querySelector(".protyle-wysiwyg") ||
-        protyle.contentElement;
-      const style = getComputedStyle(container);
-      //todo 计算宽度其实复杂，回头单独提出来，这里简化了
-      const width = parseFloat(style.width) - 60 + "px";
-      const tables = buildSyTableBlocks(node as HTMLElement, width);
-      return tables[0];
-    },
-  });
-  const markdown = turndownService.turndown(html);
-  const isBlock = (text: string) => {
-    const div = document.createElement("div");
-    div.innerHTML = text;
-    if (div.firstElementChild) {
-      if (div.firstElementChild.hasAttribute("data-type")) {
-        return true;
-      }
-    }
-    return false;
-  };
-  const getDataType = (text: string) => {
-    const div = document.createElement("div");
-    div.innerHTML = text;
-    return div.firstElementChild.getAttribute("data-type");
-  };
-  for (const line of markdown.split(/[(\r\n)\r\n]+/)) {
-    if (isBlock(line) && getDataType(line) === "NodeTable") {
-      //* 表格需要先插入再更新，否则交互不正确
-      const res = await insertBlock(
-        {
-          dataType: "markdown",
-          data: `||||
-          | --| --| --|
-          ||||
-          ||||`,
-          previousID: previousId,
-        },
-        protyle
-      );
-      previousId = res[0].doOperations[0].id;
-      //todo 无法保留宽度信息
-      const res2 = await updateBlock(
-        {
-          dataType: "dom",
-          data: line,
-          id: previousId,
-        },
-        protyle
-      );
-      previousId = res2[0].doOperations[0].id;
-    } else {
-      const res = await insertBlock(
-        {
-          dataType: isBlock(line) ? "dom" : "markdown",
-          data: line,
-          previousID: previousId,
-        },
-        protyle
-      );
-      previousId = res[0].doOperations[0].id;
-    }
-  }
 }
