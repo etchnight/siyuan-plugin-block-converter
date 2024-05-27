@@ -1,3 +1,22 @@
+## [0.2.9](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v0.2.8...v0.2.9) (2024-05-27)
+
+
+### Bug Fixes
+
+* **自定义块更新:** 等待块后端更新完毕后再执行 自定义 脚本 ([6684349](https://github.com/etchnight/siyuan-plugin-table-importer/commit/6684349e6dd24e36c3dca3094f51b3afbddb3300))
+
+
+### Features
+
+* **自定义块复制/自定义块粘贴:** 函数内`Lute`与`window.Lute`不同，为编辑器内使用的Lute实例（而非Lute类,不需要调用Lute.New()） ([380fe31](https://github.com/etchnight/siyuan-plugin-table-importer/commit/380fe31b63e557fbe8ccf3bbff0fca124b8feb22))
+
+
+### BREAKING CHANGES
+
+* **自定义块复制/自定义块粘贴:** 在函数内内置Lute，函数内`Lute`与`window.Lute`不同，为编辑器内使用的Lute实例（而非Lute类,不需要调用Lute.New()）
+
+
+
 ## [0.2.8](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v0.2.7...v0.2.8) (2024-05-19)
 
 
