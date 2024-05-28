@@ -6,8 +6,7 @@ import {
 import { BlockId } from "../../subMod/siyuanPlugin-common/types/siyuan-api";
 import { IProtyle } from "../../subMod/siyuanPlugin-common/types/global-siyuan";
 import { buildSyTableBlocks } from "./tableTransfer";
-import { getInsertId, getJsBlocks } from "./common";
-import { showMessage } from "siyuan";
+import {  getJsBlocks } from "./common";
 
 export async function customPaste(
   previousId: BlockId,
@@ -29,13 +28,36 @@ export async function customPaste(
     }
   }
   const markdown = turndownService.turndown(html);
-  const getDataType = (text: string) => {
-    const div = document.createElement("div");
-    div.innerHTML = text;
-    return div.firstElementChild.getAttribute("data-type");
-  };
+
+  const domText = protyle.lute.Md2BlockDOM(markdown);
+  const parentDom = document.createElement("div");
+  parentDom.innerHTML = domText;
+  //*html块转普通Block
+  for (const child of parentDom.children) {
+    if (child.getAttribute("data-type") === "NodeHTMLBlock") {
+      const content = child
+        .querySelector("protyle-html")
+        ?.getAttribute("data-content");
+      if (content) {
+        const tempdiv = document.createElement("div");
+        tempdiv.innerHTML = content;
+        child.outerHTML = tempdiv.innerText || tempdiv.textContent;
+      }
+    }
+  }
+  const res = await insertBlock(
+    {
+      dataType: "dom",
+      data: parentDom.innerHTML,
+      previousID: previousId,
+    },
+    protyle
+  );
+  //console.log(res);
+  /* 分步插入方法
   let count = 0;
-  for (const line of markdown.split(/[(\r\n)\r\n]+/)) {
+  const markdownList = markdown.split(/[(\r\n)\r\n]+/);
+   for (const line of markdownList) {
     if (isBlock(line) && getDataType(line) === "NodeTable") {
       previousId = await tableInsert(previousId, protyle, line);
     } else {
@@ -50,8 +72,8 @@ export async function customPaste(
       previousId = getInsertId(res);
     }
     count++;
-    showMessage(`已完成${count}/${markdown.length}`);
-  }
+    showMessage(`已完成${count}/${markdownList.length}`);
+  } */
 }
 async function getCustomRule(docId: BlockId) {
   const ruleBlocks = await getJsBlocks(docId);
@@ -82,16 +104,6 @@ async function getCustomRule(docId: BlockId) {
   });
 }
 
-function isBlock(text: string) {
-  const div = document.createElement("div");
-  div.innerHTML = text;
-  if (div.firstElementChild) {
-    if (div.firstElementChild.hasAttribute("data-type")) {
-      return true;
-    }
-  }
-  return false;
-}
 /**
  * 默认规则——将表格转换为思源表格
  */
@@ -110,8 +122,24 @@ function addTableRule(turndownService: TurndownService, protyle: IProtyle) {
     },
   });
 }
+/**
+ * @deprecated
+ * @param text
+ * @returns
+ */
+function isBlock(text: string) {
+  const div = document.createElement("div");
+  div.innerHTML = text;
+  if (div.firstElementChild) {
+    if (div.firstElementChild.hasAttribute("data-type")) {
+      return true;
+    }
+  }
+  return false;
+}
 
 /**
+ * @deprecated
  * 针对table的特殊插入方式
  */
 async function tableInsert(
@@ -143,4 +171,15 @@ async function tableInsert(
   );
   previousId = res2[0].doOperations[0].id;
   return previousId;
+}
+
+/**
+ * @deprecated
+ * @param text
+ * @returns
+ */
+function getDataType(text: string) {
+  const div = document.createElement("div");
+  div.innerHTML = text;
+  return div.firstElementChild.getAttribute("data-type");
 }
