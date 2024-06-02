@@ -4,31 +4,39 @@
 
 [更新日志](./CHANGELOG.md)
 
-提供一系列与块转换有关（或者说通过块标菜单触发）的工具，目前包含以下组件：
+使用自定义代码进行复制、粘贴和更新操作，以块为单位进行操作，目前包含以下组件：
 
-- 自定义块粘贴：将剪贴板内 html 粘贴至思源笔记，针对表格做了优化。
-- 自定义块复制：在思源中编写 js 代码，复制块时将把块内容按指定方法处理后再写入剪贴板。
-- 自定义块更新：在思源中编写 js 代码，使用该代码处理块内容并更新。
-- 表格插入助手：将 html 类型的表格块转换为思源内置表格块。（计划移除）
-- 粘贴为 Html 块：将剪贴板中内容粘贴为 Html 块。（计划移除）
+- 自定义块粘贴：将剪贴板内 html 粘贴至思源笔记，支持自定义规则，针对表格做了优化。
+- 自定义块复制：复制块时将把块内容按指定方法处理后再写入剪贴板。
+- 自定义块更新：使用自定义代码处理块内容并更新。
+- ~~表格插入助手：将 html 类型的表格块转换为思源内置表格块。~~（已移除）
+- ~~粘贴为 Html 块：将剪贴板中内容粘贴为 Html 块。~~（已移除）
 - ~~流程图生成器：将块引用形式的流程转换为 Mermaid 流程图。~~（已移除）
 
 ## 自定义块粘贴
 
-将剪贴板内 html 粘贴至思源笔记，与普通粘贴的不同在于，针对表格做了优化（后续可能会继续添加其他方面的优化），另外，使用[mixmark-io/turndown: 🛏 An HTML to Markdown converter written in JavaScript (github.com)](https://github.com/mixmark-io/turndown)而不是 Lute 作为 html 转 markdown 工具。
-
-## 表格插入助手
-
-将 html 类型的表格块转换为思源内置表格块。
+将剪贴板内 html 粘贴至思源笔记，与普通粘贴的不同在于，针对表格做了优化，另外，使用[mixmark-io/turndown: 🛏 An HTML to Markdown converter written in JavaScript (github.com)](https://github.com/mixmark-io/turndown)而不是 Lute 作为 html 转 markdown 工具。
 
 ### 使用方法
 
-1. 新建 html 块，在其中粘贴表格 html 代码（必须含有`<table>`标签）
-2. 点击块标 -> 插件 -> 转换为思源表格
-3. 转换后的表格将插入在步骤 1 新建的 html 之后
+1. 在插件设置中设置 js 代码所在文档。
+2. 在上述文档中编写 js 代码。
+3. 点击粘贴位置处块的块标->插件->自定义粘贴
 
-- Q : 是否支持 Word、Excel 中的表格？
-- A : 不支持，上述文件均可以另存为 html 文件
+js 代码应该具有如下形式，关于 filter 和 replacement 的详细描述，参见[turndown文档](https://github.com/mixmark-io/turndown)。
+
+```js
+{
+  filter: function (node, options) {
+    const fontSize = node.style.fontSize;
+    const fontSizeNum = parseInt(fontSize);
+    return fontSizeNum >= 22;
+  },
+  replacement: function (content, node, options) {
+    return "# " + content;
+  },
+};
+```
 
 ## 自定义块复制
 
@@ -57,7 +65,7 @@
 4. 点击要复制的块的块标->插件->自定义复制
 
 - v0.2.6 以上版本：支持设置自定义快捷键
-- 函数内`Lute`与`window.Lute`不同，为编辑器内使用的Lute实例（而非Lute类,不需要调用Lute.New()）
+- 函数内`Lute`与`window.Lute`不同，为编辑器内使用的 Lute 实例（而非 Lute 类,不需要调用 Lute.New()）
 
 ### 内部实现
 
@@ -163,19 +171,3 @@ return {
   markdown: `{{SELECT * FROM blocks WHERE id IN(SELECT block_id FROM refs WHERE def_block_id='${input.parent_id}')}}`,
 };
 ```
-
-## 粘贴为 HTML 块
-
-将剪贴板中内容粘贴为 HTML 块。
-
-> 🚀 这是一项实验性功能。
-
-Windows 剪切板可以存储多种格式的内容。如复制 Excel 中一部分表格，剪贴板中将会有制表符分隔文本、HTML 文本、png 格式图片三种类型，该组件捕获 HTML 文本并将其写入一个 HTML 块。
-
-### 使用方法
-
-点击块标 -> 插件 -> 粘贴为 HTML 块
-
-### 示例
-
-![这是图片](./asset/paste2HtmlBLock.gif)

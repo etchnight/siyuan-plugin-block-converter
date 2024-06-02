@@ -1,3 +1,32 @@
+# [0.3.0](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v0.2.9...v0.3.0) (2024-06-02)
+
+
+### Bug Fixes
+
+* **自定义块粘贴:** 修复大量粘贴时有时获取不到插入块的id问题 ([9ca24f7](https://github.com/etchnight/siyuan-plugin-table-importer/commit/9ca24f75a5fac8b9e48e0f0d7b39bf95abc2be62))
+
+
+### Code Refactoring
+
+* 大面积重构 ([62b86c1](https://github.com/etchnight/siyuan-plugin-table-importer/commit/62b86c15d53cad4c0364c048725837202485453d))
+
+
+### Features
+
+* **自定义块粘贴:** 支持自定义转换方法 ([9cee6c2](https://github.com/etchnight/siyuan-plugin-table-importer/commit/9cee6c2a087135be5c08ca87efdba6f9516ada96))
+
+
+### Performance Improvements
+
+* **自定义块粘贴:** 改进粘贴效率 ([3ea5fd3](https://github.com/etchnight/siyuan-plugin-table-importer/commit/3ea5fd3937a8c301161f8b32b78ea7220543dd5b))
+
+
+### BREAKING CHANGES
+
+* 删除 表格插入助手 和 粘贴为 Html 块
+
+
+
 ## [0.2.9](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v0.2.8...v0.2.9) (2024-05-27)
 
 
