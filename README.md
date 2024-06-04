@@ -23,7 +23,7 @@
 2. 在上述文档中编写 js 代码。
 3. 点击粘贴位置处块的块标->插件->自定义粘贴
 
-js 代码应该具有如下形式，关于 filter 和 replacement 的详细描述，参见[turndown文档](https://github.com/mixmark-io/turndown)。
+js 代码应该具有如下形式，关于 filter 和 replacement 的详细描述，参见[turndown 文档](https://github.com/mixmark-io/turndown)。
 
 ```js
 {
@@ -126,10 +126,15 @@ function chineseToNum(chnStr) {
 {
   markdown?: string;
   attrs?: { [key: string]: string };
+  isDelete?: boolean;
 };
 ```
 
-其中，markdown 表示更新后的块内容，attr 表示更新后的属性。
+- markdown 表示更新后的块内容
+- attr 表示更新后的属性
+- 返回`isDelete`为 true，则会删除该块
+  - 注意，由于`markdown`有内容才会对块进行处理，所以，若要删除该块，需要返回`markdown`不为空
+  - 所选块的第一个块不能被删除
 
 > ⚠️ 注意事项：
 >

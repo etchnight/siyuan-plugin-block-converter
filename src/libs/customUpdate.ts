@@ -1,6 +1,7 @@
 import { Menu, showMessage } from "siyuan";
 import { setBlockAttrs } from "../../subMod/siyuanPlugin-common/siyuan-api/attr";
 import {
+  deleteBlock,
   insertBlock,
   updateBlockWithAttr,
 } from "../../subMod/siyuanPlugin-common/siyuan-api/block";
@@ -45,6 +46,7 @@ export function buildTransform(jsBlock: Block) {
         const result = (await func(e, i, array, lute)) as {
           markdown?: string;
           attrs?: { [key: string]: string };
+          isDelete?: boolean;
         };
         if (!result) {
           return;
@@ -60,14 +62,26 @@ export function buildTransform(jsBlock: Block) {
             input[i].id
           );
         }
-        return { dom, attrs, oldDom };
+        return { dom, attrs, oldDom, isDelete: result.isDelete };
       })
     );
     let count = 0;
+    let preBlockId = input[0].id;
     for (let i = 0; i < outputDoms.length; i++) {
-      const { dom, attrs, oldDom } = outputDoms[i];
+      const { dom, attrs, oldDom, isDelete } = outputDoms[i];
       let updateFlag = false;
-      let preBlockId = input[i].id;
+      if (isDelete && i !== 0) {
+        await deleteBlock(
+          { id: input[i].id },
+          detail.protyle,
+          oldDom.innerHTML,
+          input[i].parent_id,
+          preBlockId
+        );
+        continue;
+      } else {
+        preBlockId = input[i].id;
+      }
       for (const block of dom.children) {
         if (!updateFlag) {
           await updateBlockWithAttr(
@@ -79,7 +93,6 @@ export function buildTransform(jsBlock: Block) {
             detail.protyle,
             oldDom.innerHTML
           );
-
           updateFlag = true;
         } else {
           const res = await insertBlock(
