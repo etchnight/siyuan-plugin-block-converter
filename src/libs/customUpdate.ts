@@ -116,7 +116,9 @@ export function buildTransform(jsBlock: Block) {
         });
       }
       count++;
-      showMessage(`已完成${count}/${outputDoms.length}`);
+      showMessage(
+        `${currentJsBlock.name || ""}已完成${count}/${outputDoms.length}`
+      );
     }
   };
   return transform;
