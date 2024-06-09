@@ -8,17 +8,20 @@ import { IProtyle } from "../../subMod/siyuanPlugin-common/types/global-siyuan";
 import { TransactionRes } from "../../subMod/siyuanPlugin-common/siyuan-api/block";
 
 export async function getJsBlocks(docId: BlockId) {
-  const jsBlocks = //todo
+  let jsBlocks = //todo
     (await requestQuerySQL(`SELECT * FROM blocks WHERE blocks.type='c' 
       AND blocks.root_id='${docId}'`)) as Block[];
-  const submenuBlocks = jsBlocks.filter((e) => {
+  jsBlocks = jsBlocks.filter((e) => {
     return (
       e.markdown.startsWith("```js") ||
       e.markdown.startsWith("```javascript") ||
       e.markdown.startsWith("```JavaScript")
     );
   });
-  return submenuBlocks;
+  jsBlocks.sort((a, b) => {
+    return a.name.localeCompare(b.name, "zh");
+  });
+  return jsBlocks;
 }
 
 export function getCurrentBlock() {
