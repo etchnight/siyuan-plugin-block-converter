@@ -1,18 +1,20 @@
 import {
   Plugin,
   Menu,
-  IMenuItemOption,
   showMessage,
   IWebSocketData,
+  IMenu,
+  IProtyle,
 } from "siyuan";
 import { buildSetting } from "../subMod/siyuanPlugin-common/component/setting";
-import { IProtyle } from "../subMod/siyuanPlugin-common/types/global-siyuan";
+//import { IProtyle } from "../subMod/siyuanPlugin-common/types/global-siyuan";
 import { buildCopy } from "./libs/customCopy";
 import { buildTransform } from "./libs/customUpdate";
 import { getCurrentBlock, getJsBlocks, getSelectedBlocks } from "./libs/common";
 import { customPaste } from "./libs/customPaste";
+import { i18nObj } from "../scripts/i18n";
 const PluginName = "siyuan-plugin-block-converter"; //用于id等
-const STORAGE_NAME = "config";
+const STORAGE_NAME = "config.json";
 const DefaultDATA = {
   config: {
     isCustomPaste: {
@@ -50,8 +52,8 @@ const DefaultDATA = {
 
 export default class PluginBlockConverter extends Plugin {
   //private blockIconEventBindThis = this.blockIconEvent.bind(this);
-  private blockCustomCopySubmenus: IMenuItemOption[] = [];
-  private blockCustomUpdateSubmenus: IMenuItemOption[] = [];
+  private blockCustomCopySubmenus: IMenu[] = [];
+  private blockCustomUpdateSubmenus: IMenu[] = [];
   private waitting = false; //判断是否应该等待
   private detail: {
     menu: Menu;
@@ -61,10 +63,17 @@ export default class PluginBlockConverter extends Plugin {
   public data = structuredClone(DefaultDATA);
 
   async onload() {
+    this.i18n = this.i18n as typeof i18nObj.zh_CN;
+    //this.displayName = "块转换工具"; //?不能自动加载插件名称
     this.eventBus.on("click-blockicon", this.blockIconEvent);
     this.eventBus.on("ws-main", this.switchWait);
     await this.loadData(STORAGE_NAME);
-    this.updateConfig();
+    //注意，STORAGE_NAME 为 "config.json"，不是 "config"
+    this.data.config = Object.assign(
+      DefaultDATA.config,
+      this.data[STORAGE_NAME]
+    );
+    //this.updateConfig();
     buildSetting(this.data.config, {
       storageName: STORAGE_NAME,
       isReload: true,
@@ -84,6 +93,7 @@ export default class PluginBlockConverter extends Plugin {
   }
   /**
    * 设置 this.data.config，包含兼容性老版本处理
+   * @deprecated 由于v0.4.0的破坏性更新，弃用原来的`config`文件，改为`config.json`
    */
   private updateConfig = () => {
     //this.data.config = Object.assign(DefaultDATA.config, this.data.config);
@@ -165,7 +175,7 @@ export default class PluginBlockConverter extends Plugin {
       this.blockCustomCopySubmenus = [];
       return;
     }
-    const submenu: IMenuItemOption[] = [];
+    const submenu: IMenu[] = [];
     const submenuBlocks = await getJsBlocks(
       this.data.config.blockCusCopyJsRootId.value
     );
@@ -201,18 +211,19 @@ export default class PluginBlockConverter extends Plugin {
   }) => {
     detail.menu.addItem({
       iconHTML: "",
-      label: this.i18n.BlockCustomCopy.name,
+      label: this.i18n.BlockCustomCopyName,
       id: "blockCustomCopy",
       submenu: this.blockCustomCopySubmenus,
     });
   };
 
+  //获取js块
   private async initBlockCustomUpdate() {
     if (!this.data.config.blockCusUpdateJsRootId.value) {
       this.blockCustomUpdateSubmenus = [];
       return;
     }
-    const submenu: IMenuItemOption[] = [];
+    const submenu: IMenu[] = [];
     const submenuBlocks = await getJsBlocks(
       this.data.config.blockCusUpdateJsRootId.value
     );
@@ -260,7 +271,7 @@ export default class PluginBlockConverter extends Plugin {
   }) => {
     detail.menu.addItem({
       iconHTML: "",
-      label: this.i18n.BlockCustomUpdate.name,
+      label: this.i18n.BlockCustomUpdateName,
       id: "blockCustomUpdate",
       submenu: this.blockCustomUpdateSubmenus,
     });

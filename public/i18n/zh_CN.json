@@ -1,28 +1,5 @@
 {
-  "addTopBarIcon": "使用插件添加一个顶栏按钮",
-  "cancel": "取消",
-  "save": "保存",
-  "byeMenu": "再见，菜单！",
-  "helloPlugin": "表格插入助手已加载",
-  "byePlugin": "再见，插件！",
-  "showDialog": "弹出一个对话框",
-  "blockMenuName": "转换为思源表格",
-  "confirmRemove": "确认删除 ${name} 中的数据？",
-  "insertEmoji": "插入表情",
-  "removeSpace": "移除空格",
-  "getTab": "在日志中打印出已打开的所有自定义页签",
-  "name": "思源",
-  "hello": {
-    "makesure": "使用这个模板之前，请阅读<a href=\"https://github.com/siyuan-note/plugin-sample\">官方教程</a>, 确保自己已经理解了插件的基本开发流程。"
-  },
-  "hintTitle": "关于",
-  "hintDesc": "<a href='https://github.com/siyuan-note/plugin-sample-vite-svelte'>🔗 plugin-sample-vite-svelte</a><br>💻 @frostime<br>💻 @88250<br>💻 @zxkmm",
-  "BlockCustomUpdate": {
-    "name": "自定义更新",
-    "turnOn": "自定义块更新-是否开启"
-  },
-  "BlockCustomCopy": {
-    "name": "自定义复制",
-    "turnOn": "自定义块复制-是否开启"
-  }
+  "BlockCustomUpdateName": "自定义更新",
+  "BlockCustomCopyName": "自定义复制",
+  "isTurnON": "是否开启"
 }

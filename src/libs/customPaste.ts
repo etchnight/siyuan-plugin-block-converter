@@ -4,9 +4,10 @@ import {
   updateBlock,
 } from "../../subMod/siyuanPlugin-common/siyuan-api/block";
 import { BlockId } from "../../subMod/siyuanPlugin-common/types/siyuan-api";
-import { IProtyle } from "../../subMod/siyuanPlugin-common/types/global-siyuan";
+//import { IProtyle } from "../../subMod/siyuanPlugin-common/types/global-siyuan";
 import { buildSyTableBlocks } from "./tableTransfer";
 import {  getJsBlocks } from "./common";
+import { IProtyle } from "siyuan";
 
 export async function customPaste(
   previousId: BlockId,

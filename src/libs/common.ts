@@ -1,10 +1,10 @@
-import { Menu } from "siyuan";
+import { IProtyle, Menu } from "siyuan";
 import { requestQuerySQL } from "../../subMod/siyuanPlugin-common/siyuan-api/query";
 import {
   Block,
   BlockId,
 } from "../../subMod/siyuanPlugin-common/types/siyuan-api";
-import { IProtyle } from "../../subMod/siyuanPlugin-common/types/global-siyuan";
+//import { IProtyle } from "../../subMod/siyuanPlugin-common/types/global-siyuan";
 import { TransactionRes } from "../../subMod/siyuanPlugin-common/siyuan-api/block";
 
 export async function getJsBlocks(docId: BlockId) {

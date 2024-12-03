@@ -1,7 +1,7 @@
-import { Menu, showMessage } from "siyuan";
+import { IProtyle, Menu, showMessage } from "siyuan";
 import { queryBlockById } from "../../subMod/siyuanPlugin-common/siyuan-api/query";
 import { Block } from "../../subMod/siyuanPlugin-common/types/siyuan-api";
-import { IProtyle } from "../../subMod/siyuanPlugin-common/types/global-siyuan";
+//import { IProtyle } from "../../subMod/siyuanPlugin-common/types/global-siyuan";
 
 export function buildCopy(jsBlock: Block) {
   const copy = async (detail: {

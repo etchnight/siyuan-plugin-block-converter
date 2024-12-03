@@ -1,4 +1,4 @@
-import { Menu, showMessage } from "siyuan";
+import { IProtyle, Menu, showMessage } from "siyuan";
 import { setBlockAttrs } from "../../subMod/siyuanPlugin-common/siyuan-api/attr";
 import {
   deleteBlock,
@@ -7,7 +7,7 @@ import {
 } from "../../subMod/siyuanPlugin-common/siyuan-api/block";
 import { queryBlockById } from "../../subMod/siyuanPlugin-common/siyuan-api/query";
 import { Block } from "../../subMod/siyuanPlugin-common/types/siyuan-api";
-import { IProtyle } from "../../subMod/siyuanPlugin-common/types/global-siyuan";
+//import { IProtyle } from "../../subMod/siyuanPlugin-common/types/global-siyuan";
 
 export function buildTransform(jsBlock: Block) {
   const transform = async (detail: {
@@ -33,25 +33,30 @@ export function buildTransform(jsBlock: Block) {
     ).constructor;
     const func = new AsyncFunction(
       "input",
-      "index",
-      "inputArray",
-      "Lute",
+      "tools",
       ` 
-        let { title, name, content, markdown,id } = input;
         ${currentJsBlock.content}
+        return { markdown: markdown, attrs: attrs, isDelete: isDelete };
         `
     );
     const outputDoms = await Promise.all(
       input.map(async (e, i, array) => {
-        const result = (await func(e, i, array, lute)) as {
-          markdown?: string;
-          attrs?: { [key: string]: string };
-          isDelete?: boolean;
+        const input = {
+          block: e, //当前块
+          index: i, //当前块索引
+          array, //所有块
+          attrs: undefined, //当前块属性
+          isDelete: false, //是否删除
         };
+        const tools = {
+          lute,
+        };
+        const result = (await func(input, tools)) as typeof input;
         if (!result) {
           return;
         }
-        const { markdown, attrs } = result;
+        const markdown = result.block.markdown;
+        const { attrs } = result;
         const dom = document.createElement("div");
         const oldDom = document.createElement("div");
         oldDom.innerHTML = lute.Md2BlockDOM(e.markdown);
