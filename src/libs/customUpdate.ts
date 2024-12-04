@@ -10,7 +10,7 @@ import {
 } from "../../subMod/siyuanPlugin-common/siyuan-api/block";
 import { queryBlockById } from "../../subMod/siyuanPlugin-common/siyuan-api/query";
 import { Block } from "../../subMod/siyuanPlugin-common/types/siyuan-api";
-import { executeFunc } from "./utils";
+import { executeFunc } from "./common";
 //import { IProtyle } from "../../subMod/siyuanPlugin-common/types/global-siyuan";
 
 export function buildTransform(jsBlock: Block) {
