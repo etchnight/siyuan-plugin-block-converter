@@ -47,3 +47,33 @@ export async function getSnippet(
     `
   );
 }
+
+export async function executeFunc(
+  input: IFuncInput,
+  tools: ITools,
+  jsBlock: {
+    id?: string;
+    name?: string;
+    content?: string;
+  }
+) {
+  const func = await getSnippet(jsBlock.id, jsBlock.name, jsBlock.content);
+  let reloadFlag = true;
+  //超时自动刷新
+  const safePromise = new Promise((_resolve) =>
+    setTimeout(() => {
+      reloadFlag ? location.reload() : "";
+    }, 5000)//todo 可配置
+  );
+  const customPromise = func(input, tools)
+    .then((res: { input: IFuncInput; tools: ITools }) => {
+      reloadFlag = false; //防止刷新
+      input = res.input;
+      tools = res.tools;
+    })
+    .finally(() => {
+      reloadFlag = false;
+    });
+  await Promise.race([customPromise, safePromise]);
+  return { input, tools };
+}

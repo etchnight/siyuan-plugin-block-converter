@@ -10,7 +10,7 @@ import {
 } from "../../subMod/siyuanPlugin-common/siyuan-api/block";
 import { queryBlockById } from "../../subMod/siyuanPlugin-common/siyuan-api/query";
 import { Block } from "../../subMod/siyuanPlugin-common/types/siyuan-api";
-import {  getSnippet } from "./utils";
+import { executeFunc } from "./utils";
 //import { IProtyle } from "../../subMod/siyuanPlugin-common/types/global-siyuan";
 
 export function buildTransform(jsBlock: Block) {
@@ -19,6 +19,8 @@ export function buildTransform(jsBlock: Block) {
     blockElements: HTMLElement[];
     protyle: IProtyle;
   }) => {
+    const lute = detail.protyle.lute; //当前编辑器内的lute实例
+
     //*从数据库中查询出所有块
     const inputBlocks = await Promise.all(
       detail.blockElements.map(async (e) => {
@@ -36,9 +38,8 @@ export function buildTransform(jsBlock: Block) {
       })
     );
     //*获取和设置自定义脚本
-    const lute = detail.protyle.lute; //当前编辑器内的lute实例
-    const currentJsBlock = await queryBlockById(jsBlock.id);
-    const func = await getSnippet("", "", jsBlock.content);
+    //const currentJsBlock = await queryBlockById(jsBlock.id);
+    //const func = await getSnippet("", "", jsBlock.content);
     //*执行自定义脚本并转化为dom结构
     const outputDoms = await Promise.all(
       inputBlocks.map(async (e, i, array) => {
@@ -52,9 +53,11 @@ export function buildTransform(jsBlock: Block) {
         };
         const tools = {
           lute,
-          getSnippet,
+          executeFunc,
         };
-        const result = await func(input_func, tools);
+        const result = await executeFunc(input_func, tools, {
+          content: jsBlock.content,
+        });
         if (!result) {
           return;
         }
@@ -126,9 +129,7 @@ export function buildTransform(jsBlock: Block) {
         });
       }
       count++;
-      showMessage(
-        `${currentJsBlock.name || ""}已完成${count}/${outputDoms.length}`
-      );
+      showMessage(`${jsBlock.name || ""}已完成${count}/${outputDoms.length}`);
     }
   };
   return transform;
