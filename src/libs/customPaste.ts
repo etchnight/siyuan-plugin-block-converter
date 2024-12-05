@@ -1,8 +1,4 @@
 import TurndownService from "turndown";
-import {
-  insertBlock,
-  updateBlock,
-} from "../../subMod/siyuanPlugin-common/siyuan-api/block";
 import { BlockId } from "../../subMod/siyuanPlugin-common/types/siyuan-api";
 //import { IProtyle } from "../../subMod/siyuanPlugin-common/types/global-siyuan";
 import { buildSyTableBlocks } from "./tableTransfer";
@@ -46,35 +42,6 @@ export async function customPaste(
       }
     }
   }
-  const res = await insertBlock(
-    {
-      dataType: "dom",
-      data: parentDom.innerHTML,
-      previousID: previousId,
-    },
-    protyle
-  );
-  //console.log(res);
-  /* 分步插入方法
-  let count = 0;
-  const markdownList = markdown.split(/[(\r\n)\r\n]+/);
-   for (const line of markdownList) {
-    if (isBlock(line) && getDataType(line) === "NodeTable") {
-      previousId = await tableInsert(previousId, protyle, line);
-    } else {
-      const res = await insertBlock(
-        {
-          dataType: isBlock(line) ? "dom" : "markdown",
-          data: line,
-          previousID: previousId,
-        },
-        protyle
-      );
-      previousId = getInsertId(res);
-    }
-    count++;
-    showMessage(`已完成${count}/${markdownList.length}`);
-  } */
 }
 async function getCustomRule(docId: BlockId) {
   const ruleBlocks = await getJsBlocks(docId);
@@ -123,64 +90,4 @@ function addTableRule(turndownService: TurndownService, protyle: IProtyle) {
     },
   });
 }
-/**
- * @deprecated
- * @param text
- * @returns
- */
-function isBlock(text: string) {
-  const div = document.createElement("div");
-  div.innerHTML = text;
-  if (div.firstElementChild) {
-    if (div.firstElementChild.hasAttribute("data-type")) {
-      return true;
-    }
-  }
-  return false;
-}
 
-/**
- * @deprecated
- * 针对table的特殊插入方式
- */
-async function tableInsert(
-  previousId: BlockId,
-  protyle: IProtyle,
-  line: string
-) {
-  //* 表格需要先插入再更新，否则交互不正确
-  const res = await insertBlock(
-    {
-      dataType: "markdown",
-      data: `||||
-        | --| --| --|
-        ||||
-        ||||`,
-      previousID: previousId,
-    },
-    protyle
-  );
-  previousId = res[0].doOperations[0].id;
-  //todo 无法保留宽度信息
-  const res2 = await updateBlock(
-    {
-      dataType: "dom",
-      data: line,
-      id: previousId,
-    },
-    protyle
-  );
-  previousId = res2[0].doOperations[0].id;
-  return previousId;
-}
-
-/**
- * @deprecated
- * @param text
- * @returns
- */
-function getDataType(text: string) {
-  const div = document.createElement("div");
-  div.innerHTML = text;
-  return div.firstElementChild.getAttribute("data-type");
-}

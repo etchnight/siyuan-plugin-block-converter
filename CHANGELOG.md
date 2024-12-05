@@ -1,3 +1,31 @@
+# [0.4.0](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v0.3.0...v0.4.0) (2024-12-05)
+
+
+### Bug Fixes
+
+* 修复脚本热更新 ([ecd076e](https://github.com/etchnight/siyuan-plugin-table-importer/commit/ecd076e8ba532dc4e5be495559a6eae6a3a778b2))
+
+
+### Code Refactoring
+
+* 开始重构 ([1e9e1e8](https://github.com/etchnight/siyuan-plugin-table-importer/commit/1e9e1e810fb764a7731c87d1876a20080ffcec8d))
+
+
+### Features
+
+* 超时（5秒）自动刷新页面，以防止死循环出现 ([7d3cefb](https://github.com/etchnight/siyuan-plugin-table-importer/commit/7d3cefb3782db321b0f448772c545c33f91f7ec9)), closes [#6](https://github.com/etchnight/siyuan-plugin-table-importer/issues/6)
+* 获取到的js块将按照字母顺序排序 ([dfa58fe](https://github.com/etchnight/siyuan-plugin-table-importer/commit/dfa58fe09936556556a4c270316e7fa8ea88f571))
+* 可以调用另外一个代码片段 ([8569d98](https://github.com/etchnight/siyuan-plugin-table-importer/commit/8569d98191f37a5a848b3ff576b10afc6f06f6f3))
+* **自定义块更新:** 提示显示运行块的名称 ([5958771](https://github.com/etchnight/siyuan-plugin-table-importer/commit/5958771b14ff8f48ce9f14e81cec4ce80f83bbc6))
+* **自定义块更新:** 支持删除块 ([519842c](https://github.com/etchnight/siyuan-plugin-table-importer/commit/519842c33a67c73105c5b86ad2c1b3f138ecd949))
+
+
+### BREAKING CHANGES
+
+* 暂时不可用
+
+
+
 # [0.3.0](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v0.2.9...v0.3.0) (2024-06-02)
 
 
