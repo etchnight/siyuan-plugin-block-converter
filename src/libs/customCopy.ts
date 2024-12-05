@@ -18,7 +18,7 @@ export function buildCopy(jsBlock: Block) {
       inputs.map(async (input) => {
         //执行自定义脚本
         const result = await executeFunc(input, tools, input.block.markdown, {
-          content: jsBlock.content,
+          id: jsBlock.id, //重新获取以确保获取到最新的脚本
         });
         return result;
       })
