@@ -1,7 +1,7 @@
 /**
  * 存放一些公共函数
  */
-import { IProtyle, Menu } from "siyuan";
+import { IProtyle, Lute, Menu } from "siyuan";
 import {
   requestQuerySQL,
   queryBlockById,
@@ -12,11 +12,12 @@ import {
 } from "../../subMod/siyuanPlugin-common/types/siyuan-api";
 //import { IProtyle } from "../../subMod/siyuanPlugin-common/types/global-siyuan";
 import { TransactionRes } from "../../subMod/siyuanPlugin-common/siyuan-api/block";
+import { getBlockAttrs } from "../../subMod/siyuanPlugin-common/siyuan-api/attr";
 
 /**
  * *获取指定文档下的所有js块
- * @param docId 
- * @returns 
+ * @param docId
+ * @returns
  */
 export async function getJsBlocks(docId: BlockId) {
   let jsBlocks = //todo
@@ -37,7 +38,7 @@ export async function getJsBlocks(docId: BlockId) {
 
 /**
  * *获取光标所在块
- * @returns 
+ * @returns
  */
 export function getCurrentBlock() {
   let nodeElement = getSelection().anchorNode;
@@ -79,7 +80,7 @@ export function getSelectedBlocks(
 }
 
 /**
- * 执行insert Block 操作后，获取插入块的id
+ * *执行insert Block 操作后，获取插入块的id
  * @param res
  */
 export function getInsertId(res: TransactionRes[]) {
@@ -112,10 +113,10 @@ export interface ITools {
 
 /**
  * *获取指定js块并转为函数
- * @param jsBlockId 
- * @param name 
- * @param jsBlockContent 
- * @returns 
+ * @param jsBlockId
+ * @param name
+ * @param jsBlockContent
+ * @returns
  */
 export async function getSnippet(
   jsBlockId?: string,
@@ -124,8 +125,9 @@ export async function getSnippet(
 ): Promise<
   (
     input: IFuncInput,
-    tools: ITools
-  ) => Promise<{ input: IFuncInput; tools: ITools }>
+    tools: ITools,
+    output: string
+  ) => Promise<{ input: IFuncInput; tools: ITools; output: string }>
 > {
   //let currentJsBlock: Block;
   //*使用顺序：jsBlockContent -> jsBlockId -> name
@@ -144,23 +146,25 @@ export async function getSnippet(
   return new AsyncFunction(
     "input",
     "tools",
+    "output",
     ` 
     ${jsBlockContent ? jsBlockContent : ""}
-    return { input , tools };
+    return { input , tools , output };
     `
   );
 }
 
 /**
  * *运行自定义函数，并防止超时
- * @param input 
- * @param tools 
- * @param jsBlock 
- * @returns 
+ * @param input
+ * @param tools
+ * @param jsBlock
+ * @returns
  */
 export async function executeFunc(
   input: IFuncInput,
   tools: ITools,
+  output: string,
   jsBlock: {
     id?: string;
     name?: string;
@@ -176,15 +180,59 @@ export async function executeFunc(
         reloadFlag ? location.reload() : "";
       }, 5000) //todo 可配置
   );
-  const customPromise = func(input, tools)
-    .then((res: { input: IFuncInput; tools: ITools }) => {
+  const customPromise = func(input, tools, output)
+    .then((res: { input: IFuncInput; tools: ITools; output: string }) => {
       reloadFlag = false; //防止刷新
       input = res.input;
       tools = res.tools;
+      output = res.output;
     })
     .finally(() => {
       reloadFlag = false;
     });
   await Promise.race([customPromise, safePromise]);
-  return { input, tools };
+  return { input, tools, output };
+}
+
+/**
+ * 根据块元素从数据库查询块信息，并返回 executeFunc 的入参集合
+ * @param blockElements
+ * @returns
+ */
+export async function getParaByElement(
+  blockElements: HTMLElement[],
+  lute: Lute
+) {
+  const inputBlocks = await Promise.all(
+    blockElements.map(async (e) => {
+      const id = e.getAttribute("data-node-id");
+      const block = await queryBlockById(id);
+      const doc = await queryBlockById(block.root_id);
+      const attrs = await getBlockAttrs({ id }); //JSON.parse(block.ial.replace("{:", "{"))不可行
+      //todo 带有其他属性对更新属性的影响未测试
+      //attrs.id ? delete attrs.id : null;
+      //attrs.updated ? delete attrs.updated : null;
+      return {
+        block,
+        extra: { title: doc.content, attrs },
+      };
+    })
+  );
+  const inputs: IFuncInput[] = inputBlocks.map((e, i, array) => {
+    //执行自定义脚本
+    const input_func = {
+      block: e.block, //当前块
+      extra: e.extra, //当前文档标题,当前块属性
+      index: i, //当前块索引
+      array: array.map((e) => e.block), //所有块
+      isDelete: false, //是否删除
+      output: e.block.markdown, //输出内容
+    };
+    return input_func;
+  });
+  const tools: ITools = {
+    lute,
+    executeFunc,
+  };
+  return { inputs, tools };
 }

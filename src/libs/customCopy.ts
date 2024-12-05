@@ -1,6 +1,6 @@
 import { IProtyle, Menu, showMessage } from "siyuan";
-import { queryBlockById } from "../../subMod/siyuanPlugin-common/siyuan-api/query";
 import { Block } from "../../subMod/siyuanPlugin-common/types/siyuan-api";
+import { executeFunc, getParaByElement } from "./common";
 //import { IProtyle } from "../../subMod/siyuanPlugin-common/types/global-siyuan";
 
 export function buildCopy(jsBlock: Block) {
@@ -9,37 +9,25 @@ export function buildCopy(jsBlock: Block) {
     blockElements: HTMLElement[];
     protyle: IProtyle;
   }) => {
-    const input = await Promise.all(
-      detail.blockElements.map(async (e) => {
-        const id = e.getAttribute("data-node-id");
-        const block = await queryBlockById(id);
-        const doc = await queryBlockById(block.root_id);
-        return {
-          ...block,
-          title: doc.content,
-        };
+    const lute = detail.protyle.lute; //当前编辑器内的lute实例
+    const { inputs, tools } = await getParaByElement(
+      detail.blockElements,
+      lute
+    );
+    const results = await Promise.all(
+      inputs.map(async (input) => {
+        //执行自定义脚本
+        const result = await executeFunc(input, tools, input.block.markdown, {
+          content: jsBlock.content,
+        });
+        return result;
       })
     );
-    const currentJsBlock = await queryBlockById(jsBlock.id);
-    const AsyncFunction = Object.getPrototypeOf(
-      async function () {}
-    ).constructor;
-    const func = new AsyncFunction(
-      "input",
-      "index",
-      "inputArray",
-      "Lute",
-      ` 
-        let { title, name, content, markdown,id } = input;
-        ${currentJsBlock.content}
-      `
-    );
-    let result = "";
-    for (let i = 0; i < input.length; i++) {
-      result += await func(input[i], i, input, detail.protyle.lute);
-    }
-    await navigator.clipboard.writeText(result);
-    showMessage(`${result}已写入剪贴板`);
+    const output = results.reduce((prev, curr) => {
+      return prev + curr.output;
+    }, "");
+    await navigator.clipboard.writeText(output);
+    showMessage(`${output}已写入剪贴板`);
   };
   return copy;
 }
