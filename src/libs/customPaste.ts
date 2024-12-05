@@ -2,8 +2,9 @@ import TurndownService from "turndown";
 import { BlockId } from "../../subMod/siyuanPlugin-common/types/siyuan-api";
 //import { IProtyle } from "../../subMod/siyuanPlugin-common/types/global-siyuan";
 import { buildSyTableBlocks } from "./tableTransfer";
-import {  getJsBlocks } from "./common";
-import { IProtyle } from "siyuan";
+import { getJsBlocks } from "./common";
+import { IProtyle, showMessage } from "siyuan";
+import { insertBlock } from "../../subMod/siyuanPlugin-common/siyuan-api/block";
 
 export async function customPaste(
   previousId: BlockId,
@@ -11,7 +12,15 @@ export async function customPaste(
   docId?: BlockId
 ) {
   const content = await navigator.clipboard.read().then((e) => e[0]);
-  const blob = await content.getType("text/html");
+  let blob: Blob;
+  if (content.types.includes("text/html")) {
+    blob = await content.getType("text/html");
+  } else if (content.types.includes("text/plain")) {
+    blob = await content.getType("text/plain");
+  } else {
+    showMessage("请粘贴html或纯文本");
+    return;
+  }
   const html = await blob.text();
   console.warn(`[customPaste]`, { html });
   const turndownService = new TurndownService();
@@ -25,7 +34,7 @@ export async function customPaste(
     }
   }
   const markdown = turndownService.turndown(html);
-
+  console.warn(`[customPaste]`, { markdown });
   const domText = protyle.lute.Md2BlockDOM(markdown);
   const parentDom = document.createElement("div");
   parentDom.innerHTML = domText;
@@ -42,6 +51,11 @@ export async function customPaste(
       }
     }
   }
+  //*插入粘贴的内容
+  await insertBlock(
+    { dataType: "dom", data: parentDom.innerHTML, previousID: previousId },
+    protyle
+  );
 }
 async function getCustomRule(docId: BlockId) {
   const ruleBlocks = await getJsBlocks(docId);
@@ -90,4 +104,3 @@ function addTableRule(turndownService: TurndownService, protyle: IProtyle) {
     },
   });
 }
-
