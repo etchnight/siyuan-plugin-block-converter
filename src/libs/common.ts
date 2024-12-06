@@ -1,7 +1,7 @@
 /**
  * 存放一些公共函数
  */
-import { IProtyle, Lute, Menu } from "siyuan";
+import { IProtyle, Lute, Menu, showMessage } from "siyuan";
 import {
   requestQuerySQL,
   queryBlockById,
@@ -10,9 +10,25 @@ import {
   Block,
   BlockId,
 } from "../../subMod/siyuanPlugin-common/types/siyuan-api";
-//import { IProtyle } from "../../subMod/siyuanPlugin-common/types/global-siyuan";
 import { TransactionRes } from "../../subMod/siyuanPlugin-common/siyuan-api/block";
 import { getBlockAttrs } from "../../subMod/siyuanPlugin-common/siyuan-api/attr";
+
+//tools 附加工具库
+import * as prettier from "prettier";
+import prettierPluginBabel from "prettier/plugins/babel";
+import prettierPluginEstree from "prettier/plugins/estree";
+import prettierPluginMarkdown from "prettier/plugins/markdown";
+//TODO markdown格式化
+/* 
+import remarkParse from "remark-parse";
+import { unified } from "unified";
+import remarkRehype from "remark-rehype";
+import rehypeStringify from "rehype-stringify";
+import rehypeFormat from "rehype-format";
+import remarkMan from "remark-man";
+import remarkGfm from "remark-gfm";
+import remarkFrontmatter from 'remark-frontmatter'
+import remarkStringify from "remark-stringify"; */
 
 /**
  * *获取指定文档下的所有js块
@@ -187,6 +203,12 @@ export async function executeFunc(
       tools = res.tools;
       output = res.output;
     })
+    .catch((e) => {
+      showMessage(
+        `${jsBlock.name || `块id为` + jsBlock.id}函数执行出错，请查看控制台`
+      );
+      console.error(e);
+    })
     .finally(() => {
       reloadFlag = false;
     });
@@ -233,6 +255,14 @@ export async function getParaByElement(
   const tools: ITools = {
     lute,
     executeFunc,
+    //todo markdown格式化 unified: unified().use(remarkParse).use(remarkGfm).use(remarkStringify),
+    prettier: {
+      prettier,
+      prettierPluginBabel,
+      prettierPluginEstree,
+      prettierPluginMarkdown,
+    },
   };
+
   return { inputs, tools };
 }

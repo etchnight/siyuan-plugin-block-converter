@@ -107,6 +107,16 @@ async function executeFunc(
 #### tools 上提供的函数
 
 - lute，注意与`window.Lute`不同，为编辑器内使用的 Lute 实例（而非 Lute 类,不需要调用 Lute.New()），具体使用方法参见[思源社区文档](https://docs.siyuan-note.club/zh-Hans/reference/api/plugin/class/Lute.html)。
+- [prettier](https://prettier.io/):代码格式化工具，为了在编辑器中使用，使用方法与官方文档稍有不同，如：
+  ```js
+  await tools.prettier.prettier.format("foo();", {
+    parser: "babel",
+    plugins: [
+      tools.prettier.prettierPluginBabel,
+      tools.prettier.prettierPluginEstree,
+    ],
+  });
+  ```
 
 ### 其他特性
 
@@ -136,5 +146,3 @@ async function executeFunc(
 - 可以将一个块更新为多个块（如返回的Markdown内容有多个段落），但只有第一个块会继承或更新属性
 - v0.2.4 以上版本：新增 `inputArray` 变量(详见 自定义块复制 部分)，可以利用其将多个块更新为一个块，但是如果任何块返回 `output` 内容为空，为保证数据安全，不会主动将其清空
 - v0.2.6 以上版本：支持`Ctrl+Z`撤销(🚀 实验性)
-
-
