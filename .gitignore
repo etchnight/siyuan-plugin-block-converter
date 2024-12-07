@@ -8,5 +8,5 @@ dev
 dist
 build
 tmp
-test
+test/func
 
