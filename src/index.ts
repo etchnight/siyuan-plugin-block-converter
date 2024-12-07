@@ -5,8 +5,10 @@ import {
   IWebSocketData,
   IMenu,
   IProtyle,
+  IGetDocInfo,
 } from "siyuan";
 import { buildSetting } from "../subMod/siyuanPlugin-common/component/setting";
+import { getDoc } from "../subMod/siyuanPlugin-common/siyuan-api/filetree";
 //import { IProtyle } from "../subMod/siyuanPlugin-common/types/global-siyuan";
 import { buildCopy } from "./libs/customCopy";
 import { buildTransform } from "./libs/customUpdate";
@@ -55,6 +57,10 @@ export default class PluginBlockConverter extends Plugin {
   private blockCustomCopySubmenus: IMenu[] = [];
   private blockCustomUpdateSubmenus: IMenu[] = [];
   private waitting = false; //判断是否应该等待
+  /**
+   * 三种生成途径：通过块标事件直接获取、文档标题事件中查询、快捷键命令中通过common.js中函数获取
+   * 在自定义复制和自定义粘贴中作为入参使用
+   */
   private detail: {
     menu: Menu;
     blockElements: HTMLElement[];
@@ -67,6 +73,7 @@ export default class PluginBlockConverter extends Plugin {
     //this.displayName = "块转换工具"; //?不能自动加载插件名称
     this.eventBus.on("click-blockicon", this.blockIconEvent);
     this.eventBus.on("ws-main", this.switchWait);
+    this.eventBus.on("click-editortitleicon", this.openMenuDoctreeEvent);
     await this.loadData(STORAGE_NAME);
     //注意，STORAGE_NAME 为 "config.json"，不是 "config"
     this.data.config = Object.assign(
@@ -90,6 +97,7 @@ export default class PluginBlockConverter extends Plugin {
   onunload() {
     this.eventBus.off("click-blockicon", this.blockIconEvent);
     this.eventBus.off("ws-main", this.switchWait);
+    this.eventBus.off("click-editortitleicon", this.openMenuDoctreeEvent);
   }
   /**
    * 设置 this.data.config，包含兼容性老版本处理
@@ -119,6 +127,11 @@ export default class PluginBlockConverter extends Plugin {
       this.data.config.blockCusCopyJsRootId.value = blockCusCopyJsRootId;
     }
   };
+
+  /**
+   * 等待写入数据库完成
+   * @param param0
+   */
   private switchWait = ({ detail }: { detail: IWebSocketData }) => {
     if (detail.cmd === "transactions") {
       this.waitting = true;
@@ -127,15 +140,39 @@ export default class PluginBlockConverter extends Plugin {
       this.waitting = false;
     }
   };
+
   private blockIconEvent = ({
     detail,
   }: {
-    detail: { menu: Menu; blockElements: [HTMLElement]; protyle: IProtyle };
+    detail: { menu: Menu; blockElements: HTMLElement[]; protyle: IProtyle };
   }) => {
     this.detail = detail;
     this.data.config.isBlockCusCopy.value && this.addCustomCopyMenu(detail);
     this.data.config.isBlockCusUpdate.value && this.addCustomUpdateMenu(detail);
     this.data.config.isCustomPaste.value && this.addCustomPasteMenu(detail);
+  };
+
+  private openMenuDoctreeEvent = ({
+    detail,
+  }: {
+    detail: { menu: Menu; data: IGetDocInfo; protyle: IProtyle };
+  }) => {
+    //*注意，这一步必须在异步函数之前运行
+    this.data.config.isBlockCusUpdate.value && this.addCustomUpdateMenu(detail);
+    getDoc({ id: detail.data.rootID }).then((res) => {
+      const div = document.createElement("div");
+      div.innerHTML = res.content;
+      const children = div.children;
+      const content: HTMLElement[] = [];
+      for (const child of children) {
+        content.push(child as HTMLElement);
+      }
+      this.detail = {
+        menu: detail.menu,
+        blockElements: content,
+        protyle: detail.protyle,
+      };
+    });
   };
 
   private initCustomPaste = async () => {
@@ -155,7 +192,7 @@ export default class PluginBlockConverter extends Plugin {
 
   private addCustomPasteMenu = async (detail: {
     menu: Menu;
-    blockElements: [HTMLElement];
+    blockElements: HTMLElement[];
     protyle: IProtyle;
   }) => {
     const docId = this.data.config.customPasteJsRootId;
@@ -206,7 +243,7 @@ export default class PluginBlockConverter extends Plugin {
   }
   private addCustomCopyMenu = async (detail: {
     menu: Menu;
-    blockElements: [HTMLElement];
+    blockElements: HTMLElement[];
     protyle: IProtyle;
   }) => {
     detail.menu.addItem({
@@ -264,9 +301,11 @@ export default class PluginBlockConverter extends Plugin {
     }
     this.blockCustomUpdateSubmenus = submenu;
   }
+
   private addCustomUpdateMenu = async (detail: {
     menu: Menu;
-    blockElements: [HTMLElement];
+    blockElements?: HTMLElement[];
+    data?: IGetDocInfo;
     protyle: IProtyle;
   }) => {
     detail.menu.addItem({

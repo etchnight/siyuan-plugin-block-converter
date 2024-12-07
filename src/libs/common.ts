@@ -1,7 +1,7 @@
 /**
  * 存放一些公共函数
  */
-import { IProtyle, Lute, Menu, showMessage } from "siyuan";
+import { IGetDocInfo, IProtyle, Lute, Menu, showMessage } from "siyuan";
 import {
   requestQuerySQL,
   queryBlockById,
@@ -79,20 +79,26 @@ export function getSelectedBlocks(
   protyle: IProtyle, //todo 与detail.protyle是否相同
   detail: {
     menu: Menu;
-    blockElements: HTMLElement[];
+    blockElements?: HTMLElement[];
+    data?: IGetDocInfo;
     protyle: IProtyle;
   }
 ) {
-  Object.assign(detail, {
-    blockElements: Array.from(
-      protyle.wysiwyg.element.querySelectorAll(".protyle-wysiwyg--select")
-    ),
-    protyle,
-  });
-  if (detail.blockElements.length === 0) {
-    Object.assign(detail, { blockElements: [getCurrentBlock()] });
+  //选择多个块
+  let blockElements: HTMLElement[] = Array.from(
+    protyle.wysiwyg.element.querySelectorAll(".protyle-wysiwyg--select")
+  );
+  //选择单个块
+  if (blockElements.length === 0) {
+    blockElements = [getCurrentBlock()];
   }
-  return detail;
+  const newDetail = {
+    menu: detail.menu,
+    blockElements: blockElements,
+    protyle: protyle,
+  };
+
+  return newDetail;
 }
 
 /**
