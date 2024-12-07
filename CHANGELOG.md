@@ -1,3 +1,14 @@
+## [0.4.1](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v0.4.0...v0.4.1) (2024-12-07)
+
+
+### Features
+
+* 附加工具库prettier ([acc3e49](https://github.com/etchnight/siyuan-plugin-table-importer/commit/acc3e493722d13b694b118899250f15842024864))
+* 优化报错机制 ([9126edb](https://github.com/etchnight/siyuan-plugin-table-importer/commit/9126edbc445f0efdaf9c81df7d79c8ebd80f7e6c))
+* **自定义块更新:** 可以点击文档标题处的块标->插件->自定义更新，这样会更新整个文档(🚀 实验性) ([3cc3626](https://github.com/etchnight/siyuan-plugin-table-importer/commit/3cc3626e4ea3e100e37c2ab8fc52caead0f81a01))
+
+
+
 # [0.4.0](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v0.3.0...v0.4.0) (2024-12-05)
 
 
