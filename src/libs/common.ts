@@ -189,11 +189,21 @@ export async function executeFunc(
 ) {
   const func = await getSnippet(jsBlock.id, jsBlock.name, jsBlock.content);
   let reloadFlag = true;
+  let errorFlag = true;
   //超时自动刷新
   const safePromise = new Promise(
     (_resolve) =>
       setTimeout(() => {
-        reloadFlag ? location.reload() : "";
+        if (reloadFlag) {
+          showMessage("运行超时，即将刷新页面");
+          setTimeout(() => {
+            location.reload();
+          }, 1000);
+        } else if (errorFlag) {
+          showMessage(
+            `${jsBlock.name || "id为" + jsBlock.id}脚本运行出错，请查看控制台`
+          );
+        }
       }, 5000) //todo 可配置
   );
   const customPromise = func(input, tools, output)
@@ -202,12 +212,7 @@ export async function executeFunc(
       input = res.input;
       tools = res.tools;
       output = res.output;
-    })
-    .catch((e) => {
-      showMessage(
-        `${jsBlock.name || `块id为` + jsBlock.id}函数执行出错，请查看控制台`
-      );
-      console.error(e);
+      errorFlag = false; //防止报错
     })
     .finally(() => {
       reloadFlag = false;
