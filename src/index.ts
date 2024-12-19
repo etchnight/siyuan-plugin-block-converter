@@ -17,6 +17,7 @@ import { customPaste } from "./libs/customPaste";
 import { i18nObj } from "../scripts/i18n";
 const PluginName = "siyuan-plugin-block-converter"; //用于id等
 const STORAGE_NAME = "config.json";
+//const STORAGE_NAME_BLOCK_CUSTOM_COPY = "blockCustomCopy.json";
 const DefaultDATA = {
   config: {
     isCustomPaste: {
@@ -66,16 +67,36 @@ export default class PluginBlockConverter extends Plugin {
     blockElements: HTMLElement[];
     protyle: IProtyle;
   } = { menu: undefined, blockElements: [], protyle: undefined };
-  public data = structuredClone(DefaultDATA);
-
+  //* 此处需要与i18n.json中的key对应
+  declare public data: {
+    config: typeof DefaultDATA.config;
+    "config.json": typeof DefaultDATA.config;
+    "blockCustomCopy.json": {
+      id: string;
+      name: string;
+      snippet: string[];
+    }[];
+    "blockCustomUpdate.json": {
+      id: string;
+      name: string;
+      snippet: string[];
+    }[];
+    "customPaste.json": {
+      id: string;
+      name: string;
+      snippet: string[];
+      group: string[];
+    }[];
+  }; //= structuredClone(DefaultDATA);
+  declare public i18n: typeof i18nObj.zh_CN;
   async onload() {
-    this.i18n = this.i18n as typeof i18nObj.zh_CN;
     //this.displayName = "块转换工具"; //?不能自动加载插件名称
     this.eventBus.on("click-blockicon", this.blockIconEvent);
     this.eventBus.on("ws-main", this.switchWait);
     this.eventBus.on("click-editortitleicon", this.openMenuDoctreeEvent);
     await this.loadData(STORAGE_NAME);
     //注意，STORAGE_NAME 为 "config.json"，不是 "config"
+    // todo 应该直接使用 this.data["config.json"]
     this.data.config = Object.assign(
       DefaultDATA.config,
       this.data[STORAGE_NAME]
@@ -89,6 +110,18 @@ export default class PluginBlockConverter extends Plugin {
     this.data.config.isBlockCusCopy.value && this.initBlockCustomCopy();
     this.data.config.isBlockCusUpdate.value && this.initBlockCustomUpdate();
     this.data.config.isCustomPaste.value && this.initCustomPaste();
+    await this.loadData("blockCustomCopy.json");
+    await this.loadData("blockCustomUpdate.json");
+    await this.loadData("customPaste.json");
+
+    /*     console.log(this.data);
+    this.data["blockCustomCopy.json"].forEach((item) => {
+      const body = item.snippet.join("\n");
+      console.log(body);
+      const aaa = JSON.stringify(body.split("\n"));
+      console.log(aaa);
+    }); */
+
     //this.eventBus.on("open-menu-content", this.openMenuContentEvent);
   }
 
@@ -122,7 +155,7 @@ export default class PluginBlockConverter extends Plugin {
         .blockCusCopyJsRootId as unknown as string;
       const blockCusUpdateJsRootId = this.data.config
         .blockCusUpdateJsRootId as unknown as string;
-      this.data = DefaultDATA;
+      this.data.config = DefaultDATA.config;
       this.data.config.blockCusUpdateJsRootId.value = blockCusUpdateJsRootId;
       this.data.config.blockCusCopyJsRootId.value = blockCusCopyJsRootId;
     }
@@ -150,6 +183,7 @@ export default class PluginBlockConverter extends Plugin {
     this.data.config.isBlockCusCopy.value && this.addCustomCopyMenu(detail);
     this.data.config.isBlockCusUpdate.value && this.addCustomUpdateMenu(detail);
     this.data.config.isCustomPaste.value && this.addCustomPasteMenu(detail);
+    this.addSaveSnippetMenu(detail);
   };
 
   private openMenuDoctreeEvent = ({
@@ -313,6 +347,69 @@ export default class PluginBlockConverter extends Plugin {
       label: this.i18n.BlockCustomUpdateName,
       id: "blockCustomUpdate",
       submenu: this.blockCustomUpdateSubmenus,
+    });
+  };
+
+  private addSaveSnippetMenu = async (detail: {
+    menu: Menu;
+    blockElements: HTMLElement[];
+    protyle: IProtyle;
+  }) => {
+    //仅对单个块有效
+    if (detail.blockElements.length > 1) {
+      return;
+    }
+    const blockType = detail.blockElements[0].getAttribute("data-type");
+    if (blockType !== "NodeCodeBlock") {
+      return;
+    }
+    const saveSnippet = async (fileName: string) => {
+      //* fileName见this.data
+      const code = detail.blockElements[0].querySelector(
+        "[contenteditable=true]"
+      )?.textContent;
+      if (!code) {
+        return;
+      }
+      const blockId = detail.blockElements[0].getAttribute("data-node-id");
+      const body = code.split("\n");
+      const name = detail.blockElements[0].getAttribute("name") || body[0];
+      const snippet = {
+        id: blockId,
+        snippet: body,
+        name,
+      };
+      if (!this.data[fileName]) {
+        this.data[fileName] = [];
+      }
+      this.data[fileName].push(snippet);
+      await this.saveData(fileName, this.data[fileName]);
+      //location.reload();
+    };
+    detail.menu.addItem({
+      iconHTML: "",
+      label: this.i18n.saveSnippet,
+      id: "saveSnippet",
+      submenu: [
+        {
+          iconHTML: "",
+          label: this.i18n.BlockCustomCopyName,
+          type: "submenu",
+          click: () => saveSnippet("blockCustomCopy.json"),
+        },
+        {
+          iconHTML: "",
+          label: this.i18n.BlockCustomUpdateName,
+          type: "submenu",
+          click: () => saveSnippet("blockCustomUpdate.json"),
+        },
+        {
+          iconHTML: "",
+          label: this.i18n.CustomPasteName,
+          type: "submenu",
+          click: () => saveSnippet("customPaste.json"),
+        },
+      ],
     });
   };
 }

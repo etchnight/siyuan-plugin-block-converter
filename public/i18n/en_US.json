@@ -1,5 +1,7 @@
 {
   "BlockCustomUpdateName": "custom update",
   "BlockCustomCopyName": "custom copy",
-  "isTurnON": "turn on to enable"
+  "CustomPasteName": "custom paste",
+  "isTurnON": "turn on to enable",
+  "saveSnippet": "save as code snippet"
 }

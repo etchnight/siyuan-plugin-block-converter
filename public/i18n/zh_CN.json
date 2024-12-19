@@ -1,5 +1,7 @@
 {
   "BlockCustomUpdateName": "自定义更新",
   "BlockCustomCopyName": "自定义复制",
-  "isTurnON": "是否开启"
+  "CustomPasteName": "自定义粘贴",
+  "isTurnON": "是否开启",
+  "saveSnippet": "保存为代码片段"
 }
