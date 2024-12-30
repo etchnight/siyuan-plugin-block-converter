@@ -100,7 +100,7 @@ async function executeFunc(
   jsBlock: {
     id?: string;//拟调用的js块id
     name?: string;//拟调用的js块命名
-    content?: string;//拟调用的js块内容，一般使用不到
+    filePath?: string;//拟调用的js文件路径，注意，该路径是相对于"/data/storage/petal/siyuan-plugin-block-converter/"的路径
 }): Promise<{
     input: IFuncInput;
     tools: ITools;

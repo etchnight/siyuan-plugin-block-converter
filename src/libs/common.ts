@@ -1,7 +1,7 @@
 /**
  * 存放一些公共函数
  */
-import { IGetDocInfo, IProtyle, Lute, Menu, showMessage } from "siyuan";
+import { Dialog, IGetDocInfo, IProtyle, Lute, Menu, showMessage } from "siyuan";
 import {
   requestQuerySQL,
   queryBlockById,
@@ -18,17 +18,21 @@ import * as prettier from "prettier";
 import prettierPluginBabel from "prettier/plugins/babel";
 import prettierPluginEstree from "prettier/plugins/estree";
 import prettierPluginMarkdown from "prettier/plugins/markdown";
-//TODO markdown格式化
-/* 
-import remarkParse from "remark-parse";
-import { unified } from "unified";
-import remarkRehype from "remark-rehype";
-import rehypeStringify from "rehype-stringify";
-import rehypeFormat from "rehype-format";
-import remarkMan from "remark-man";
-import remarkGfm from "remark-gfm";
-import remarkFrontmatter from 'remark-frontmatter'
-import remarkStringify from "remark-stringify"; */
+import {
+  getFile,
+  readDir,
+} from "../../subMod/siyuanPlugin-common/siyuan-api/file";
+import { protyleUtil } from "./protyle-util";
+
+/**
+ * 组件的名称，用于函数参数等
+ */
+export enum EComponent {
+  Copy = "blockCustomCopy",
+  Update = "blockCustomUpdate",
+  Paste = "CustomPaste",
+}
+export const PluginName = "siyuan-plugin-block-converter"; //用于id等
 
 /**
  * *获取指定文档下的所有js块
@@ -134,7 +138,12 @@ export interface ITools {
 }
 
 /**
- * *获取指定js块并转为函数
+ * 自定义函数输入参数3: output，输出，默认为原块的Markdown内容
+ */
+type IOutput = string; //Markdown文本
+
+/**
+ * *从文件或笔记中获取snippet并转为函数
  * @param jsBlockId
  * @param name
  * @param jsBlockContent
@@ -143,16 +152,17 @@ export interface ITools {
 export async function getSnippet(
   jsBlockId?: string,
   name?: string,
-  jsBlockContent?: string
+  filePath?: string,
+  snippet?: string
 ): Promise<
   (
     input: IFuncInput,
     tools: ITools,
-    output: string
-  ) => Promise<{ input: IFuncInput; tools: ITools; output: string }>
+    output: IOutput
+  ) => Promise<{ input: IFuncInput; tools: ITools; output: IOutput }>
 > {
-  //let currentJsBlock: Block;
-  //*使用顺序：jsBlockContent -> jsBlockId -> name
+  //*使用顺序: snippet -> jsBlockId -> name -> filePath
+  let jsBlockContent: string = snippet;
   if (jsBlockId && !jsBlockContent) {
     jsBlockContent = (await queryBlockById(jsBlockId)).content;
   } else if (name) {
@@ -162,6 +172,10 @@ export async function getSnippet(
     if (resList.length) {
       jsBlockContent = resList[0].content;
     }
+  } else if (filePath) {
+    jsBlockContent = await getFile({
+      path: "/data/storage/petal/" + PluginName + "/" + filePath,
+    });
   }
 
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
@@ -177,7 +191,7 @@ export async function getSnippet(
 }
 
 /**
- * *运行自定义函数，并防止超时
+ * *获取、运行自定义函数，并防止超时
  * @param input
  * @param tools
  * @param jsBlock
@@ -187,13 +201,14 @@ export async function executeFunc(
   input: IFuncInput,
   tools: ITools,
   output: string,
-  jsBlock: {
-    id?: string;
-    name?: string;
-    content?: string;
-  }
+  jsBlock: ISnippet
 ) {
-  const func = await getSnippet(jsBlock.id, jsBlock.name, jsBlock.content);
+  const func = await getSnippet(
+    jsBlock.id,
+    jsBlock.name,
+    jsBlock.path,
+    jsBlock.snippet
+  );
   let reloadFlag = true;
   let errorFlag = true;
   //超时自动刷新
@@ -266,7 +281,6 @@ export async function getParaByElement(
   const tools: ITools = {
     lute,
     executeFunc,
-    //todo markdown格式化 unified: unified().use(remarkParse).use(remarkGfm).use(remarkStringify),
     prettier: {
       prettier,
       prettierPluginBabel,
@@ -276,4 +290,142 @@ export async function getParaByElement(
   };
 
   return { inputs, tools };
+}
+
+/**
+ * 获取所有js文件（指定类型）
+ * @param component
+ * @returns
+ */
+export async function getJsFiles(component: EComponent) {
+  const readDirRecur = async (
+    path: string,
+    fileList: {
+      isDir: boolean;
+      //isSymlink: boolean;
+      //name: string;
+      //updated: number;
+      path: string;
+    }[] = [],
+    level = 0
+  ) => {
+    if (level > 20) {
+      return;
+    }
+    const pathPrefix = "/data/storage/petal/" + PluginName + "/";
+    const files = await readDir({ path: pathPrefix + path });
+    const filesMap = files.map((file) => {
+      return {
+        isDir: file.isDir,
+        //isSymlink: file.isSymlink,
+        //name: file.name,
+        //updated: file.updated,
+        path: path + "/" + file.name,
+      };
+    });
+    for (const file of filesMap) {
+      if (file.isDir) {
+        await readDirRecur(file.path, fileList, level + 1);
+      } else {
+        fileList.push(file);
+      }
+    }
+    return fileList;
+  };
+  const files = await readDirRecur(component);
+  return files;
+}
+
+export interface ISnippet {
+  isFile: boolean;
+  label: string;
+  snippet?: string;
+  path?: string; //file专属
+  id?: string; //Block块专属
+  name?: string; //Block块专属
+}
+
+/**
+ * ISnippet初始生成函数，获取笔记和文件中的所有js
+ * @param component 
+ * @param rootId 
+ * @returns 
+ */
+export async function getAllJs(component: EComponent, rootId: string) {
+  const files = await getJsFiles(component);
+  const snippets: ISnippet[] = files.map((file) => {
+    return {
+      label: file.path.replace(component + "/", ""), //!
+      path: file.path,
+      isFile: true,
+      //name: file.name,
+    };
+  });
+  const jsBlocks = await getJsBlocks(rootId);
+  jsBlocks.forEach((jsBlock) => {
+    snippets.push({
+      label: jsBlock.name || jsBlock.content.substring(0, 20),
+      isFile: false,
+      snippet: jsBlock.content,
+      id: jsBlock.id,
+      name: jsBlock.name,
+    });
+  });
+  return snippets;
+}
+
+/**
+ * 弹出对话框
+ * @param blockElements
+ * @param protyle
+ * @returns
+ */
+export async function protyleUtilDialog(
+  blockElements: HTMLElement[],
+  protyle: IProtyle,
+  rootId: string,
+  component: EComponent
+) {
+  //* dialog方案
+  //menu.submenu = this.blockCustomCopySubmenus;
+  const dialog = new Dialog({
+    //title: this.i18n.BlockCustomCopyName,
+    content: "<div class='container'></div>",
+  });
+  const container = dialog.element.querySelector(".container");
+  if (!container) {
+    return;
+  }
+  const snippets = await getAllJs(component, rootId);
+  const protyleUtilDiv = protyleUtil(
+    snippets,
+    //EComponent.Copy,
+    blockElements,
+    protyle,
+    dialog
+  );
+  container.appendChild(protyleUtilDiv);
+  //console.log(container);
+  //* menu方案
+  /*
+        //* 等待原菜单消失
+        const commonMenu = document.getElementById("commonMenu");
+        let count = 0;
+        while (commonMenu && count < 20) {
+          await new Promise<void>((resolve, _reject) => {
+            setTimeout(resolve, 100);
+          });
+          count++;
+          if (commonMenu.classList.contains("fn__none")) {
+            break;
+          }
+        }
+        const menu2 = new Menu("sdhsjah");
+        menu2.addItem({
+          label: "test",
+          click: () => {
+            console.log("test");
+          },
+        });
+        menu2.open({ x: 100, y: 100 }); */
 }

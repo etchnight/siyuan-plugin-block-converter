@@ -9,13 +9,23 @@ import {
 } from "siyuan";
 import { buildSetting } from "../subMod/siyuanPlugin-common/component/setting";
 import { getDoc } from "../subMod/siyuanPlugin-common/siyuan-api/filetree";
-//import { IProtyle } from "../subMod/siyuanPlugin-common/types/global-siyuan";
-import { buildCopy } from "./libs/customCopy";
+import {  buildCopyPreview, execCopy } from "./libs/customCopy";
 import { buildTransform } from "./libs/customUpdate";
-import { getCurrentBlock, getJsBlocks, getSelectedBlocks } from "./libs/common";
+import {
+  EComponent,
+  getAllJs,
+  getCurrentBlock,
+  getJsBlocks,
+  getSelectedBlocks,
+  PluginName,
+  protyleUtilDialog,
+} from "./libs/common";
 import { customPaste } from "./libs/customPaste";
 import { i18nObj } from "../scripts/i18n";
-const PluginName = "siyuan-plugin-block-converter"; //用于id等
+import extract from "extract-comments";
+//import { getJsdocData } from "jsdoc-to-markdown";
+//import doctrine from "doctrine";
+
 const STORAGE_NAME = "config.json";
 //const STORAGE_NAME_BLOCK_CUSTOM_COPY = "blockCustomCopy.json";
 const DefaultDATA = {
@@ -55,7 +65,7 @@ const DefaultDATA = {
 
 export default class PluginBlockConverter extends Plugin {
   //private blockIconEventBindThis = this.blockIconEvent.bind(this);
-  private blockCustomCopySubmenus: IMenu[] = [];
+  //private blockCustomCopySubmenus: IMenu[] = [];
   private blockCustomUpdateSubmenus: IMenu[] = [];
   private waitting = false; //判断是否应该等待
   /**
@@ -110,19 +120,21 @@ export default class PluginBlockConverter extends Plugin {
     this.data.config.isBlockCusCopy.value && this.initBlockCustomCopy();
     this.data.config.isBlockCusUpdate.value && this.initBlockCustomUpdate();
     this.data.config.isCustomPaste.value && this.initCustomPaste();
+    //
+    //* 载入自定义块数据
     await this.loadData("blockCustomCopy.json");
     await this.loadData("blockCustomUpdate.json");
     await this.loadData("customPaste.json");
-
-    /*     console.log(this.data);
-    this.data["blockCustomCopy.json"].forEach((item) => {
-      const body = item.snippet.join("\n");
-      console.log(body);
-      const aaa = JSON.stringify(body.split("\n"));
-      console.log(aaa);
-    }); */
-
-    //this.eventBus.on("open-menu-content", this.openMenuContentEvent);
+    for (const fileName of [
+      "blockCustomCopy.json",
+      "blockCustomUpdate.json",
+      "customPaste.json",
+    ]) {
+      if (!this.data[fileName]) {
+        this.data[fileName] = [];
+      }
+    }
+    //await this.loadPresetSnippet("blockCustomUpdate/法条自动链接.js");
   }
 
   onLayoutReady() {}
@@ -242,50 +254,53 @@ export default class PluginBlockConverter extends Plugin {
   };
 
   private async initBlockCustomCopy() {
-    if (!this.data.config.blockCusCopyJsRootId.value) {
-      this.blockCustomCopySubmenus = [];
-      return;
-    }
-    const submenu: IMenu[] = [];
-    const submenuBlocks = await getJsBlocks(
+    const snippets = await getAllJs(
+      EComponent.Copy,
       this.data.config.blockCusCopyJsRootId.value
     );
-    for (const jsBlock of submenuBlocks) {
-      const copy = buildCopy(jsBlock);
-      const funcLable = jsBlock.name || jsBlock.content.substring(0, 20);
-      submenu.push({
-        label: funcLable,
-        type: "submenu",
-        click: () => copy(this.detail),
-      });
-
+    for (const snippet of snippets) {
       this.addCommand({
-        langKey: PluginName + encodeURIComponent(funcLable),
-        langText: "自定义块复制-" + funcLable,
+        langKey: PluginName + encodeURIComponent(snippet.label),
+        langText: "自定义块复制-" + snippet.label,
         hotkey: "",
-        editorCallback: (protyle) => {
+        editorCallback: async (protyle) => {
+          snippet.snippet = undefined; //*每次运行重新获取脚本内容
+          const copy = buildCopyPreview(snippet);
           this.detail = getSelectedBlocks(protyle, this.detail);
           if (this.detail.blockElements.length > 0) {
-            copy(this.detail);
+            const output = await copy(
+              this.detail.blockElements,
+              this.detail.protyle
+            );
+            execCopy(output);
           } else {
             showMessage("未选择任何块");
           }
         },
       });
     }
-    this.blockCustomCopySubmenus = submenu;
+    //this.blockCustomCopySubmenus = submenu;
   }
-  private addCustomCopyMenu = async (detail: {
+  private addCustomCopyMenu = (detail: {
     menu: Menu;
     blockElements: HTMLElement[];
     protyle: IProtyle;
   }) => {
-    detail.menu.addItem({
+    const menu: IMenu = {
       iconHTML: "",
       label: this.i18n.BlockCustomCopyName,
       id: "blockCustomCopy",
-      submenu: this.blockCustomCopySubmenus,
-    });
+      //submenu: [],
+      click: () => {
+        protyleUtilDialog(
+          detail.blockElements,
+          detail.protyle,
+          this.data.config.blockCusCopyJsRootId.value,
+          EComponent.Copy
+        );
+      },
+    };
+    detail.menu.addItem(menu);
   };
 
   //获取js块
@@ -350,6 +365,25 @@ export default class PluginBlockConverter extends Plugin {
     });
   };
 
+  private loadPresetSnippet = async (fileName: string) => {
+    const json = await this.loadData(fileName);
+    const comments = extract(json) as {
+      type: "BlockComment" | "LineComment";
+      value: string;
+    }[];
+    const metadataComment = comments.find((e) => {
+      return e.type === "BlockComment" && e.value.startsWith("metadata");
+    });
+    const metadata = metadataComment.value.split("\n").reduce((acc, cur) => {
+      const group = cur.match(/@(.*?) (.*)/);
+      if (!group) {
+        return acc;
+      }
+      acc[group[1]] = group[2];
+      return acc;
+    }, {});
+  };
+
   private addSaveSnippetMenu = async (detail: {
     menu: Menu;
     blockElements: HTMLElement[];
@@ -363,7 +397,7 @@ export default class PluginBlockConverter extends Plugin {
     if (blockType !== "NodeCodeBlock") {
       return;
     }
-    const saveSnippet = async (fileName: string) => {
+    const saveSnippet = async (dirName: string) => {
       //* fileName见this.data
       const code = detail.blockElements[0].querySelector(
         "[contenteditable=true]"
@@ -372,19 +406,10 @@ export default class PluginBlockConverter extends Plugin {
         return;
       }
       const blockId = detail.blockElements[0].getAttribute("data-node-id");
-      const body = code.split("\n");
-      const name = detail.blockElements[0].getAttribute("name") || body[0];
-      const snippet = {
-        id: blockId,
-        snippet: body,
-        name,
-      };
-      if (!this.data[fileName]) {
-        this.data[fileName] = [];
-      }
-      this.data[fileName].push(snippet);
-      await this.saveData(fileName, this.data[fileName]);
-      //location.reload();
+      const name = detail.blockElements[0].getAttribute("name");
+      const id = blockId + "-" + window.siyuan.user?.userId || "unknownUserId";
+      const fileName = name || id;
+      await this.saveData(`${dirName}/${fileName}.js`, code);
     };
     detail.menu.addItem({
       iconHTML: "",
@@ -395,19 +420,19 @@ export default class PluginBlockConverter extends Plugin {
           iconHTML: "",
           label: this.i18n.BlockCustomCopyName,
           type: "submenu",
-          click: () => saveSnippet("blockCustomCopy.json"),
+          click: () => saveSnippet("blockCustomCopy"),
         },
         {
           iconHTML: "",
           label: this.i18n.BlockCustomUpdateName,
           type: "submenu",
-          click: () => saveSnippet("blockCustomUpdate.json"),
+          click: () => saveSnippet("blockCustomUpdate"),
         },
         {
           iconHTML: "",
           label: this.i18n.CustomPasteName,
           type: "submenu",
-          click: () => saveSnippet("customPaste.json"),
+          click: () => saveSnippet("customPaste"),
         },
       ],
     });
