@@ -129,11 +129,16 @@ listItem.appendChild(remove); */
       const buildUtilContiainer = () => {
         const utilContiainer = document.createElement("div");
         utilContiainer.classList.add("fn__flex");
+        //max-height: 372.8px;
+        utilContiainer.style.maxHeight = "372.8px";
         protyleUtil.appendChild(utilContiainer);
 
         const buildFlexColumn = () => {
           const flexColumn = document.createElement("div");
           flexColumn.classList.add("fn__flex-column");
+          //min-width: 260px;max-width:50vw
+          flexColumn.style.width = "260px";
+          flexColumn.style.maxWidth = "50vw";
           utilContiainer.appendChild(flexColumn);
 
           const buildTools = () => {
