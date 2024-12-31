@@ -2,7 +2,7 @@ import { IProtyle, showMessage } from "siyuan";
 import { executeFunc, getArgsByElement, ISnippet } from "./common";
 //import { IProtyle } from "../../subMod/siyuanPlugin-common/types/global-siyuan";
 
-export function buildCopyPreview(jsBlock: ISnippet) {
+function buildCopyPreview(jsBlock: ISnippet) {
   const copyPreview = async (
     blockElements: HTMLElement[],
     protyle: IProtyle
@@ -34,7 +34,30 @@ export function buildCopyPreview(jsBlock: ISnippet) {
  * @param jsBlock
  * @returns
  */
-export async function execCopy(output: string) {
-  await navigator.clipboard.writeText(output);
-  showMessage(`${output}已写入剪贴板`);
+export async function execCopy(
+  file: ISnippet,
+  blockElements: HTMLElement[],
+  protyle: IProtyle
+) {
+  if (!file.output) {
+    const copyPreview = buildCopyPreview(file);
+    const output = await copyPreview(blockElements, protyle);
+    file.output = output;
+  }
+  await navigator.clipboard.writeText(file.output as string);
+  showMessage(`${file.output}已写入剪贴板`);
+}
+
+export async function previewCopy(
+  file: ISnippet,
+  blockElements: HTMLElement[],
+  protyle: IProtyle
+) {
+  if (!file.output) {
+    const copyPreview = buildCopyPreview(file);
+    const output = await copyPreview(blockElements, protyle);
+    file.output = output;
+  }
+  const lute = protyle.lute;
+  return lute.Md2BlockDOM(file.output as string);
 }

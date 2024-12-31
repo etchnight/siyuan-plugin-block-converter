@@ -23,6 +23,7 @@ import {
   readDir,
 } from "../../subMod/siyuanPlugin-common/siyuan-api/file";
 import { protyleUtil } from "./protyle-util";
+import { IUpdateResult } from "./customUpdate";
 
 /**
  * 组件的名称，用于函数参数等
@@ -188,36 +189,50 @@ export async function executeFunc(
     jsBlock.path,
     jsBlock.snippet
   );
-  let reloadFlag = true;
+  //let reloadFlag = true;
   let errorFlag = true;
   //超时自动刷新
   const safePromise = new Promise(
-    (_resolve) =>
+    (resolve) =>
       setTimeout(() => {
-        if (reloadFlag) {
-          showMessage("运行超时，即将刷新页面");
-          setTimeout(() => {
+        resolve(false);
+        /*         if (reloadFlag) {
+          showMessage("运行超时");
+                     setTimeout(() => {
             location.reload();
-          }, 1000);
+          }, 1000); 
         } else if (errorFlag) {
           showMessage(
             `${jsBlock.name || "id为" + jsBlock.id}脚本运行出错，请查看控制台`
           );
-        }
+        } */
       }, 5000) //todo 可配置
   );
-  const customPromise = func(input, tools, output)
-    .then((res: { input: IFuncInput; tools: ITools; output: string }) => {
-      reloadFlag = false; //防止刷新
-      input = res.input;
-      tools = res.tools;
-      output = res.output;
-      errorFlag = false; //防止报错
-    })
-    .finally(() => {
-      reloadFlag = false;
-    });
-  await Promise.race([customPromise, safePromise]);
+  const customPromise = new Promise((resolve) => {
+    func(input, tools, output)
+      .then((res: { input: IFuncInput; tools: ITools; output: string }) => {
+        //reloadFlag = false; //防止刷新
+        input = res.input;
+        tools = res.tools;
+        output = res.output;
+        errorFlag = false; //防止报错
+      })
+      .finally(() => {
+        resolve(true);
+        //reloadFlag = false;
+      });
+  });
+
+  const raceFlag = await Promise.race([customPromise, safePromise]);
+  if (!raceFlag) {
+    showMessage("运行超时");
+    throw new Error("运行超时");
+  } else if (errorFlag) {
+    showMessage(
+      `${jsBlock.name || "id为" + jsBlock.id}脚本运行出错，请查看控制台`
+    );
+    throw new Error("运行错误");
+  }
   return { input, tools, output };
 }
 
@@ -345,6 +360,7 @@ export interface ISnippet {
   id?: string; //Block块专属
   name?: string; //Block块专属
   description?: string; // todo
+  output?: string | IUpdateResult[];//预存结果
 }
 
 /**

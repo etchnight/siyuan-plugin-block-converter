@@ -9,8 +9,8 @@ import {
 } from "siyuan";
 import { buildSetting } from "../subMod/siyuanPlugin-common/component/setting";
 import { getDoc } from "../subMod/siyuanPlugin-common/siyuan-api/filetree";
-import { buildCopyPreview, execCopy } from "./libs/customCopy";
-import { buildUpdatePreview, execUpdate } from "./libs/customUpdate";
+import { execCopy } from "./libs/customCopy";
+import { execUpdate } from "./libs/customUpdate";
 import {
   EComponent,
   getAllJs,
@@ -236,14 +236,9 @@ export default class PluginBlockConverter extends Plugin {
         hotkey: "",
         editorCallback: async (protyle) => {
           snippet.snippet = undefined; //*每次运行重新获取脚本内容
-          const copy = buildCopyPreview(snippet);
-          this.detail = getSelectedBlocks(protyle, this.detail);
           if (this.detail.blockElements.length > 0) {
-            const output = await copy(
-              this.detail.blockElements,
-              this.detail.protyle
-            );
-            execCopy(output);
+            this.detail = getSelectedBlocks(protyle, this.detail);
+            await execCopy(snippet, this.detail.blockElements, protyle);
           } else {
             showMessage("未选择任何块");
           }
@@ -278,7 +273,7 @@ export default class PluginBlockConverter extends Plugin {
   private async initBlockCustomUpdate() {
     const snippets = await getAllJs(
       EComponent.Update,
-      this.data.config.blockCusCopyJsRootId.value
+      this.data.config.blockCusUpdateJsRootId.value
     );
     for (const snippet of snippets) {
       this.addCommand({
@@ -287,11 +282,9 @@ export default class PluginBlockConverter extends Plugin {
         hotkey: "",
         editorCallback: async (protyle) => {
           snippet.snippet = undefined; //*每次运行重新获取脚本内容
-          this.detail = getSelectedBlocks(protyle, this.detail);
-          const update = buildUpdatePreview(snippet);
           if (this.detail.blockElements.length > 0) {
-            const output = await update(this.detail.blockElements, protyle);
-            execUpdate(protyle, output);
+            this.detail = getSelectedBlocks(protyle, this.detail);
+            await execUpdate(snippet, this.detail.blockElements, protyle);
           } else {
             showMessage("未选择任何块");
           }
@@ -314,7 +307,7 @@ export default class PluginBlockConverter extends Plugin {
         protyleUtilDialog(
           detail.blockElements,
           detail.protyle,
-          this.data.config.blockCusCopyJsRootId.value,
+          this.data.config.blockCusUpdateJsRootId.value,
           EComponent.Update
         );
       },
@@ -378,19 +371,19 @@ export default class PluginBlockConverter extends Plugin {
           iconHTML: "",
           label: this.i18n.BlockCustomCopyName,
           type: "submenu",
-          click: () => saveSnippet("blockCustomCopy"),
+          click: () => saveSnippet(EComponent.Copy),
         },
         {
           iconHTML: "",
           label: this.i18n.BlockCustomUpdateName,
           type: "submenu",
-          click: () => saveSnippet("blockCustomUpdate"),
+          click: () => saveSnippet(EComponent.Update),
         },
         {
           iconHTML: "",
           label: this.i18n.CustomPasteName,
           type: "submenu",
-          click: () => saveSnippet("customPaste"),
+          click: () => saveSnippet(EComponent.Paste),
         },
       ],
     });

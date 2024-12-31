@@ -9,7 +9,7 @@ import { executeFunc, getArgsByElement, ISnippet } from "./common";
 import { store } from "./store";
 //import { IProtyle } from "../../subMod/siyuanPlugin-common/types/global-siyuan";
 
-interface IUpdateResult {
+export interface IUpdateResult {
   id: string;
   parentId: string;
   dom: HTMLDivElement;
@@ -18,7 +18,7 @@ interface IUpdateResult {
   isDelete: boolean;
 }
 
-export function buildUpdatePreview(jsBlock: ISnippet) {
+function buildUpdatePreview(jsBlock: ISnippet) {
   const transform = async (
     blockElements: HTMLElement[],
     protyle: IProtyle
@@ -73,9 +73,16 @@ export function buildUpdatePreview(jsBlock: ISnippet) {
 }
 
 export async function execUpdate(
-  protyle: IProtyle,
-  outputDoms: IUpdateResult[]
+  file: ISnippet,
+  blockElements: HTMLElement[],
+  protyle: IProtyle
 ) {
+  if (!file.output) {
+    const updatePreview = buildUpdatePreview(file);
+    const output = await updatePreview(blockElements, protyle);
+    file.output = output;
+  }
+  const outputDoms = file.output as IUpdateResult[];
   //*执行添加、更新、删除操作
   let count = 0;
   let preBlockId = outputDoms[0].id;
@@ -130,4 +137,30 @@ export async function execUpdate(
     count++;
     showMessage(`已完成${count}/${outputDoms.length}`);
   }
+  showMessage(`${file.label}更新成功`);
+}
+
+export async function previewUpdate(
+  file: ISnippet,
+  blockElements: HTMLElement[],
+  protyle: IProtyle
+): Promise<string> {
+  if (!file.output) {
+    const updatePreview = buildUpdatePreview(file);
+    const output = await updatePreview(blockElements, protyle);
+    file.output = output;
+  }
+  const blocks: HTMLDivElement[] = [];
+  for (const output of file.output as IUpdateResult[]) {
+    if (output.isDelete) {
+      continue;
+    }
+    blocks.push(output.dom);
+  }
+  const blocksHtml: string[] = blocks.map((block) => {
+    const div = document.createElement("div");
+    div.appendChild(block);
+    return block.outerHTML;
+  });
+  return blocksHtml.join("");
 }

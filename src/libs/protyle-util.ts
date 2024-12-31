@@ -5,8 +5,8 @@
 
 import { Dialog, IProtyle } from "siyuan";
 import { EComponent, ISnippet } from "../libs/common";
-import { buildCopyPreview, execCopy } from "./customCopy";
-import { buildUpdatePreview, execUpdate } from "./customUpdate";
+import { execCopy, previewCopy } from "./customCopy";
+import { execUpdate, previewUpdate } from "./customUpdate";
 
 export const protyleUtil = (
   files: ISnippet[],
@@ -33,10 +33,10 @@ export const protyleUtil = (
    */
   //*预览区
   const wysiwyg = document.createElement("div");
-  const updateWysiwyg = () => {
-    wysiwyg.innerHTML = `<div class="protyle-wysiwyg__empty">请输入内容</div>`;
+  const updateWysiwyg = (html: string) => {
+    wysiwyg.innerHTML = html;
   };
-  updateWysiwyg();
+  updateWysiwyg("");
   //*文件列表
   const listEle = document.createElement("div");
   const updateList = (filter?: string) => {
@@ -47,25 +47,50 @@ export const protyleUtil = (
       }
     });
   };
+  //*私有状态，用于记录当前选中的文件
+  let selectedFile: ISnippet | undefined;
   //*列表项
   const buildListItem = (file: ISnippet) => {
     const listItem = document.createElement("div");
     listItem.classList.add("b3-list-item");
     listItem.classList.add("b3-list-item--hide-action");
-    //*运行脚本
+    //*运行脚本（预览）
+    listItem.addEventListener("mouseenter", async () => {
+      selectedFile = file;
+      //*防抖
+      await new Promise((resolve) => {
+        setTimeout(() => {
+          resolve("");
+        }, 500);
+      });
+      if (selectedFile !== file) {
+        return;
+      }
+      //dialog.destroy();
+      let html = "";
+      if (component == EComponent.Copy) {
+        html = await previewCopy(file, blockElements, protyle);
+      } else if (component == EComponent.Update) {
+        html = await previewUpdate(file, blockElements, protyle);
+      }
+      if (selectedFile === file) {
+        updateWysiwyg(html);
+      }
+    });
+    listItem.addEventListener("mouseover", () => {
+      if (selectedFile === file) {
+        updateWysiwyg("");
+      }
+    });
+    //*运行脚本（执行）
     listItem.addEventListener("click", async () => {
       dialog.destroy();
       if (component == EComponent.Copy) {
-        const copyPreview = buildCopyPreview(file);
-        const output = await copyPreview(blockElements, protyle);
-        execCopy(output);
+        await execCopy(file, blockElements, protyle);
       } else if (component == EComponent.Update) {
-        const updatePreview = buildUpdatePreview(file);
-        const output = await updatePreview(blockElements, protyle);
-        execUpdate(protyle, output);
+        await execUpdate(file, blockElements, protyle);
       }
     });
-
     const text = document.createElement("span");
     text.classList.add("b3-list-item__text");
     text.innerText = file.label;
