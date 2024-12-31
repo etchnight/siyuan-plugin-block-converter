@@ -35,28 +35,6 @@ export enum EComponent {
 export const PluginName = "siyuan-plugin-block-converter"; //用于id等
 
 /**
- * *获取指定文档下的所有js块
- * @param docId
- * @returns
- */
-export async function getJsBlocks(docId: BlockId) {
-  let jsBlocks = //todo
-    (await requestQuerySQL(`SELECT * FROM blocks WHERE blocks.type='c' 
-      AND blocks.root_id='${docId}'`)) as Block[];
-  jsBlocks = jsBlocks.filter((e) => {
-    return (
-      e.markdown.startsWith("```js") ||
-      e.markdown.startsWith("```javascript") ||
-      e.markdown.startsWith("```JavaScript")
-    );
-  });
-  jsBlocks.sort((a, b) => {
-    return a.name.localeCompare(b.name, "zh");
-  });
-  return jsBlocks;
-}
-
-/**
  * *获取光标所在块
  * @returns
  */
@@ -149,7 +127,7 @@ type IOutput = string; //Markdown文本
  * @param jsBlockContent
  * @returns
  */
-export async function getSnippet(
+export async function buildFunc(
   jsBlockId?: string,
   name?: string,
   filePath?: string,
@@ -192,6 +170,7 @@ export async function getSnippet(
 
 /**
  * *获取、运行自定义函数，并防止超时
+ * todo 当主线程阻塞时，会卡住，需要优化
  * @param input
  * @param tools
  * @param jsBlock
@@ -203,7 +182,7 @@ export async function executeFunc(
   output: string,
   jsBlock: ISnippet
 ) {
-  const func = await getSnippet(
+  const func = await buildFunc(
     jsBlock.id,
     jsBlock.name,
     jsBlock.path,
@@ -247,7 +226,7 @@ export async function executeFunc(
  * @param blockElements
  * @returns
  */
-export async function getParaByElement(
+export async function getArgsByElement(
   blockElements: HTMLElement[],
   lute: Lute
 ) {
@@ -290,6 +269,28 @@ export async function getParaByElement(
   };
 
   return { inputs, tools };
+}
+
+/**
+ * *获取指定文档下的所有js块
+ * @param docId
+ * @returns
+ */
+export async function getJsBlocks(docId: BlockId) {
+  let jsBlocks = //todo
+    (await requestQuerySQL(`SELECT * FROM blocks WHERE blocks.type='c' 
+      AND blocks.root_id='${docId}'`)) as Block[];
+  jsBlocks = jsBlocks.filter((e) => {
+    return (
+      e.markdown.startsWith("```js") ||
+      e.markdown.startsWith("```javascript") ||
+      e.markdown.startsWith("```JavaScript")
+    );
+  });
+  jsBlocks.sort((a, b) => {
+    return a.name.localeCompare(b.name, "zh");
+  });
+  return jsBlocks;
 }
 
 /**
@@ -343,13 +344,14 @@ export interface ISnippet {
   path?: string; //file专属
   id?: string; //Block块专属
   name?: string; //Block块专属
+  description?: string; // todo
 }
 
 /**
  * ISnippet初始生成函数，获取笔记和文件中的所有js
- * @param component 
- * @param rootId 
- * @returns 
+ * @param component
+ * @param rootId
+ * @returns
  */
 export async function getAllJs(component: EComponent, rootId: string) {
   const files = await getJsFiles(component);
@@ -369,6 +371,7 @@ export async function getAllJs(component: EComponent, rootId: string) {
       snippet: jsBlock.content,
       id: jsBlock.id,
       name: jsBlock.name,
+      description: jsBlock.memo, //todo 文档说明
     });
   });
   return snippets;
@@ -399,10 +402,10 @@ export async function protyleUtilDialog(
   const snippets = await getAllJs(component, rootId);
   const protyleUtilDiv = protyleUtil(
     snippets,
-    //EComponent.Copy,
     blockElements,
     protyle,
-    dialog
+    dialog,
+    component
   );
   container.appendChild(protyleUtilDiv);
   //console.log(container);

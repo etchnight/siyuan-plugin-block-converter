@@ -4,15 +4,16 @@
  */
 
 import { Dialog, IProtyle } from "siyuan";
-import { ISnippet } from "../libs/common";
+import { EComponent, ISnippet } from "../libs/common";
 import { buildCopyPreview, execCopy } from "./customCopy";
+import { buildUpdatePreview, execUpdate } from "./customUpdate";
 
 export const protyleUtil = (
   files: ISnippet[],
-  //component: EComponent,
   blockElements: HTMLElement[],
   protyle: IProtyle,
-  dialog: Dialog
+  dialog: Dialog,
+  component: EComponent
 ) => {
   /**
    * root
@@ -54,9 +55,15 @@ export const protyleUtil = (
     //*运行脚本
     listItem.addEventListener("click", async () => {
       dialog.destroy();
-      const copyPreview = buildCopyPreview(file);
-      const output = await copyPreview(blockElements, protyle);
-      execCopy(output);
+      if (component == EComponent.Copy) {
+        const copyPreview = buildCopyPreview(file);
+        const output = await copyPreview(blockElements, protyle);
+        execCopy(output);
+      } else if (component == EComponent.Update) {
+        const updatePreview = buildUpdatePreview(file);
+        const output = await updatePreview(blockElements, protyle);
+        execUpdate(protyle, output);
+      }
     });
 
     const text = document.createElement("span");

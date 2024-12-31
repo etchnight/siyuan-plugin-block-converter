@@ -9,13 +9,12 @@ import {
 } from "siyuan";
 import { buildSetting } from "../subMod/siyuanPlugin-common/component/setting";
 import { getDoc } from "../subMod/siyuanPlugin-common/siyuan-api/filetree";
-import {  buildCopyPreview, execCopy } from "./libs/customCopy";
-import { buildTransform } from "./libs/customUpdate";
+import { buildCopyPreview, execCopy } from "./libs/customCopy";
+import { buildUpdatePreview, execUpdate } from "./libs/customUpdate";
 import {
   EComponent,
   getAllJs,
   getCurrentBlock,
-  getJsBlocks,
   getSelectedBlocks,
   PluginName,
   protyleUtilDialog,
@@ -23,6 +22,7 @@ import {
 import { customPaste } from "./libs/customPaste";
 import { i18nObj } from "../scripts/i18n";
 import extract from "extract-comments";
+import { store, switchWait } from "./libs/store";
 //import { getJsdocData } from "jsdoc-to-markdown";
 //import doctrine from "doctrine";
 
@@ -66,8 +66,8 @@ const DefaultDATA = {
 export default class PluginBlockConverter extends Plugin {
   //private blockIconEventBindThis = this.blockIconEvent.bind(this);
   //private blockCustomCopySubmenus: IMenu[] = [];
-  private blockCustomUpdateSubmenus: IMenu[] = [];
-  private waitting = false; //判断是否应该等待
+  //private blockCustomUpdateSubmenus: IMenu[] = [];
+  //private waitting = false; //判断是否应该等待
   /**
    * 三种生成途径：通过块标事件直接获取、文档标题事件中查询、快捷键命令中通过common.js中函数获取
    * 在自定义复制和自定义粘贴中作为入参使用
@@ -81,23 +81,7 @@ export default class PluginBlockConverter extends Plugin {
   declare public data: {
     config: typeof DefaultDATA.config;
     "config.json": typeof DefaultDATA.config;
-    "blockCustomCopy.json": {
-      id: string;
-      name: string;
-      snippet: string[];
-    }[];
-    "blockCustomUpdate.json": {
-      id: string;
-      name: string;
-      snippet: string[];
-    }[];
-    "customPaste.json": {
-      id: string;
-      name: string;
-      snippet: string[];
-      group: string[];
-    }[];
-  }; //= structuredClone(DefaultDATA);
+  };
   declare public i18n: typeof i18nObj.zh_CN;
   async onload() {
     //this.displayName = "块转换工具"; //?不能自动加载插件名称
@@ -120,20 +104,7 @@ export default class PluginBlockConverter extends Plugin {
     this.data.config.isBlockCusCopy.value && this.initBlockCustomCopy();
     this.data.config.isBlockCusUpdate.value && this.initBlockCustomUpdate();
     this.data.config.isCustomPaste.value && this.initCustomPaste();
-    //
-    //* 载入自定义块数据
-    await this.loadData("blockCustomCopy.json");
-    await this.loadData("blockCustomUpdate.json");
-    await this.loadData("customPaste.json");
-    for (const fileName of [
-      "blockCustomCopy.json",
-      "blockCustomUpdate.json",
-      "customPaste.json",
-    ]) {
-      if (!this.data[fileName]) {
-        this.data[fileName] = [];
-      }
-    }
+
     //await this.loadPresetSnippet("blockCustomUpdate/法条自动链接.js");
   }
 
@@ -179,10 +150,10 @@ export default class PluginBlockConverter extends Plugin {
    */
   private switchWait = ({ detail }: { detail: IWebSocketData }) => {
     if (detail.cmd === "transactions") {
-      this.waitting = true;
+      switchWait(true);
     }
-    if (detail.cmd === "databaseIndexCommit" && this.waitting === true) {
-      this.waitting = false;
+    if (detail.cmd === "databaseIndexCommit" && store.waitting === true) {
+      switchWait(false);
     }
   };
 
@@ -289,7 +260,7 @@ export default class PluginBlockConverter extends Plugin {
     const menu: IMenu = {
       iconHTML: "",
       label: this.i18n.BlockCustomCopyName,
-      id: "blockCustomCopy",
+      id: EComponent.Copy,
       //submenu: [],
       click: () => {
         protyleUtilDialog(
@@ -305,50 +276,28 @@ export default class PluginBlockConverter extends Plugin {
 
   //获取js块
   private async initBlockCustomUpdate() {
-    if (!this.data.config.blockCusUpdateJsRootId.value) {
-      this.blockCustomUpdateSubmenus = [];
-      return;
-    }
-    const submenu: IMenu[] = [];
-    const submenuBlocks = await getJsBlocks(
-      this.data.config.blockCusUpdateJsRootId.value
+    const snippets = await getAllJs(
+      EComponent.Update,
+      this.data.config.blockCusCopyJsRootId.value
     );
-    for (const jsBlock of submenuBlocks) {
-      const transform = buildTransform(jsBlock);
-      const funcLable = jsBlock.name || jsBlock.content.substring(0, 20);
-      submenu.push({
-        label: funcLable,
-        type: "submenu",
-        iconHTML: "",
-        click: async () => {
-          while (this.waitting) {
-            await new Promise<void>((resolve, _reject) => {
-              setTimeout(resolve, 100);
-            });
-          }
-          transform(this.detail);
-        },
-      });
+    for (const snippet of snippets) {
       this.addCommand({
-        langKey: PluginName + encodeURIComponent(funcLable),
-        langText: "自定义块更新-" + funcLable,
+        langKey: PluginName + encodeURIComponent(snippet.label),
+        langText: "自定义块更新-" + snippet.label,
         hotkey: "",
         editorCallback: async (protyle) => {
+          snippet.snippet = undefined; //*每次运行重新获取脚本内容
           this.detail = getSelectedBlocks(protyle, this.detail);
+          const update = buildUpdatePreview(snippet);
           if (this.detail.blockElements.length > 0) {
-            while (this.waitting) {
-              await new Promise<void>((resolve, _reject) => {
-                setTimeout(resolve, 100);
-              });
-            }
-            transform(this.detail);
+            const output = await update(this.detail.blockElements, protyle);
+            execUpdate(protyle, output);
           } else {
             showMessage("未选择任何块");
           }
         },
       });
     }
-    this.blockCustomUpdateSubmenus = submenu;
   }
 
   private addCustomUpdateMenu = async (detail: {
@@ -360,11 +309,19 @@ export default class PluginBlockConverter extends Plugin {
     detail.menu.addItem({
       iconHTML: "",
       label: this.i18n.BlockCustomUpdateName,
-      id: "blockCustomUpdate",
-      submenu: this.blockCustomUpdateSubmenus,
+      id: EComponent.Update,
+      click: () => {
+        protyleUtilDialog(
+          detail.blockElements,
+          detail.protyle,
+          this.data.config.blockCusCopyJsRootId.value,
+          EComponent.Update
+        );
+      },
     });
   };
 
+  //todo 获取js文件元数据
   private loadPresetSnippet = async (fileName: string) => {
     const json = await this.loadData(fileName);
     const comments = extract(json) as {
@@ -382,6 +339,7 @@ export default class PluginBlockConverter extends Plugin {
       acc[group[1]] = group[2];
       return acc;
     }, {});
+    return metadata;
   };
 
   private addSaveSnippetMenu = async (detail: {
