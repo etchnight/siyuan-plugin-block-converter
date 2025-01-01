@@ -87,7 +87,6 @@ export async function execUpdate(
   protyle: IProtyle
 ) {
   const outputDoms = await update(file, blockElements, protyle);
-
   //*执行添加、更新、删除操作
   let count = 0;
   let preBlockId = outputDoms[0].id;

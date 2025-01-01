@@ -288,13 +288,13 @@ export async function getArgsByElement(
   );
   const inputs: IFuncInput[] = inputBlocks.map((e, i, array) => {
     //执行自定义脚本
-    const input_func = {
+    const input_func: IFuncInput = {
       block: e.block, //当前块
       extra: e.extra, //当前文档标题,当前块属性
       index: i, //当前块索引
       array: array.map((e) => e.block), //所有块
       isDelete: false, //是否删除
-      output: e.block.markdown, //输出内容
+      //output: e.block.markdown, //输出内容
     };
     return input_func;
   });
