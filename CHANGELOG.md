@@ -1,3 +1,22 @@
+# [1.0.0](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v0.4.1...v1.0.0) (2025-01-01)
+
+
+### Bug Fixes
+
+* 修复 protyleUtil 列表项多时不能自动出现滚动条 ([0143e19](https://github.com/etchnight/siyuan-plugin-table-importer/commit/0143e19424214fcb3b3dc542e73214fbb0878630))
+
+
+### Features
+
+* 显示描述文本 ([5e23265](https://github.com/etchnight/siyuan-plugin-table-importer/commit/5e2326545e86a1218c0633f042a9769b8c569be7))
+* 新增 保存为代码片段 功能 ([a42fd72](https://github.com/etchnight/siyuan-plugin-table-importer/commit/a42fd72aa92b259c7d0fc39e6e1dffd225a0c3d0))
+* 预览功能 ([398a1f3](https://github.com/etchnight/siyuan-plugin-table-importer/commit/398a1f34d847d7282411f23c9e027d0c178d6d7a))
+* **自定义复制:** 增加使用js脚本文件功能 ([0ffabbe](https://github.com/etchnight/siyuan-plugin-table-importer/commit/0ffabbea07235c8d44eeeb34ff70401e7d4ef74a))
+* **自定义更新:** 增加使用js脚本文件功能 ([96100b7](https://github.com/etchnight/siyuan-plugin-table-importer/commit/96100b76d21d35146f9dc155184d44335656f15e))
+* **自定义粘贴:** 可预览结果，可自选规则 ([c7dbe1e](https://github.com/etchnight/siyuan-plugin-table-importer/commit/c7dbe1e318ed4fb0bfebb66252ca718d7cc93310))
+
+
+
 ## [0.4.1](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v0.4.0...v0.4.1) (2024-12-07)
 
 
