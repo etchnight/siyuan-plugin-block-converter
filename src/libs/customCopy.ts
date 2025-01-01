@@ -59,7 +59,8 @@ export async function previewCopy(
   blockElements: HTMLElement[],
   protyle: IProtyle
 ) {
-  const output = await copy(file, blockElements, protyle);
+  const blockElementsLimit = blockElements.slice(0, 10); //TODO 可配置
+  const output = await copy(file, blockElementsLimit, protyle);
   const lute = protyle.lute;
   return lute.Md2BlockDOM(output);
 }

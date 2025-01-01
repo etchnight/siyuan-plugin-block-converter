@@ -69,12 +69,15 @@ export async function previewPaste(
 export async function execPaste(
   file: ISnippet,
   //html: string,
-  protyle: IProtyle
+  protyle: IProtyle,
+  output?: string
 ) {
   //console.warn(`[customPaste]`, { markdown });
   const previousBlock = getCurrentBlock();
   const previousId = previousBlock.getAttribute("data-node-id");
-  const output = await paste(file, protyle);
+  if (!output) {
+    output = await paste(file, protyle);
+  }
   //*插入粘贴的内容
   await insertBlock(
     { dataType: "dom", data: output as string, previousID: previousId },
@@ -83,12 +86,7 @@ export async function execPaste(
 }
 
 async function buildCustomRule(jsBlock: ISnippet) {
-  const func = (await buildFunc(
-    jsBlock.id,
-    jsBlock.name,
-    jsBlock.path,
-    true
-  )) as IFunc;
+  const func = (await buildFunc(jsBlock, true)) as IFunc;
   const rules = func();
   return rules.filter((e) => {
     if (!e) {

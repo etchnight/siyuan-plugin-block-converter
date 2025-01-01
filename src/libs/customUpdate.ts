@@ -71,14 +71,23 @@ function buildUpdatePreview(jsBlock: ISnippet) {
   };
   return transform;
 }
-
-export async function execUpdate(
+async function update(
   file: ISnippet,
   blockElements: HTMLElement[],
   protyle: IProtyle
 ) {
   const updatePreview = buildUpdatePreview(file);
   const outputDoms = await updatePreview(blockElements, protyle);
+  return outputDoms;
+}
+
+export async function execUpdate(
+  file: ISnippet,
+  blockElements: HTMLElement[],
+  protyle: IProtyle
+) {
+  const outputDoms = await update(file, blockElements, protyle);
+
   //*执行添加、更新、删除操作
   let count = 0;
   let preBlockId = outputDoms[0].id;
@@ -140,10 +149,9 @@ export async function previewUpdate(
   file: ISnippet,
   blockElements: HTMLElement[],
   protyle: IProtyle
-): Promise<string> {
-  const updatePreview = buildUpdatePreview(file);
-  const outputDoms = await updatePreview(blockElements, protyle);
-
+) {
+  const blockElementsLimit = blockElements.slice(0, 10); //TODO 可配置
+  const outputDoms = await update(file, blockElementsLimit, protyle);
   const blocks: HTMLDivElement[] = [];
   for (const output of outputDoms) {
     if (output.isDelete) {

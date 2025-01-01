@@ -25,7 +25,8 @@ import {
 import { protyleUtil } from "./protyle-util";
 import { getDoc } from "../../subMod/siyuanPlugin-common/siyuan-api/filetree";
 import TurndownService from "turndown";
-
+import extract from "extract-comments";
+//import * as doctrine from "doctrine-standalone";
 /**
  * 组件的名称，用于函数参数等
  */
@@ -129,33 +130,36 @@ export type IFunc = () => TurndownService.Rule[];
 type IOutput = string; //Markdown文本
 
 /**
- * *从文件或笔记中获取snippet并转为函数
+ * @description 从文件或笔记中获取snippet并转为函数
+ *
+ * 另外一段描述
  * @param jsBlockId
  * @param name
  * @param jsBlockContent
  * @returns
  */
 export async function buildFunc(
-  jsBlockId?: string,
-  name?: string,
-  filePath?: string,
+  file: ISnippet,
+  //jsBlockId?: string,
+  //name?: string,
+  //filePath?: string,
   //snippet?: string,
   isCustomPaste: boolean = false
 ): Promise<IAsyncFunc | IFunc> {
-  //*使用顺序:  jsBlockId -> name -> filePath
+  //*使用顺序:  Id -> name -> filePath
   let jsBlockContent: string;
-  if (jsBlockId && !jsBlockContent) {
-    jsBlockContent = (await queryBlockById(jsBlockId)).content;
-  } else if (name) {
+  if (file.id) {
+    jsBlockContent = (await queryBlockById(file.id)).content;
+  } else if (file.name) {
     const resList = await requestQuerySQL(
       `select * from blocks where name = '${name}'`
     );
     if (resList.length) {
       jsBlockContent = resList[0].content;
     }
-  } else if (filePath) {
+  } else if (file.path) {
     jsBlockContent = await getFile({
-      path: "/data/storage/petal/" + PluginName + "/" + filePath,
+      path: "/data/storage/petal/" + PluginName + "/" + file.path,
     });
   }
 
@@ -175,6 +179,39 @@ export async function buildFunc(
   }
 }
 
+export async function getComment(file: ISnippet) {
+  let jsBlockContent: string;
+  if (file.path) {
+    jsBlockContent = await getFile({
+      path: "/data/storage/petal/" + PluginName + "/" + file.path,
+    });
+  }
+  if (!jsBlockContent) {
+    return;
+  }
+  const comments = extract(jsBlockContent) as {
+    type: "BlockComment" | "LineComment";
+    value: string;
+  }[];
+  if (!comments.length) {
+    return;
+  }
+  const comment = comments.find((comment) => {
+    if (comment.type !== "BlockComment") {
+      return false;
+    }
+    return (
+      comment.value.startsWith("@metadata") ||
+      comment.value.startsWith("\n@metadata")
+    );
+  });
+  if (!comment) {
+    return;
+  }
+  const commentValue = comment.value.replace("@metadata", "");
+  file.description = commentValue;
+}
+
 /**
  * *获取、运行自定义函数，并防止超时
  * todo 当主线程阻塞时，会卡住，需要优化
@@ -189,11 +226,7 @@ export async function executeFunc(
   output: string,
   jsBlock: ISnippet
 ) {
-  const func = (await buildFunc(
-    jsBlock.id,
-    jsBlock.name,
-    jsBlock.path
-  )) as IAsyncFunc;
+  const func = (await buildFunc(jsBlock)) as IAsyncFunc;
   //let reloadFlag = true;
   let errorFlag = true;
   //超时自动刷新
@@ -393,7 +426,7 @@ export async function getAllJs(component: EComponent, rootId: string) {
       snippet: jsBlock.content,
       id: jsBlock.id,
       name: jsBlock.name,
-      description: jsBlock.memo, //todo 文档说明
+      description: jsBlock.memo,
     });
   });
   return snippets;

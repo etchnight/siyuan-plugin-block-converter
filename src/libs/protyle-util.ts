@@ -1,10 +1,10 @@
 /**
  * 参考自带的模板选择窗口：app\src\protyle\toolbar\index.ts
- *
+ * todo 尺寸计算
  */
 
 import { Dialog, IProtyle } from "siyuan";
-import { EComponent, ISnippet } from "../libs/common";
+import { EComponent, getComment, ISnippet } from "../libs/common";
 import { execCopy, previewCopy } from "./customCopy";
 import { execUpdate, previewUpdate } from "./customUpdate";
 import { previewPaste } from "./customPaste";
@@ -33,10 +33,24 @@ export const protyleUtil = (
    */
   //*预览区
   const wysiwyg = document.createElement("div");
-  const updateWysiwyg = (html: string) => {
+  wysiwyg.setAttribute("data-type", "preview");
+  const updateWysiwyg = (html: string, wysiwyg: HTMLDivElement) => {
+    html =
+      `<div data-node-id="description" data-type="NodeThematicBreak" class="hr"><div></div></div>` +
+      html;
+    if (wysiwyg.getAttribute("data-type") === "description") {
+      html = protyle.lute.Md2BlockDOM("###### 脚本描述") + html;
+    } else if (wysiwyg.getAttribute("data-type") === "preview") {
+      html = protyle.lute.Md2BlockDOM("###### 脚本预览(仅前10个块)") + html;
+    }
+
     wysiwyg.innerHTML = html;
   };
-  updateWysiwyg("");
+  updateWysiwyg("", wysiwyg);
+  //*描述区
+  const wysiwygDescription = document.createElement("div");
+  wysiwygDescription.setAttribute("data-type", "description");
+  updateWysiwyg("", wysiwygDescription);
   //*文件列表
   const listEle = document.createElement("div");
   const updateList = (filter?: string) => {
@@ -66,7 +80,17 @@ export const protyleUtil = (
       if (selectedFile !== file) {
         return;
       }
+      //*描述
+      updateWysiwyg("", wysiwygDescription);
+      await getComment(file);
+      if (file.description) {
+        updateWysiwyg(
+          protyle.lute.Md2BlockDOM(file.description),
+          wysiwygDescription
+        );
+      }
       //dialog.destroy();
+      updateWysiwyg("", wysiwyg);
       let html = "";
       if (component == EComponent.Copy) {
         html = await previewCopy(file, blockElements, protyle);
@@ -75,15 +99,11 @@ export const protyleUtil = (
       } else if (component == EComponent.Paste) {
         html = await previewPaste(file, protyle);
       }
-      if (selectedFile === file) {
-        updateWysiwyg(html);
-      }
+      updateWysiwyg(html, wysiwyg);
     });
-    /*     listItem.addEventListener("mouseover", () => {
-      if (selectedFile === file) {
-        updateWysiwyg("");
-      }
-    }); */
+    listItem.addEventListener("mouseleave", () => {
+      selectedFile = null;
+    });
     //*运行脚本（执行）
     listItem.addEventListener("click", async () => {
       dialog.destroy();
@@ -124,7 +144,7 @@ listItem.appendChild(remove); */
       const protyleUtil = document.createElement("div");
       protyleUtil.classList.add("protyle-util");
       protyleUtil.style.top = "65.1125px";
-      protyleUtil.style.left = "388.8px";
+      protyleUtil.style.left = "288.8px";
       protyleUtil.style.zIndex = "11";
       //protyleUtil.style.position = "absolute";
       root.appendChild(protyleUtil);
@@ -132,7 +152,7 @@ listItem.appendChild(remove); */
         const utilContiainer = document.createElement("div");
         utilContiainer.classList.add("fn__flex");
         //max-height: 372.8px;
-        utilContiainer.style.maxHeight = "372.8px";
+        utilContiainer.style.maxHeight = "500px";
         protyleUtil.appendChild(utilContiainer);
 
         const buildFlexColumn = () => {
@@ -179,16 +199,20 @@ listItem.appendChild(remove); */
           updateList();
         };
         buildFlexColumn();
-        const buildWysiwygContiainer = () => {
+        const buildWysiwygContiainer = (
+          wysiwyg: HTMLDivElement,
+          width: string
+        ) => {
           const wysiwygContiainer = document.createElement("div");
-          wysiwygContiainer.style.width = "520px";
+          wysiwygContiainer.style.width = width;
           wysiwygContiainer.style.overflow = "auto";
           utilContiainer.appendChild(wysiwygContiainer);
 
           wysiwyg.classList.add("protyle-wysiwyg");
           wysiwygContiainer.appendChild(wysiwyg);
         };
-        buildWysiwygContiainer();
+        buildWysiwygContiainer(wysiwygDescription, "260px");
+        buildWysiwygContiainer(wysiwyg, "520px");
       };
       buildUtilContiainer();
     };
