@@ -77,12 +77,8 @@ export async function execUpdate(
   blockElements: HTMLElement[],
   protyle: IProtyle
 ) {
-  if (!file.output) {
-    const updatePreview = buildUpdatePreview(file);
-    const output = await updatePreview(blockElements, protyle);
-    file.output = output;
-  }
-  const outputDoms = file.output as IUpdateResult[];
+  const updatePreview = buildUpdatePreview(file);
+  const outputDoms = await updatePreview(blockElements, protyle);
   //*执行添加、更新、删除操作
   let count = 0;
   let preBlockId = outputDoms[0].id;
@@ -145,13 +141,11 @@ export async function previewUpdate(
   blockElements: HTMLElement[],
   protyle: IProtyle
 ): Promise<string> {
-  if (!file.output) {
-    const updatePreview = buildUpdatePreview(file);
-    const output = await updatePreview(blockElements, protyle);
-    file.output = output;
-  }
+  const updatePreview = buildUpdatePreview(file);
+  const outputDoms = await updatePreview(blockElements, protyle);
+
   const blocks: HTMLDivElement[] = [];
-  for (const output of file.output as IUpdateResult[]) {
+  for (const output of outputDoms) {
     if (output.isDelete) {
       continue;
     }

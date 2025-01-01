@@ -1,16 +1,11 @@
 import TurndownService from "turndown";
-import { BlockId } from "../../subMod/siyuanPlugin-common/types/siyuan-api";
 //import { IProtyle } from "../../subMod/siyuanPlugin-common/types/global-siyuan";
 import { buildSyTableBlocks } from "./tableTransfer";
-import { getJsBlocks } from "./common";
+import { buildFunc, getCurrentBlock, IFunc, ISnippet } from "./common";
 import { IProtyle, showMessage } from "siyuan";
 import { insertBlock } from "../../subMod/siyuanPlugin-common/siyuan-api/block";
 
-export async function customPaste(
-  previousId: BlockId,
-  protyle: IProtyle,
-  docId?: BlockId
-) {
+async function getClipboardHtml() {
   const content = await navigator.clipboard.read().then((e) => e[0]);
   let blob: Blob;
   if (content.types.includes("text/html")) {
@@ -23,18 +18,27 @@ export async function customPaste(
   }
   const html = await blob.text();
   console.warn(`[customPaste]`, { html });
+  return html;
+}
+
+async function paste(
+  //previousId: BlockId,
+  file: ISnippet,
+  //html: string,
+  protyle: IProtyle
+) {
+  //*粘贴组件可能会因剪贴板内容不同而不同
+  const html = await getClipboardHtml();
   const turndownService = new TurndownService();
   addTableRule(turndownService, protyle);
-  if (docId) {
-    const rules = await getCustomRule(docId);
-    let count = 0;
-    for (const rule of rules) {
-      count++;
-      turndownService.addRule("rule" + count, rule);
-    }
+  const rules = await buildCustomRule(file);
+  let count = 0;
+  for (const rule of rules) {
+    count++;
+    turndownService.addRule("rule" + count, rule);
   }
+
   const markdown = turndownService.turndown(html);
-  console.warn(`[customPaste]`, { markdown });
   const domText = protyle.lute.Md2BlockDOM(markdown);
   const parentDom = document.createElement("div");
   parentDom.innerHTML = domText;
@@ -51,19 +55,41 @@ export async function customPaste(
       }
     }
   }
+  return parentDom.innerHTML;
+}
+
+export async function previewPaste(
+  file: ISnippet,
+  //html: string,
+  protyle: IProtyle
+) {
+  return await paste(file, protyle);
+  //return file.output as string;
+}
+export async function execPaste(
+  file: ISnippet,
+  //html: string,
+  protyle: IProtyle
+) {
+  //console.warn(`[customPaste]`, { markdown });
+  const previousBlock = getCurrentBlock();
+  const previousId = previousBlock.getAttribute("data-node-id");
+  const output = await paste(file, protyle);
   //*插入粘贴的内容
   await insertBlock(
-    { dataType: "dom", data: parentDom.innerHTML, previousID: previousId },
+    { dataType: "dom", data: output as string, previousID: previousId },
     protyle
   );
 }
-async function getCustomRule(docId: BlockId) {
-  const ruleBlocks = await getJsBlocks(docId);
-  const rules = ruleBlocks.map((ruleBlock) => {
-    const func = new Function(`return ${ruleBlock.content}`);
-    const rule = func();
-    return rule as TurndownService.Rule;
-  });
+
+async function buildCustomRule(jsBlock: ISnippet) {
+  const func = (await buildFunc(
+    jsBlock.id,
+    jsBlock.name,
+    jsBlock.path,
+    true
+  )) as IFunc;
+  const rules = func();
   return rules.filter((e) => {
     if (!e) {
       return false;

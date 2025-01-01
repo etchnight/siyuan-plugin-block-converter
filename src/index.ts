@@ -8,18 +8,17 @@ import {
   IGetDocInfo,
 } from "siyuan";
 import { buildSetting } from "../subMod/siyuanPlugin-common/component/setting";
-import { getDoc } from "../subMod/siyuanPlugin-common/siyuan-api/filetree";
 import { execCopy } from "./libs/customCopy";
 import { execUpdate } from "./libs/customUpdate";
 import {
   EComponent,
   getAllJs,
-  getCurrentBlock,
   getSelectedBlocks,
+  ISnippet,
   PluginName,
   protyleUtilDialog,
 } from "./libs/common";
-import { customPaste } from "./libs/customPaste";
+import { execPaste } from "./libs/customPaste";
 import { i18nObj } from "../scripts/i18n";
 import extract from "extract-comments";
 import { store, switchWait } from "./libs/store";
@@ -72,11 +71,11 @@ export default class PluginBlockConverter extends Plugin {
    * 三种生成途径：通过块标事件直接获取、文档标题事件中查询、快捷键命令中通过common.js中函数获取
    * 在自定义复制和自定义粘贴中作为入参使用
    */
-  private detail: {
+  /*   private detail: {
     menu: Menu;
     blockElements: HTMLElement[];
     protyle: IProtyle;
-  } = { menu: undefined, blockElements: [], protyle: undefined };
+  } = { menu: undefined, blockElements: [], protyle: undefined }; */
   //* 此处需要与i18n.json中的key对应
   declare public data: {
     config: typeof DefaultDATA.config;
@@ -101,9 +100,7 @@ export default class PluginBlockConverter extends Plugin {
       isReload: true,
       plugin: this,
     });
-    this.data.config.isBlockCusCopy.value && this.initBlockCustomCopy();
-    this.data.config.isBlockCusUpdate.value && this.initBlockCustomUpdate();
-    this.data.config.isCustomPaste.value && this.initCustomPaste();
+    this.initCommand();
 
     //await this.loadPresetSnippet("blockCustomUpdate/法条自动链接.js");
   }
@@ -115,34 +112,6 @@ export default class PluginBlockConverter extends Plugin {
     this.eventBus.off("ws-main", this.switchWait);
     this.eventBus.off("click-editortitleicon", this.openMenuDoctreeEvent);
   }
-  /**
-   * 设置 this.data.config，包含兼容性老版本处理
-   * @deprecated 由于v0.4.0的破坏性更新，弃用原来的`config`文件，改为`config.json`
-   */
-  private updateConfig = () => {
-    //this.data.config = Object.assign(DefaultDATA.config, this.data.config);
-    //*v0.2.9 => v0.3.0 遗留问题，由于移除模块，设置项将出现残留
-    {
-      for (const key of Object.keys(DefaultDATA.config)) {
-        DefaultDATA.config[key] =
-          this.data.config[key] || DefaultDATA.config[key];
-      }
-      this.data.config = DefaultDATA.config;
-    }
-    //*兼容性改变,v0.2.2 => v0.2.3 遗留问题，原因：loadData 将覆盖默认值
-    if (
-      typeof this.data.config.blockCusCopyJsRootId === typeof "" ||
-      typeof this.data.config.blockCusUpdateJsRootId === typeof ""
-    ) {
-      const blockCusCopyJsRootId = this.data.config
-        .blockCusCopyJsRootId as unknown as string;
-      const blockCusUpdateJsRootId = this.data.config
-        .blockCusUpdateJsRootId as unknown as string;
-      this.data.config = DefaultDATA.config;
-      this.data.config.blockCusUpdateJsRootId.value = blockCusUpdateJsRootId;
-      this.data.config.blockCusCopyJsRootId.value = blockCusCopyJsRootId;
-    }
-  };
 
   /**
    * 等待写入数据库完成
@@ -162,10 +131,11 @@ export default class PluginBlockConverter extends Plugin {
   }: {
     detail: { menu: Menu; blockElements: HTMLElement[]; protyle: IProtyle };
   }) => {
-    this.detail = detail;
-    this.data.config.isBlockCusCopy.value && this.addCustomCopyMenu(detail);
+    //this.detail = detail; //快捷键使用
+    this.addUtilDialogMenu(detail);
+    /*     this.data.config.isBlockCusCopy.value && this.addCustomCopyMenu(detail);
     this.data.config.isBlockCusUpdate.value && this.addCustomUpdateMenu(detail);
-    this.data.config.isCustomPaste.value && this.addCustomPasteMenu(detail);
+    this.data.config.isCustomPaste.value && this.addCustomPasteMenu(detail); */
     this.addSaveSnippetMenu(detail);
   };
 
@@ -174,145 +144,116 @@ export default class PluginBlockConverter extends Plugin {
   }: {
     detail: { menu: Menu; data: IGetDocInfo; protyle: IProtyle };
   }) => {
-    //*注意，这一步必须在异步函数之前运行
-    this.data.config.isBlockCusUpdate.value && this.addCustomUpdateMenu(detail);
-    getDoc({ id: detail.data.rootID }).then((res) => {
-      const div = document.createElement("div");
-      div.innerHTML = res.content;
-      const children = div.children;
-      const content: HTMLElement[] = [];
-      for (const child of children) {
-        content.push(child as HTMLElement);
-      }
-      this.detail = {
-        menu: detail.menu,
-        blockElements: content,
-        protyle: detail.protyle,
-      };
-    });
+    this.addUtilDialogMenu(detail, true);
   };
 
-  private initCustomPaste = async () => {
-    const docId = this.data.config.customPasteJsRootId;
-    this.addCommand({
-      langKey: PluginName + "customPaste",
-      langText: "自定义粘贴",
-      hotkey: "",
-      editorCallback: (protyle) => {
-        const block = getCurrentBlock();
-        if (block) {
-          customPaste(block.getAttribute("data-node-id"), protyle, docId.value);
-        }
-      },
-    });
-  };
-
-  private addCustomPasteMenu = async (detail: {
-    menu: Menu;
-    blockElements: HTMLElement[];
-    protyle: IProtyle;
-  }) => {
-    const docId = this.data.config.customPasteJsRootId;
-    detail.menu.addItem({
-      iconHTML: "",
-      label: "自定义粘贴",
-      click(_element, _event) {
-        const lastEle = detail.blockElements[detail.blockElements.length - 1];
-        const id = lastEle.getAttribute("data-node-id");
-        customPaste(id, detail.protyle, docId.value);
-      },
-    });
-  };
-
-  private async initBlockCustomCopy() {
-    const snippets = await getAllJs(
-      EComponent.Copy,
-      this.data.config.blockCusCopyJsRootId.value
-    );
-    for (const snippet of snippets) {
-      this.addCommand({
-        langKey: PluginName + encodeURIComponent(snippet.label),
-        langText: "自定义块复制-" + snippet.label,
-        hotkey: "",
-        editorCallback: async (protyle) => {
-          snippet.snippet = undefined; //*每次运行重新获取脚本内容
-          if (this.detail.blockElements.length > 0) {
-            this.detail = getSelectedBlocks(protyle, this.detail);
-            await execCopy(snippet, this.detail.blockElements, protyle);
-          } else {
-            showMessage("未选择任何块");
-          }
-        },
+  private addUtilDialogMenu = async (
+    detail: {
+      menu: Menu;
+      blockElements?: HTMLElement[];
+      data?: IGetDocInfo;
+      protyle: IProtyle;
+    },
+    isdocument: boolean = false
+  ) => {
+    const info: {
+      label: string;
+      id: string;
+      component: EComponent;
+      rootId?: string;
+    }[] = [];
+    if (this.data.config.isBlockCusCopy.value) {
+      info.push({
+        label: this.i18n.BlockCustomCopyName,
+        id: EComponent.Copy,
+        component: EComponent.Copy,
+        rootId: this.data.config.blockCusCopyJsRootId.value,
       });
+    }
+    if (this.data.config.isBlockCusUpdate.value) {
+      info.push({
+        label: this.i18n.BlockCustomUpdateName,
+        id: EComponent.Update,
+        component: EComponent.Update,
+        rootId: this.data.config.blockCusUpdateJsRootId.value,
+      });
+    }
+    if (this.data.config.isCustomPaste.value) {
+      info.push({
+        label: this.i18n.CustomPasteName,
+        id: EComponent.Paste,
+        component: EComponent.Paste,
+        rootId: this.data.config.customPasteJsRootId.value,
+      });
+    }
+    for (const item of info) {
+      const menu: IMenu = {
+        iconHTML: "",
+        label: item.label,
+        id: item.id,
+        //submenu: [],
+        click: () => {
+          protyleUtilDialog(detail, item.rootId, item.component, isdocument);
+        },
+      };
+      detail.menu.addItem(menu);
+    }
+  };
+
+  private async initCommand() {
+    let snippets: ISnippet[] = [];
+    if (this.data.config.isBlockCusCopy.value) {
+      snippets = await getAllJs(
+        EComponent.Copy,
+        this.data.config.blockCusCopyJsRootId.value
+      );
+      for (const snippet of snippets) {
+        this.addCommand({
+          langKey: PluginName + encodeURIComponent(snippet.label),
+          langText: "自定义块复制-" + snippet.label,
+          hotkey: "",
+          editorCallback: async (protyle) => {
+            const blockElements = getSelectedBlocks(protyle);
+            await execCopy(snippet, blockElements, protyle);
+          },
+        });
+      }
+      if (this.data.config.isBlockCusUpdate.value) {
+        snippets = await getAllJs(
+          EComponent.Update,
+          this.data.config.blockCusUpdateJsRootId.value
+        );
+        for (const snippet of snippets) {
+          this.addCommand({
+            langKey: PluginName + encodeURIComponent(snippet.label),
+            langText: "自定义块更新-" + snippet.label,
+            hotkey: "",
+            editorCallback: async (protyle) => {
+              const blockElements = getSelectedBlocks(protyle);
+              await execUpdate(snippet, blockElements, protyle);
+            },
+          });
+        }
+      }
+    }
+    if (this.data.config.isCustomPaste.value) {
+      snippets = await getAllJs(
+        EComponent.Paste,
+        this.data.config.customPasteJsRootId.value
+      );
+      for (const snippet of snippets) {
+        this.addCommand({
+          langKey: PluginName + encodeURIComponent(snippet.label),
+          langText: "自定义粘贴-" + snippet.label,
+          hotkey: "",
+          editorCallback: async (protyle) => {
+            await execPaste(snippet, protyle);
+          },
+        });
+      }
     }
     //this.blockCustomCopySubmenus = submenu;
   }
-  private addCustomCopyMenu = (detail: {
-    menu: Menu;
-    blockElements: HTMLElement[];
-    protyle: IProtyle;
-  }) => {
-    const menu: IMenu = {
-      iconHTML: "",
-      label: this.i18n.BlockCustomCopyName,
-      id: EComponent.Copy,
-      //submenu: [],
-      click: () => {
-        protyleUtilDialog(
-          detail.blockElements,
-          detail.protyle,
-          this.data.config.blockCusCopyJsRootId.value,
-          EComponent.Copy
-        );
-      },
-    };
-    detail.menu.addItem(menu);
-  };
-
-  //获取js块
-  private async initBlockCustomUpdate() {
-    const snippets = await getAllJs(
-      EComponent.Update,
-      this.data.config.blockCusUpdateJsRootId.value
-    );
-    for (const snippet of snippets) {
-      this.addCommand({
-        langKey: PluginName + encodeURIComponent(snippet.label),
-        langText: "自定义块更新-" + snippet.label,
-        hotkey: "",
-        editorCallback: async (protyle) => {
-          snippet.snippet = undefined; //*每次运行重新获取脚本内容
-          if (this.detail.blockElements.length > 0) {
-            this.detail = getSelectedBlocks(protyle, this.detail);
-            await execUpdate(snippet, this.detail.blockElements, protyle);
-          } else {
-            showMessage("未选择任何块");
-          }
-        },
-      });
-    }
-  }
-
-  private addCustomUpdateMenu = async (detail: {
-    menu: Menu;
-    blockElements?: HTMLElement[];
-    data?: IGetDocInfo;
-    protyle: IProtyle;
-  }) => {
-    detail.menu.addItem({
-      iconHTML: "",
-      label: this.i18n.BlockCustomUpdateName,
-      id: EComponent.Update,
-      click: () => {
-        protyleUtilDialog(
-          detail.blockElements,
-          detail.protyle,
-          this.data.config.blockCusUpdateJsRootId.value,
-          EComponent.Update
-        );
-      },
-    });
-  };
 
   //todo 获取js文件元数据
   private loadPresetSnippet = async (fileName: string) => {
@@ -361,6 +302,7 @@ export default class PluginBlockConverter extends Plugin {
       const id = blockId + "-" + window.siyuan.user?.userId || "unknownUserId";
       const fileName = name || id;
       await this.saveData(`${dirName}/${fileName}.js`, code);
+      showMessage("保存成功");
     };
     detail.menu.addItem({
       iconHTML: "",
@@ -387,5 +329,34 @@ export default class PluginBlockConverter extends Plugin {
         },
       ],
     });
+  };
+  
+  /**
+   * 设置 this.data.config，包含兼容性老版本处理
+   * @deprecated 由于v0.4.0的破坏性更新，弃用原来的`config`文件，改为`config.json`
+   */
+  private updateConfig = () => {
+    //this.data.config = Object.assign(DefaultDATA.config, this.data.config);
+    //*v0.2.9 => v0.3.0 遗留问题，由于移除模块，设置项将出现残留
+    {
+      for (const key of Object.keys(DefaultDATA.config)) {
+        DefaultDATA.config[key] =
+          this.data.config[key] || DefaultDATA.config[key];
+      }
+      this.data.config = DefaultDATA.config;
+    }
+    //*兼容性改变,v0.2.2 => v0.2.3 遗留问题，原因：loadData 将覆盖默认值
+    if (
+      typeof this.data.config.blockCusCopyJsRootId === typeof "" ||
+      typeof this.data.config.blockCusUpdateJsRootId === typeof ""
+    ) {
+      const blockCusCopyJsRootId = this.data.config
+        .blockCusCopyJsRootId as unknown as string;
+      const blockCusUpdateJsRootId = this.data.config
+        .blockCusUpdateJsRootId as unknown as string;
+      this.data.config = DefaultDATA.config;
+      this.data.config.blockCusUpdateJsRootId.value = blockCusUpdateJsRootId;
+      this.data.config.blockCusCopyJsRootId.value = blockCusCopyJsRootId;
+    }
   };
 }

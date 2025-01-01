@@ -23,7 +23,8 @@ import {
   readDir,
 } from "../../subMod/siyuanPlugin-common/siyuan-api/file";
 import { protyleUtil } from "./protyle-util";
-import { IUpdateResult } from "./customUpdate";
+import { getDoc } from "../../subMod/siyuanPlugin-common/siyuan-api/filetree";
+import TurndownService from "turndown";
 
 /**
  * 组件的名称，用于函数参数等
@@ -39,7 +40,7 @@ export const PluginName = "siyuan-plugin-block-converter"; //用于id等
  * *获取光标所在块
  * @returns
  */
-export function getCurrentBlock() {
+export function getCurrentBlock(): HTMLElement {
   let nodeElement = getSelection().anchorNode;
   while (nodeElement.nodeType !== 1 && nodeElement.parentElement) {
     nodeElement = nodeElement.parentElement;
@@ -59,13 +60,13 @@ export function getCurrentBlock() {
  * *获取选中的所有块
  */
 export function getSelectedBlocks(
-  protyle: IProtyle, //todo 与detail.protyle是否相同
-  detail: {
+  protyle: IProtyle
+  /*   detail: {
     menu: Menu;
     blockElements?: HTMLElement[];
     data?: IGetDocInfo;
     protyle: IProtyle;
-  }
+  } */
 ) {
   //选择多个块
   let blockElements: HTMLElement[] = Array.from(
@@ -75,13 +76,12 @@ export function getSelectedBlocks(
   if (blockElements.length === 0) {
     blockElements = [getCurrentBlock()];
   }
-  const newDetail = {
+  /*   const newDetail = {
     menu: detail.menu,
     blockElements: blockElements,
     protyle: protyle,
-  };
-
-  return newDetail;
+  }; */
+  return blockElements;
 }
 
 /**
@@ -116,6 +116,13 @@ export interface ITools {
   [key: string]: any;
 }
 
+export type IAsyncFunc = (
+  input: IFuncInput,
+  tools: ITools,
+  output: IOutput
+) => Promise<{ input: IFuncInput; tools: ITools; output: IOutput }>;
+
+export type IFunc = () => TurndownService.Rule[];
 /**
  * 自定义函数输入参数3: output，输出，默认为原块的Markdown内容
  */
@@ -132,16 +139,11 @@ export async function buildFunc(
   jsBlockId?: string,
   name?: string,
   filePath?: string,
-  snippet?: string
-): Promise<
-  (
-    input: IFuncInput,
-    tools: ITools,
-    output: IOutput
-  ) => Promise<{ input: IFuncInput; tools: ITools; output: IOutput }>
-> {
-  //*使用顺序: snippet -> jsBlockId -> name -> filePath
-  let jsBlockContent: string = snippet;
+  //snippet?: string,
+  isCustomPaste: boolean = false
+): Promise<IAsyncFunc | IFunc> {
+  //*使用顺序:  jsBlockId -> name -> filePath
+  let jsBlockContent: string;
   if (jsBlockId && !jsBlockContent) {
     jsBlockContent = (await queryBlockById(jsBlockId)).content;
   } else if (name) {
@@ -158,15 +160,19 @@ export async function buildFunc(
   }
 
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
-  return new AsyncFunction(
-    "input",
-    "tools",
-    "output",
-    ` 
+  if (isCustomPaste) {
+    return new Function(`return ${jsBlockContent}`) as IFunc;
+  } else {
+    return new AsyncFunction(
+      "input",
+      "tools",
+      "output",
+      ` 
     ${jsBlockContent ? jsBlockContent : ""}
     return { input , tools , output };
     `
-  );
+    );
+  }
 }
 
 /**
@@ -183,12 +189,11 @@ export async function executeFunc(
   output: string,
   jsBlock: ISnippet
 ) {
-  const func = await buildFunc(
+  const func = (await buildFunc(
     jsBlock.id,
     jsBlock.name,
-    jsBlock.path,
-    jsBlock.snippet
-  );
+    jsBlock.path
+  )) as IAsyncFunc;
   //let reloadFlag = true;
   let errorFlag = true;
   //超时自动刷新
@@ -360,7 +365,8 @@ export interface ISnippet {
   id?: string; //Block块专属
   name?: string; //Block块专属
   description?: string; // todo
-  output?: string | IUpdateResult[];//预存结果
+  //output?: string | IUpdateResult[]; //脚本可能会改变，所以不预存结果
+  //clipboardHtml?: string; //Paste专属，预存输入
 }
 
 /**
@@ -400,11 +406,27 @@ export async function getAllJs(component: EComponent, rootId: string) {
  * @returns
  */
 export async function protyleUtilDialog(
-  blockElements: HTMLElement[],
-  protyle: IProtyle,
+  detail: {
+    menu: Menu;
+    blockElements?: HTMLElement[];
+    data?: IGetDocInfo;
+    protyle: IProtyle;
+  },
   rootId: string,
-  component: EComponent
+  component: EComponent,
+  isdocument: boolean = false
 ) {
+  if (isdocument) {
+    const res = await getDoc({ id: detail.data.rootID });
+    const div = document.createElement("div");
+    div.innerHTML = res.content;
+    const children = div.children;
+    const content: HTMLElement[] = [];
+    for (const child of children) {
+      content.push(child as HTMLElement);
+    }
+    detail.blockElements = content;
+  }
   //* dialog方案
   //menu.submenu = this.blockCustomCopySubmenus;
   const dialog = new Dialog({
@@ -418,8 +440,8 @@ export async function protyleUtilDialog(
   const snippets = await getAllJs(component, rootId);
   const protyleUtilDiv = protyleUtil(
     snippets,
-    blockElements,
-    protyle,
+    detail.blockElements,
+    detail.protyle,
     dialog,
     component
   );

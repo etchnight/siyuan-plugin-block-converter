@@ -7,7 +7,7 @@ import { Dialog, IProtyle } from "siyuan";
 import { EComponent, ISnippet } from "../libs/common";
 import { execCopy, previewCopy } from "./customCopy";
 import { execUpdate, previewUpdate } from "./customUpdate";
-
+import { previewPaste } from "./customPaste";
 export const protyleUtil = (
   files: ISnippet[],
   blockElements: HTMLElement[],
@@ -72,16 +72,18 @@ export const protyleUtil = (
         html = await previewCopy(file, blockElements, protyle);
       } else if (component == EComponent.Update) {
         html = await previewUpdate(file, blockElements, protyle);
+      } else if (component == EComponent.Paste) {
+        html = await previewPaste(file, protyle);
       }
       if (selectedFile === file) {
         updateWysiwyg(html);
       }
     });
-    listItem.addEventListener("mouseover", () => {
+    /*     listItem.addEventListener("mouseover", () => {
       if (selectedFile === file) {
         updateWysiwyg("");
       }
-    });
+    }); */
     //*运行脚本（执行）
     listItem.addEventListener("click", async () => {
       dialog.destroy();

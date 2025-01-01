@@ -29,6 +29,16 @@ function buildCopyPreview(jsBlock: ISnippet) {
   return copyPreview;
 }
 
+async function copy(
+  file: ISnippet,
+  blockElements: HTMLElement[],
+  protyle: IProtyle
+) {
+  const copyPreview = buildCopyPreview(file);
+  const output = await copyPreview(blockElements, protyle);
+  return output;
+}
+
 /**
  * 将copyPreview函数的运行结果写入剪贴板
  * @param jsBlock
@@ -39,13 +49,9 @@ export async function execCopy(
   blockElements: HTMLElement[],
   protyle: IProtyle
 ) {
-  if (!file.output) {
-    const copyPreview = buildCopyPreview(file);
-    const output = await copyPreview(blockElements, protyle);
-    file.output = output;
-  }
-  await navigator.clipboard.writeText(file.output as string);
-  showMessage(`${file.output}已写入剪贴板`);
+  const output = await copy(file, blockElements, protyle);
+  await navigator.clipboard.writeText(output);
+  showMessage(`${output}已写入剪贴板`);
 }
 
 export async function previewCopy(
@@ -53,11 +59,7 @@ export async function previewCopy(
   blockElements: HTMLElement[],
   protyle: IProtyle
 ) {
-  if (!file.output) {
-    const copyPreview = buildCopyPreview(file);
-    const output = await copyPreview(blockElements, protyle);
-    file.output = output;
-  }
+  const output = await copy(file, blockElements, protyle);
   const lute = protyle.lute;
-  return lute.Md2BlockDOM(file.output as string);
+  return lute.Md2BlockDOM(output);
 }
