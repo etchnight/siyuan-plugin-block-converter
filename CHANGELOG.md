@@ -1,3 +1,22 @@
+## [1.0.1](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v1.0.0...v1.0.1) (2025-01-01)
+
+
+### Bug Fixes
+
+* 预设脚本全部放在preinstalled文件夹下 ([2c1a76f](https://github.com/etchnight/siyuan-plugin-table-importer/commit/2c1a76f4a916ec659e82176851fc4ff17c66d55a))
+* 执行其他文件错误提示优化 ([da9d74e](https://github.com/etchnight/siyuan-plugin-table-importer/commit/da9d74e092a89bd34262c62219a677baf5820918))
+
+
+### Features
+
+* 加载插件时载入预存脚本 ([48cba18](https://github.com/etchnight/siyuan-plugin-table-importer/commit/48cba18e37694409777d6640611c96b6979b07b7))
+* 语言国际化 ([92d34e8](https://github.com/etchnight/siyuan-plugin-table-importer/commit/92d34e8ca3f3f92654cf3b69d29e6ff7d0744d83))
+* 增加预设脚本示例、中文排版综合 ([d552bac](https://github.com/etchnight/siyuan-plugin-table-importer/commit/d552bacc57ac8ae6f75f1d367c64b8f5340eba40))
+* **自定义更新:** 可以跳过某些块的处理 ([ecb6439](https://github.com/etchnight/siyuan-plugin-table-importer/commit/ecb64392fb2e95821290d2049e9b0196e9b0a283))
+* tools增加siyuanApi ([5e23087](https://github.com/etchnight/siyuan-plugin-table-importer/commit/5e230870a13ea72d5decafb03ce37822100eceb6))
+
+
+
 # [1.0.0](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v0.4.1...v1.0.0) (2025-01-01)
 
 

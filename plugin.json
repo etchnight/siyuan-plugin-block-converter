@@ -2,7 +2,7 @@
   "name": "siyuan-plugin-block-converter",
   "author": "dualwind",
   "url": "https://github.com/etchnight/siyuan-plugin-block-converter",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "minAppVersion": "3.0.0",
   "backends": ["windows", "linux", "darwin"],
   "frontends": ["desktop", "desktop-window"],
