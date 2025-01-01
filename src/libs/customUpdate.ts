@@ -5,7 +5,7 @@ import {
   insertBlock,
   updateBlockWithAttr,
 } from "../../subMod/siyuanPlugin-common/siyuan-api/block";
-import { executeFunc, getArgsByElement, ISnippet } from "./common";
+import { executeFunc, getArgsByElement, getI18n, ISnippet } from "./common";
 import { store } from "./store";
 //import { IProtyle } from "../../subMod/siyuanPlugin-common/types/global-siyuan";
 
@@ -140,9 +140,9 @@ export async function execUpdate(
       });
     }
     count++;
-    showMessage(`已完成${count}/${outputDoms.length}`);
+    showMessage(`${getI18n().message_completed}${count}/${outputDoms.length}`);
   }
-  showMessage(`${file.label}更新成功`);
+  showMessage(`${file.label}${getI18n().message_updateSuccess}`);
 }
 
 export async function previewUpdate(

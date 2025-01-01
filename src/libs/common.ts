@@ -26,17 +26,15 @@ import { protyleUtil } from "./protyle-util";
 import { getDoc } from "../../subMod/siyuanPlugin-common/siyuan-api/filetree";
 import TurndownService from "turndown";
 import extract from "extract-comments";
-//import * as doctrine from "doctrine-standalone";
-/**
- * 组件的名称，用于函数参数等
- */
-export enum EComponent {
-  Copy = "blockCustomCopy",
-  Update = "blockCustomUpdate",
-  Paste = "CustomPaste",
-}
-export const PluginName = "siyuan-plugin-block-converter"; //用于id等
+import { CONSTANTS, EComponent } from "./constants";
+import { i18nObj } from "@/types/i18nObj";
 
+export function getI18n() {
+  const plugin = window.siyuan.ws.app.plugins.find(
+    (e) => e.name == CONSTANTS.PluginName
+  );
+  return plugin.i18n as i18nObj;
+}
 /**
  * *获取光标所在块
  * @returns
@@ -152,14 +150,14 @@ export async function buildFunc(
     jsBlockContent = (await queryBlockById(file.id)).content;
   } else if (file.name) {
     const resList = await requestQuerySQL(
-      `select * from blocks where name = '${name}'`
+      `select * from blocks where name = '${file.name}'`
     );
     if (resList.length) {
       jsBlockContent = resList[0].content;
     }
   } else if (file.path) {
     jsBlockContent = await getFile({
-      path: "/data/storage/petal/" + PluginName + "/" + file.path,
+      path: "/data/storage/petal/" + CONSTANTS.PluginName + "/" + file.path,
     });
   }
 
@@ -183,7 +181,7 @@ export async function getComment(file: ISnippet) {
   let jsBlockContent: string;
   if (file.path) {
     jsBlockContent = await getFile({
-      path: "/data/storage/petal/" + PluginName + "/" + file.path,
+      path: "/data/storage/petal/" + CONSTANTS.PluginName + "/" + file.path,
     });
   }
   if (!jsBlockContent) {
@@ -234,16 +232,6 @@ export async function executeFunc(
     (resolve) =>
       setTimeout(() => {
         resolve(false);
-        /*         if (reloadFlag) {
-          showMessage("运行超时");
-                     setTimeout(() => {
-            location.reload();
-          }, 1000); 
-        } else if (errorFlag) {
-          showMessage(
-            `${jsBlock.name || "id为" + jsBlock.id}脚本运行出错，请查看控制台`
-          );
-        } */
       }, 5000) //todo 可配置
   );
   const customPromise = new Promise((resolve) => {
@@ -263,13 +251,13 @@ export async function executeFunc(
 
   const raceFlag = await Promise.race([customPromise, safePromise]);
   if (!raceFlag) {
-    showMessage("运行超时");
-    throw new Error("运行超时");
+    showMessage(getI18n().message_timeout);
+    throw new Error(getI18n().message_timeout);
   } else if (errorFlag) {
     showMessage(
-      `${jsBlock.name || "id为" + jsBlock.id}脚本运行出错，请查看控制台`
+      `${jsBlock.name || jsBlock.id || jsBlock.path}${getI18n().message_error1}`
     );
-    throw new Error("运行错误");
+    throw new Error(getI18n().message_error);
   }
   return { input, tools, output };
 }
@@ -353,7 +341,7 @@ export async function getJsBlocks(docId: BlockId) {
  */
 export async function getJsFiles(
   component: EComponent,
-  pathPrefix: string = "/data/storage/petal/" + PluginName + "/"
+  pathPrefix: string = "/data/storage/petal/" + CONSTANTS.PluginName + "/"
 ) {
   const readDirRecur = async (
     path: string,
@@ -465,7 +453,6 @@ export async function protyleUtilDialog(
   //* dialog方案
   //menu.submenu = this.blockCustomCopySubmenus;
   const dialog = new Dialog({
-    //title: this.i18n.BlockCustomCopyName,
     content: "<div class='container'></div>",
   });
   const container = dialog.element.querySelector(".container");

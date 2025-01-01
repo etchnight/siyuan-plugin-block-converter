@@ -7,87 +7,61 @@ import {
   IProtyle,
   IGetDocInfo,
 } from "siyuan";
-import { buildSetting } from "../subMod/siyuanPlugin-common/component/setting";
+import {
+  buildSetting,
+  SettingData,
+} from "../subMod/siyuanPlugin-common/component/setting";
 import { execCopy } from "./libs/customCopy";
 import { execUpdate } from "./libs/customUpdate";
 import {
-  EComponent,
   getAllJs,
   getJsFiles,
   getSelectedBlocks,
   ISnippet,
-  PluginName,
   protyleUtilDialog,
 } from "./libs/common";
 import { execPaste } from "./libs/customPaste";
-import { i18nObj } from "../scripts/i18n";
 import { store, switchWait } from "./libs/store";
 import { getFile } from "../subMod/siyuanPlugin-common/siyuan-api/file";
+import { CONSTANTS, EComponent } from "./libs/constants";
+import { i18nObj } from "./types/i18nObj";
 //import { getJsdocData } from "jsdoc-to-markdown";
 //import doctrine from "doctrine";
 
-const STORAGE_NAME = "config.json";
-//const STORAGE_NAME_BLOCK_CUSTOM_COPY = "blockCustomCopy.json";
-const DefaultDATA = {
-  config: {
-    isCustomPaste: {
-      type: "switch",
-      title: "自定义粘贴-是否开启",
-      value: true,
-    },
-    customPasteJsRootId: {
-      type: "input",
-      title: "自定义粘贴-js所在文档",
-      value: "",
-    },
-    isBlockCusCopy: {
-      type: "switch",
-      title: "自定义块复制-是否开启",
-      value: true,
-    },
-    blockCusCopyJsRootId: {
-      type: "input",
-      title: "自定义块复制-js所在文档",
-      value: "",
-    },
-    isBlockCusUpdate: {
-      type: "switch",
-      title: "自定义块更新-是否开启",
-      value: true,
-    },
-    blockCusUpdateJsRootId: {
-      type: "input",
-      title: "自定义块更新-js所在文档",
-      value: "",
-    },
-  },
-};
+//const STORAGE_CONFIG_NAME = "config.json";
+
+interface IConfig {
+  isCustomPaste: SettingData;
+  customPasteJsRootId: SettingData;
+  isBlockCusCopy: SettingData;
+  blockCusCopyJsRootId: SettingData;
+  isBlockCusUpdate: SettingData;
+  blockCusUpdateJsRootId: SettingData;
+}
 
 export default class PluginBlockConverter extends Plugin {
   //* 此处需要与i18n.json中的key对应
   declare public data: {
-    config: typeof DefaultDATA.config;
-    "config.json": typeof DefaultDATA.config;
+    //config: typeof DefaultDATA.config;
+    "config.json": IConfig;
   };
-  declare public i18n: typeof i18nObj.zh_CN;
+  declare public i18n: i18nObj;
   async onload() {
     //this.displayName = "块转换工具"; //?不能自动加载插件名称
     this.eventBus.on("click-blockicon", this.blockIconEvent);
     this.eventBus.on("ws-main", this.switchWait);
     this.eventBus.on("click-editortitleicon", this.openMenuDoctreeEvent);
-    await this.loadData(STORAGE_NAME);
-    //注意，STORAGE_NAME 为 "config.json"，不是 "config"
-    // todo 应该直接使用 this.data["config.json"]
-    this.data.config = Object.assign(
-      DefaultDATA.config,
-      this.data[STORAGE_NAME]
+
+    await this.loadConfig();
+
+    buildSetting(
+      this.data["config.json"] as any as { [key: string]: SettingData },
+      {
+        storageName: "config.json",
+        isReload: true,
+        plugin: this,
+      }
     );
-    //this.updateConfig();
-    buildSetting(this.data.config, {
-      storageName: STORAGE_NAME,
-      isReload: true,
-      plugin: this,
-    });
     this.initCommand();
     this.loadPresetSnippet();
     //await this.loadPresetSnippet("blockCustomUpdate/法条自动链接.js");
@@ -114,6 +88,50 @@ export default class PluginBlockConverter extends Plugin {
     }
   };
 
+  private async loadConfig() {
+    const DefaultDATA = {
+      config: {
+        isCustomPaste: {
+          type: "switch",
+          title: `${this.i18n.name_customPaste} - ${this.i18n.setting_isTurnON}`,
+          value: true,
+        },
+        customPasteJsRootId: {
+          type: "input",
+          title: `${this.i18n.name_customPaste} - ${this.i18n.setting_jsDoc}`,
+          value: "",
+        },
+        isBlockCusCopy: {
+          type: "switch",
+          title: `${this.i18n.name_blockCustomCopy} - ${this.i18n.setting_isTurnON}`,
+          value: true,
+        },
+        blockCusCopyJsRootId: {
+          type: "input",
+          title: `${this.i18n.name_blockCustomCopy} - ${this.i18n.setting_jsDoc}`,
+          value: "",
+        },
+        isBlockCusUpdate: {
+          type: "switch",
+          title: `${this.i18n.name_blockCustomUpdate} - ${this.i18n.setting_isTurnON}`,
+          value: true,
+        },
+        blockCusUpdateJsRootId: {
+          type: "input",
+          title: `${this.i18n.name_blockCustomUpdate} - ${this.i18n.setting_jsDoc}`,
+          value: "",
+        },
+      },
+    };
+    await this.loadData("config.json");
+    //* 注意，STORAGE_NAME 为 "config.json"，不是 "config"
+    this.data["config.json"] = Object.assign(
+      DefaultDATA.config,
+      this.data["config.json"]
+    );
+    //this.updateConfig();
+  }
+
   private blockIconEvent = ({
     detail,
   }: {
@@ -121,9 +139,9 @@ export default class PluginBlockConverter extends Plugin {
   }) => {
     //this.detail = detail; //快捷键使用
     this.addUtilDialogMenu(detail);
-    /*     this.data.config.isBlockCusCopy.value && this.addCustomCopyMenu(detail);
-    this.data.config.isBlockCusUpdate.value && this.addCustomUpdateMenu(detail);
-    this.data.config.isCustomPaste.value && this.addCustomPasteMenu(detail); */
+    /*     this.data["config.json"].isBlockCusCopy.value && this.addCustomCopyMenu(detail);
+    this.data["config.json"].isBlockCusUpdate.value && this.addCustomUpdateMenu(detail);
+    this.data["config.json"].isCustomPaste.value && this.addCustomPasteMenu(detail); */
     this.addSaveSnippetMenu(detail);
   };
 
@@ -150,28 +168,28 @@ export default class PluginBlockConverter extends Plugin {
       component: EComponent;
       rootId?: string;
     }[] = [];
-    if (this.data.config.isBlockCusCopy.value) {
+    if (this.data["config.json"].isBlockCusCopy.value) {
       info.push({
-        label: this.i18n.BlockCustomCopyName,
+        label: this.i18n.name_blockCustomCopy,
         id: EComponent.Copy,
         component: EComponent.Copy,
-        rootId: this.data.config.blockCusCopyJsRootId.value,
+        rootId: this.data["config.json"].blockCusCopyJsRootId.value as string,
       });
     }
-    if (this.data.config.isBlockCusUpdate.value) {
+    if (this.data["config.json"].isBlockCusUpdate.value) {
       info.push({
-        label: this.i18n.BlockCustomUpdateName,
+        label: this.i18n.name_blockCustomUpdate,
         id: EComponent.Update,
         component: EComponent.Update,
-        rootId: this.data.config.blockCusUpdateJsRootId.value,
+        rootId: this.data["config.json"].blockCusUpdateJsRootId.value as string,
       });
     }
-    if (this.data.config.isCustomPaste.value) {
+    if (this.data["config.json"].isCustomPaste.value) {
       info.push({
-        label: this.i18n.CustomPasteName,
+        label: this.i18n.name_customPaste,
         id: EComponent.Paste,
         component: EComponent.Paste,
-        rootId: this.data.config.customPasteJsRootId.value,
+        rootId: this.data["config.json"].customPasteJsRootId.value as string,
       });
     }
     for (const item of info) {
@@ -190,15 +208,15 @@ export default class PluginBlockConverter extends Plugin {
 
   private async initCommand() {
     let snippets: ISnippet[] = [];
-    if (this.data.config.isBlockCusCopy.value) {
+    if (this.data["config.json"].isBlockCusCopy.value) {
       snippets = await getAllJs(
         EComponent.Copy,
-        this.data.config.blockCusCopyJsRootId.value
+        this.data["config.json"].blockCusCopyJsRootId.value as string
       );
       for (const snippet of snippets) {
         this.addCommand({
-          langKey: PluginName + encodeURIComponent(snippet.label),
-          langText: "自定义块复制-" + snippet.label,
+          langKey: CONSTANTS.PluginName + encodeURIComponent(snippet.label),
+          langText: this.i18n.name_blockCustomCopy + "-" + snippet.label,
           hotkey: "",
           editorCallback: async (protyle) => {
             const blockElements = getSelectedBlocks(protyle);
@@ -206,15 +224,15 @@ export default class PluginBlockConverter extends Plugin {
           },
         });
       }
-      if (this.data.config.isBlockCusUpdate.value) {
+      if (this.data["config.json"].isBlockCusUpdate.value) {
         snippets = await getAllJs(
           EComponent.Update,
-          this.data.config.blockCusUpdateJsRootId.value
+          this.data["config.json"].blockCusUpdateJsRootId.value as string
         );
         for (const snippet of snippets) {
           this.addCommand({
-            langKey: PluginName + encodeURIComponent(snippet.label),
-            langText: "自定义块更新-" + snippet.label,
+            langKey: CONSTANTS.PluginName + encodeURIComponent(snippet.label),
+            langText: this.i18n.name_blockCustomUpdate + "-" + snippet.label,
             hotkey: "",
             editorCallback: async (protyle) => {
               const blockElements = getSelectedBlocks(protyle);
@@ -224,15 +242,15 @@ export default class PluginBlockConverter extends Plugin {
         }
       }
     }
-    if (this.data.config.isCustomPaste.value) {
+    if (this.data["config.json"].isCustomPaste.value) {
       snippets = await getAllJs(
         EComponent.Paste,
-        this.data.config.customPasteJsRootId.value
+        this.data["config.json"].customPasteJsRootId.value as string
       );
       for (const snippet of snippets) {
         this.addCommand({
-          langKey: PluginName + encodeURIComponent(snippet.label),
-          langText: "自定义粘贴-" + snippet.label,
+          langKey: CONSTANTS.PluginName + encodeURIComponent(snippet.label),
+          langText: this.i18n.name_customPaste + "-" + snippet.label,
           hotkey: "",
           editorCallback: async (protyle) => {
             await execPaste(snippet, protyle);
@@ -244,7 +262,7 @@ export default class PluginBlockConverter extends Plugin {
   }
 
   private loadPresetSnippet = async () => {
-    const constantPath = "/data/plugins/" + PluginName + "/snippet/";
+    const constantPath = "/data/plugins/" + CONSTANTS.PluginName + "/snippet/";
     for (const component of Object.values(EComponent)) {
       const files = await getJsFiles(component, constantPath);
       for (const file of files) {
@@ -282,61 +300,32 @@ export default class PluginBlockConverter extends Plugin {
       const id = blockId + "-" + window.siyuan.user?.userId || "unknownUserId";
       const fileName = name || id;
       await this.saveData(`${dirName}/${fileName}.js`, code);
-      showMessage("保存成功");
+      showMessage(this.i18n.message_saveSnippetSuccess);
     };
     detail.menu.addItem({
       iconHTML: "",
-      label: this.i18n.saveSnippet,
+      label: this.i18n.name_saveSnippet,
       id: "saveSnippet",
       submenu: [
         {
           iconHTML: "",
-          label: this.i18n.BlockCustomCopyName,
+          label: this.i18n.name_blockCustomCopy,
           type: "submenu",
           click: () => saveSnippet(EComponent.Copy),
         },
         {
           iconHTML: "",
-          label: this.i18n.BlockCustomUpdateName,
+          label: this.i18n.name_blockCustomUpdate,
           type: "submenu",
           click: () => saveSnippet(EComponent.Update),
         },
         {
           iconHTML: "",
-          label: this.i18n.CustomPasteName,
+          label: this.i18n.name_customPaste,
           type: "submenu",
           click: () => saveSnippet(EComponent.Paste),
         },
       ],
     });
-  };
-
-  /**
-   * 设置 this.data.config，包含兼容性老版本处理
-   * @deprecated 由于v0.4.0的破坏性更新，弃用原来的`config`文件，改为`config.json`
-   */
-  private updateConfig = () => {
-    //this.data.config = Object.assign(DefaultDATA.config, this.data.config);
-    //*v0.2.9 => v0.3.0 遗留问题，由于移除模块，设置项将出现残留
-    {
-      for (const key of Object.keys(DefaultDATA.config)) {
-        DefaultDATA.config[key] =
-          this.data.config[key] || DefaultDATA.config[key];
-      }
-      this.data.config = DefaultDATA.config;
-    }
-    //*兼容性改变,v0.2.2 => v0.2.3 遗留问题，原因：loadData 将覆盖默认值
-    if (
-      typeof this.data.config.blockCusCopyJsRootId === typeof "" ||
-      typeof this.data.config.blockCusUpdateJsRootId === typeof ""
-    ) {
-      const blockCusCopyJsRootId = this.data.config
-        .blockCusCopyJsRootId as unknown as string;
-      const blockCusUpdateJsRootId = this.data.config
-        .blockCusUpdateJsRootId as unknown as string;
-      this.data.config = DefaultDATA.config;
-      this.data.config.blockCusUpdateJsRootId.value = blockCusUpdateJsRootId;
-      this.data.config.blockCusCopyJsRootId.value = blockCusCopyJsRootId;
-    }
   };
 }

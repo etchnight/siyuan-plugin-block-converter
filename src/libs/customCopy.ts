@@ -1,5 +1,5 @@
 import { IProtyle, showMessage } from "siyuan";
-import { executeFunc, getArgsByElement, ISnippet } from "./common";
+import { executeFunc, getArgsByElement, getI18n, ISnippet } from "./common";
 //import { IProtyle } from "../../subMod/siyuanPlugin-common/types/global-siyuan";
 
 function buildCopyPreview(jsBlock: ISnippet) {
@@ -51,7 +51,7 @@ export async function execCopy(
 ) {
   const output = await copy(file, blockElements, protyle);
   await navigator.clipboard.writeText(output);
-  showMessage(`${output}已写入剪贴板`);
+  showMessage(`${output}${getI18n().message_copySuccess}`);
 }
 
 export async function previewCopy(

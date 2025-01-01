@@ -4,10 +4,11 @@
  */
 
 import { Dialog, IProtyle } from "siyuan";
-import { EComponent, getComment, ISnippet } from "../libs/common";
+import { getComment, ISnippet } from "../libs/common";
 import { execCopy, previewCopy } from "./customCopy";
 import { execUpdate, previewUpdate } from "./customUpdate";
 import { previewPaste } from "./customPaste";
+import { EComponent } from "./constants";
 export const protyleUtil = (
   files: ISnippet[],
   blockElements: HTMLElement[],

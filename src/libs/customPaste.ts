@@ -1,9 +1,16 @@
 import TurndownService from "turndown";
 //import { IProtyle } from "../../subMod/siyuanPlugin-common/types/global-siyuan";
 import { buildSyTableBlocks } from "./tableTransfer";
-import { buildFunc, getCurrentBlock, IFunc, ISnippet } from "./common";
+import {
+  buildFunc,
+  getCurrentBlock,
+  getI18n,
+  IFunc,
+  ISnippet,
+} from "./common";
 import { IProtyle, showMessage } from "siyuan";
 import { insertBlock } from "../../subMod/siyuanPlugin-common/siyuan-api/block";
+import { EComponent } from "./constants";
 
 async function getClipboardHtml() {
   const content = await navigator.clipboard.read().then((e) => e[0]);
@@ -13,11 +20,11 @@ async function getClipboardHtml() {
   } else if (content.types.includes("text/plain")) {
     blob = await content.getType("text/plain");
   } else {
-    showMessage("请粘贴html或纯文本");
+    showMessage(getI18n().message_getClipboardHtml);
     return;
   }
   const html = await blob.text();
-  console.warn(`[customPaste]`, { html });
+  console.warn(`[${EComponent.Paste}]`, { html });
   return html;
 }
 

@@ -1,0 +1,16 @@
+export type i18nObj = {
+"name_blockCustomUpdate":string,
+"name_blockCustomCopy":string,
+"name_customPaste":string,
+"name_saveSnippet":string,
+"setting_isTurnON":string,
+"setting_jsDoc":string,
+"message_saveSnippetSuccess":string,
+"message_getClipboardHtml":string,
+"message_timeout":string,
+"message_error":string,
+"message_error1":string,
+"message_copySuccess":string,
+"message_updateSuccess":string,
+"message_completed":string,
+}

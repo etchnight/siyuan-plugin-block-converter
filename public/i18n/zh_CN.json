@@ -1,7 +1,16 @@
 {
-  "BlockCustomUpdateName": "自定义更新",
-  "BlockCustomCopyName": "自定义复制",
-  "CustomPasteName": "自定义粘贴",
-  "isTurnON": "是否开启",
-  "saveSnippet": "保存为代码片段"
+  "name_blockCustomUpdate": "自定义更新",
+  "name_blockCustomCopy": "自定义复制",
+  "name_customPaste": "自定义粘贴",
+  "name_saveSnippet": "保存为代码片段",
+  "setting_isTurnON": "是否开启",
+  "setting_jsDoc": "js所在文档",
+  "message_saveSnippetSuccess": "保存成功",
+  "message_getClipboardHtml": "请粘贴html或纯文本",
+  "message_timeout": "运行超时",
+  "message_error": "运行错误",
+  "message_error1": "脚本运行出错，请查看控制台",
+  "message_copySuccess": "已写入剪贴板",
+  "message_updateSuccess": "更新成功",
+  "message_completed": "已完成: "
 }
