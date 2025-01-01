@@ -12,10 +12,11 @@ import { store } from "./store";
 export interface IUpdateResult {
   id: string;
   parentId: string;
-  dom: HTMLDivElement;
+  dom: HTMLDivElement; //是一个div，其children可能包含多个block div 节点
   attrs: { [key: string]: string };
   oldDom: HTMLDivElement;
   isDelete: boolean;
+  isIgnore: boolean;
 }
 
 function buildUpdatePreview(jsBlock: ISnippet) {
@@ -64,6 +65,7 @@ function buildUpdatePreview(jsBlock: ISnippet) {
           attrs: result.input.extra.attrs,
           oldDom,
           isDelete: result.input.isDelete,
+          isIgnore: result.input.isIgnore,
         };
       })
     );
@@ -91,8 +93,14 @@ export async function execUpdate(
   let count = 0;
   let preBlockId = outputDoms[0].id;
   for (let i = 0; i < outputDoms.length; i++) {
-    const { id, parentId, dom, attrs, oldDom, isDelete } = outputDoms[i];
+    const { id, parentId, dom, attrs, oldDom, isDelete, isIgnore } =
+      outputDoms[i];
     let updateFlag = false;
+    if (isIgnore) {
+      preBlockId = id;
+      count++;
+      continue;
+    }
     if (isDelete && i !== 0) {
       await deleteBlock(
         { id: id },
@@ -101,10 +109,12 @@ export async function execUpdate(
         parentId,
         preBlockId
       );
+      count++;
       continue;
     } else {
       preBlockId = id;
     }
+    //* 见IUpdateResult的解释，dom可能包含多个block div节点
     for (const block of dom.children) {
       if (!updateFlag) {
         await updateBlockWithAttr(

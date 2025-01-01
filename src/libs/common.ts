@@ -105,7 +105,8 @@ export interface IFuncInput {
   extra: { title: string; attrs: { [key: string]: string } }; //当前文档标题,当前块属性
   index: number; //当前块索引
   array: Block[]; //所有块
-  isDelete: boolean; //是否删除
+  isDelete: boolean; //是否删除，在自定义更新中使用，表示是否删除当前块
+  isIgnore: boolean; //是否忽略，在自定义更新中使用，true 表示不进行任何操作，比output原样输出安全，优先于isDelete
 }
 
 /**
@@ -294,6 +295,7 @@ export async function getArgsByElement(
       index: i, //当前块索引
       array: array.map((e) => e.block), //所有块
       isDelete: false, //是否删除
+      isIgnore: false,
       //output: e.block.markdown, //输出内容
     };
     return input_func;

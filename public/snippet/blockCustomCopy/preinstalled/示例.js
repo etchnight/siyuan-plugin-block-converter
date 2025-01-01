@@ -3,9 +3,9 @@
  * 这是一个示例脚本
  *
  * 如果想要直接在IDE中编辑脚本，可以复制该文件
- * 
+ *
  * 它不会改变输出，只需进行简单调整（如添加let,删除部分语句），就可以使IDE的代码提示有效
- * 
+ *
  * 注意，输入参数中的 tools 仍旧只能在思源笔记内使用，所以在此没有定义
  */
 
@@ -67,6 +67,7 @@ input = {
     },
   ],
   isDelete: false,
+  isIgnore: false,
 };
 let tempOutput = output; //删除
 output = input.block.markdown;
