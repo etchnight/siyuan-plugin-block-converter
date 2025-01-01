@@ -13,6 +13,7 @@ import { execUpdate } from "./libs/customUpdate";
 import {
   EComponent,
   getAllJs,
+  getJsFiles,
   getSelectedBlocks,
   ISnippet,
   PluginName,
@@ -20,8 +21,8 @@ import {
 } from "./libs/common";
 import { execPaste } from "./libs/customPaste";
 import { i18nObj } from "../scripts/i18n";
-import extract from "extract-comments";
 import { store, switchWait } from "./libs/store";
+import { getFile } from "../subMod/siyuanPlugin-common/siyuan-api/file";
 //import { getJsdocData } from "jsdoc-to-markdown";
 //import doctrine from "doctrine";
 
@@ -63,19 +64,6 @@ const DefaultDATA = {
 };
 
 export default class PluginBlockConverter extends Plugin {
-  //private blockIconEventBindThis = this.blockIconEvent.bind(this);
-  //private blockCustomCopySubmenus: IMenu[] = [];
-  //private blockCustomUpdateSubmenus: IMenu[] = [];
-  //private waitting = false; //判断是否应该等待
-  /**
-   * 三种生成途径：通过块标事件直接获取、文档标题事件中查询、快捷键命令中通过common.js中函数获取
-   * 在自定义复制和自定义粘贴中作为入参使用
-   */
-  /*   private detail: {
-    menu: Menu;
-    blockElements: HTMLElement[];
-    protyle: IProtyle;
-  } = { menu: undefined, blockElements: [], protyle: undefined }; */
   //* 此处需要与i18n.json中的key对应
   declare public data: {
     config: typeof DefaultDATA.config;
@@ -101,7 +89,7 @@ export default class PluginBlockConverter extends Plugin {
       plugin: this,
     });
     this.initCommand();
-
+    this.loadPresetSnippet();
     //await this.loadPresetSnippet("blockCustomUpdate/法条自动链接.js");
   }
 
@@ -255,25 +243,17 @@ export default class PluginBlockConverter extends Plugin {
     //this.blockCustomCopySubmenus = submenu;
   }
 
-  //todo 获取js文件元数据
-  private loadPresetSnippet = async (fileName: string) => {
-    const json = await this.loadData(fileName);
-    const comments = extract(json) as {
-      type: "BlockComment" | "LineComment";
-      value: string;
-    }[];
-    const metadataComment = comments.find((e) => {
-      return e.type === "BlockComment" && e.value.startsWith("metadata");
-    });
-    const metadata = metadataComment.value.split("\n").reduce((acc, cur) => {
-      const group = cur.match(/@(.*?) (.*)/);
-      if (!group) {
-        return acc;
+  private loadPresetSnippet = async () => {
+    const constantPath = "/data/plugins/" + PluginName + "/snippet/";
+    for (const component of Object.values(EComponent)) {
+      const files = await getJsFiles(component, constantPath);
+      for (const file of files) {
+        const jsContent = await getFile({
+          path: constantPath + file.path,
+        });
+        await this.saveData(file.path, jsContent);
       }
-      acc[group[1]] = group[2];
-      return acc;
-    }, {});
-    return metadata;
+    }
   };
 
   private addSaveSnippetMenu = async (detail: {
@@ -330,7 +310,7 @@ export default class PluginBlockConverter extends Plugin {
       ],
     });
   };
-  
+
   /**
    * 设置 this.data.config，包含兼容性老版本处理
    * @deprecated 由于v0.4.0的破坏性更新，弃用原来的`config`文件，改为`config.json`

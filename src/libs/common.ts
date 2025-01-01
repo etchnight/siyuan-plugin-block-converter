@@ -351,7 +351,10 @@ export async function getJsBlocks(docId: BlockId) {
  * @param component
  * @returns
  */
-export async function getJsFiles(component: EComponent) {
+export async function getJsFiles(
+  component: EComponent,
+  pathPrefix: string = "/data/storage/petal/" + PluginName + "/"
+) {
   const readDirRecur = async (
     path: string,
     fileList: {
@@ -366,7 +369,6 @@ export async function getJsFiles(component: EComponent) {
     if (level > 20) {
       return;
     }
-    const pathPrefix = "/data/storage/petal/" + PluginName + "/";
     const files = await readDir({ path: pathPrefix + path });
     const filesMap = files.map((file) => {
       return {
