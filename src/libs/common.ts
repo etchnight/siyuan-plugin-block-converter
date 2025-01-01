@@ -17,6 +17,7 @@ import {
   requestQuerySQL,
   TransactionRes,
 } from "../../subMod/siyuanPlugin-common/siyuan-api";
+import * as siyuanApi from "../../subMod/siyuanPlugin-common/siyuan-api";
 //tools 附加工具库
 import * as prettier from "prettier";
 import prettierPluginBabel from "prettier/plugins/babel";
@@ -308,8 +309,8 @@ export async function getArgsByElement(
       prettierPluginEstree,
       prettierPluginMarkdown,
     },
+    siyuanApi,
   };
-
   return { inputs, tools };
 }
 
