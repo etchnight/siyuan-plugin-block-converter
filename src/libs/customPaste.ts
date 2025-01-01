@@ -9,8 +9,8 @@ import {
   ISnippet,
 } from "./common";
 import { IProtyle, showMessage } from "siyuan";
-import { insertBlock } from "../../subMod/siyuanPlugin-common/siyuan-api/block";
 import { EComponent } from "./constants";
+import { insertBlock } from "../../subMod/siyuanPlugin-common/siyuan-api";
 
 async function getClipboardHtml() {
   const content = await navigator.clipboard.read().then((e) => e[0]);

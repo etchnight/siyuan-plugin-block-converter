@@ -2,28 +2,28 @@
  * 存放一些公共函数
  */
 import { Dialog, IGetDocInfo, IProtyle, Lute, Menu, showMessage } from "siyuan";
-import {
-  requestQuerySQL,
-  queryBlockById,
-} from "../../subMod/siyuanPlugin-common/siyuan-api/query";
+
 import {
   Block,
   BlockId,
 } from "../../subMod/siyuanPlugin-common/types/siyuan-api";
-import { TransactionRes } from "../../subMod/siyuanPlugin-common/siyuan-api/block";
-import { getBlockAttrs } from "../../subMod/siyuanPlugin-common/siyuan-api/attr";
 
+import {
+  getBlockAttrs,
+  getDoc,
+  getFile,
+  queryBlockById,
+  readDir,
+  requestQuerySQL,
+  TransactionRes,
+} from "../../subMod/siyuanPlugin-common/siyuan-api";
 //tools 附加工具库
 import * as prettier from "prettier";
 import prettierPluginBabel from "prettier/plugins/babel";
 import prettierPluginEstree from "prettier/plugins/estree";
 import prettierPluginMarkdown from "prettier/plugins/markdown";
-import {
-  getFile,
-  readDir,
-} from "../../subMod/siyuanPlugin-common/siyuan-api/file";
+
 import { protyleUtil } from "./protyle-util";
-import { getDoc } from "../../subMod/siyuanPlugin-common/siyuan-api/filetree";
 import TurndownService from "turndown";
 import extract from "extract-comments";
 import { CONSTANTS, EComponent } from "./constants";
@@ -82,7 +82,6 @@ export function getSelectedBlocks(
   }; */
   return blockElements;
 }
-
 /**
  * *执行insert Block 操作后，获取插入块的id
  * @param res

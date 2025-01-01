@@ -1,12 +1,7 @@
 import { IProtyle, showMessage } from "siyuan";
-import { setBlockAttrs } from "../../subMod/siyuanPlugin-common/siyuan-api/attr";
-import {
-  deleteBlock,
-  insertBlock,
-  updateBlockWithAttr,
-} from "../../subMod/siyuanPlugin-common/siyuan-api/block";
 import { executeFunc, getArgsByElement, getI18n, ISnippet } from "./common";
 import { store } from "./store";
+import { deleteBlock, insertBlock, setBlockAttrs, updateBlockWithAttr } from "../../subMod/siyuanPlugin-common/siyuan-api";
 //import { IProtyle } from "../../subMod/siyuanPlugin-common/types/global-siyuan";
 
 export interface IUpdateResult {
