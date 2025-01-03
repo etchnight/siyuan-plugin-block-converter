@@ -389,7 +389,7 @@ export interface ISnippet {
   path?: string; //file专属
   id?: string; //Block块专属
   name?: string; //Block块专属
-  description?: string; 
+  description?: string;
   //output?: string | IUpdateResult[]; //脚本可能会改变，所以不预存结果
   //clipboardHtml?: string; //Paste专属，预存输入
 }
@@ -456,6 +456,7 @@ export async function protyleUtilDialog(
   //menu.submenu = this.blockCustomCopySubmenus;
   const dialog = new Dialog({
     content: "<div class='container'></div>",
+    hideCloseIcon: true,
   });
   const container = dialog.element.querySelector(".container");
   if (!container) {

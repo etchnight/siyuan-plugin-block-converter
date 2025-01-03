@@ -9,6 +9,7 @@ import { execCopy, previewCopy } from "./customCopy";
 import { execUpdate, previewUpdate } from "./customUpdate";
 import { previewPaste } from "./customPaste";
 import { EComponent } from "./constants";
+import { processRender } from "../../subMod/siyuanPlugin-common/src/render";
 export const protyleUtil = (
   files: ISnippet[],
   blockElements: HTMLElement[],
@@ -20,51 +21,74 @@ export const protyleUtil = (
    * root
    * - protyle-util
    *  - fn__flex(utilContiainer)
-   *    - fn__flex-column
+   *    - fn__flex-column(leftContiainer)
    *      - fn__flex(tools)
+   *        - input
+   *        - previous//todo
+   *        - next//todo
    *      - b3-list
    *        - b3-list-item
-   *    - div(wysiwygContiainer)
+   *    - div(descriptionContiainer)description
+   *      - protyle-wysiwyg
+   *    - div(previewContiainer)
    *      - protyle-wysiwyg
    */
 
-  /**
-   * 核心组件
-   * 这部分是关系到数据的产生、预览
-   */
-  //*预览区
-  const wysiwyg = document.createElement("div");
-  wysiwyg.setAttribute("data-type", "preview");
-  const updateWysiwyg = (html: string, wysiwyg: HTMLDivElement) => {
-    html =
-      `<div data-node-id="description" data-type="NodeThematicBreak" class="hr"><div></div></div>` +
-      html;
-    if (wysiwyg.getAttribute("data-type") === "description") {
-      html = protyle.lute.Md2BlockDOM("###### 脚本描述") + html;
-    } else if (wysiwyg.getAttribute("data-type") === "preview") {
-      html = protyle.lute.Md2BlockDOM("###### 脚本预览(仅前10个块)") + html;
-    }
+  //根节点
+  const root = document.createElement("div");
+  const protyleUtil = document.createElement("div");
+  protyleUtil.classList.add("protyle-util");
+  protyleUtil.style.top = "65.1125px";
+  protyleUtil.style.left = "288.8px";
+  protyleUtil.style.zIndex = "11";
+  //protyleUtil.style.position = "absolute";
+  root.appendChild(protyleUtil);
 
-    wysiwyg.innerHTML = html;
+  //容器
+  const utilContiainer = document.createElement("div");
+  utilContiainer.classList.add("fn__flex");
+  //max-height: 372.8px;
+  utilContiainer.style.maxHeight = "500px";
+  protyleUtil.appendChild(utilContiainer);
+
+  //左侧
+  const leftContiainer = document.createElement("div");
+  leftContiainer.classList.add("fn__flex-column");
+  //min-width: 260px;max-width:50vw
+  leftContiainer.style.width = "260px";
+  leftContiainer.style.maxWidth = "50vw";
+  utilContiainer.appendChild(leftContiainer);
+
+  //*工具栏（左上）
+  const tools = document.createElement("div");
+  tools.classList.add("fn__flex");
+  tools.style.margin = "0 8px 4px 8px";
+  leftContiainer.appendChild(tools);
+
+  const input = document.createElement("input");
+  input.classList.add("b3-text-field");
+  input.classList.add("fn__flex-1");
+  input.oninput = (e) => {
+    updateList((e.target as HTMLInputElement).value);
   };
-  updateWysiwyg("", wysiwyg);
-  //*描述区
-  const wysiwygDescription = document.createElement("div");
-  wysiwygDescription.setAttribute("data-type", "description");
-  updateWysiwyg("", wysiwygDescription);
-  //*文件列表
-  const listEle = document.createElement("div");
-  const updateList = (filter?: string) => {
-    listEle.innerHTML = "";
-    files.forEach((file) => {
-      if (!filter || file.label.includes(filter)) {
-        listEle.appendChild(buildListItem(file));
-      }
-    });
-  };
+  tools.appendChild(input);
+  //todo
+  /*   const previous = document.createElement("span");
+          previous.classList.add("block__icon");
+          previous.classList.add("block__icon--show");
+          previous.setAttribute("data-type", "previous");
+          previous.innerHTML = `<svg><use xlink:href="#iconLeft"></use></svg>`;
+          tools.appendChild(previous);
+          const next = document.createElement("span");
+          next.classList.add("block__icon");
+          next.classList.add("block__icon--show");
+          next.setAttribute("data-type", "next");
+          next.innerHTML = `<svg><use xlink:href="#iconRight"></use></svg>`;
+          tools.appendChild(next); */
+  //*列表项
+
   //*私有状态，用于记录当前选中的文件
   let selectedFile: ISnippet | undefined;
-  //*列表项
   const buildListItem = (file: ISnippet) => {
     const listItem = document.createElement("div");
     listItem.classList.add("b3-list-item");
@@ -82,16 +106,16 @@ export const protyleUtil = (
         return;
       }
       //*描述
-      updateWysiwyg("", wysiwygDescription);
+      await updateWysiwyg("", wysiwygDescription);
       await getComment(file);
       if (file.description) {
-        updateWysiwyg(
+        await updateWysiwyg(
           protyle.lute.Md2BlockDOM(file.description),
           wysiwygDescription
         );
       }
       //dialog.destroy();
-      updateWysiwyg("", wysiwyg);
+      await updateWysiwyg("", wysiwyg);
       let html = "";
       if (component == EComponent.Copy) {
         html = await previewCopy(file, blockElements, protyle);
@@ -100,7 +124,7 @@ export const protyleUtil = (
       } else if (component == EComponent.Paste) {
         html = await previewPaste(file, protyle);
       }
-      updateWysiwyg(html, wysiwyg);
+      await updateWysiwyg(html, wysiwyg);
     });
     listItem.addEventListener("mouseleave", () => {
       selectedFile = null;
@@ -135,90 +159,67 @@ remove.innerHTML = `<svg><use xlink:href="#iconTrashcan"></use></svg>`;
 listItem.appendChild(remove); */
     return listItem;
   };
-  /**
-   * html层次结构
-   * 这部分不涉及逻辑，只是html结构，build函数的嵌套与html结构一一对应
-   */
-  const root = document.createElement("div");
-  const buildRoot = () => {
-    const buildProtyleUtil = () => {
-      const protyleUtil = document.createElement("div");
-      protyleUtil.classList.add("protyle-util");
-      protyleUtil.style.top = "65.1125px";
-      protyleUtil.style.left = "288.8px";
-      protyleUtil.style.zIndex = "11";
-      //protyleUtil.style.position = "absolute";
-      root.appendChild(protyleUtil);
-      const buildUtilContiainer = () => {
-        const utilContiainer = document.createElement("div");
-        utilContiainer.classList.add("fn__flex");
-        //max-height: 372.8px;
-        utilContiainer.style.maxHeight = "500px";
-        protyleUtil.appendChild(utilContiainer);
 
-        const buildFlexColumn = () => {
-          const flexColumn = document.createElement("div");
-          flexColumn.classList.add("fn__flex-column");
-          //min-width: 260px;max-width:50vw
-          flexColumn.style.width = "260px";
-          flexColumn.style.maxWidth = "50vw";
-          utilContiainer.appendChild(flexColumn);
-
-          const buildTools = () => {
-            const tools = document.createElement("div");
-            tools.classList.add("fn__flex");
-            tools.style.margin = "0 8px 4px 8px";
-            flexColumn.appendChild(tools);
-
-            const input = document.createElement("input");
-            input.classList.add("b3-text-field");
-            input.classList.add("fn__flex-1");
-            input.oninput = (e) => {
-              updateList((e.target as HTMLInputElement).value);
-            };
-            tools.appendChild(input);
-            //todo
-            /*   const previous = document.createElement("span");
-          previous.classList.add("block__icon");
-          previous.classList.add("block__icon--show");
-          previous.setAttribute("data-type", "previous");
-          previous.innerHTML = `<svg><use xlink:href="#iconLeft"></use></svg>`;
-          tools.appendChild(previous);
-          const next = document.createElement("span");
-          next.classList.add("block__icon");
-          next.classList.add("block__icon--show");
-          next.setAttribute("data-type", "next");
-          next.innerHTML = `<svg><use xlink:href="#iconRight"></use></svg>`;
-          tools.appendChild(next); */
-          };
-          buildTools();
-          listEle.classList.add("b3-list");
-          listEle.classList.add("fn__flex-1");
-          listEle.classList.add("b3-list--background");
-          listEle.style.position = "relative";
-          flexColumn.appendChild(listEle);
-          updateList();
-        };
-        buildFlexColumn();
-        const buildWysiwygContiainer = (
-          wysiwyg: HTMLDivElement,
-          width: string
-        ) => {
-          const wysiwygContiainer = document.createElement("div");
-          wysiwygContiainer.style.width = width;
-          wysiwygContiainer.style.overflow = "auto";
-          utilContiainer.appendChild(wysiwygContiainer);
-
-          wysiwyg.classList.add("protyle-wysiwyg");
-          wysiwygContiainer.appendChild(wysiwyg);
-        };
-        buildWysiwygContiainer(wysiwygDescription, "260px");
-        buildWysiwygContiainer(wysiwyg, "520px");
-      };
-      buildUtilContiainer();
-    };
-    buildProtyleUtil();
+  //*文件列表
+  const listEle = document.createElement("div");
+  listEle.classList.add("b3-list");
+  listEle.classList.add("fn__flex-1");
+  listEle.classList.add("b3-list--background");
+  listEle.style.position = "relative";
+  leftContiainer.appendChild(listEle);
+  const updateList = (filter?: string) => {
+    listEle.innerHTML = "";
+    files.forEach((file) => {
+      if (!filter || file.label.includes(filter)) {
+        listEle.appendChild(buildListItem(file));
+      }
+    });
   };
-  buildRoot();
+  updateList();
+
+  //*编辑器容器
+  const initWysiwygContiainer = (width: string) => {
+    //wysiwyg: HTMLDivElement,
+    const wysiwygContiainer = document.createElement("div");
+    wysiwygContiainer.style.width = width;
+    wysiwygContiainer.style.overflow = "auto";
+    utilContiainer.appendChild(wysiwygContiainer);
+    return wysiwygContiainer;
+  };
+
+  //更新编辑器内容
+  const initWysiwyg = (
+    contiainer: HTMLDivElement,
+    type: "preview" | "description"
+  ) => {
+    const wysiwyg = document.createElement("div");
+    wysiwyg.setAttribute("data-type", type);
+    wysiwyg.classList.add("protyle-wysiwyg");
+    contiainer.appendChild(wysiwyg);
+    return wysiwyg;
+  };
+  const updateWysiwyg = async (html: string, wysiwyg: HTMLDivElement) => {
+    let prefixHtml = `<div data-node-id="description" data-type="NodeThematicBreak" class="hr"><div></div></div>`;
+    if (wysiwyg.getAttribute("data-type") === "description") {
+      prefixHtml = protyle.lute.Md2BlockDOM("###### 脚本描述") + prefixHtml;
+    } else if (wysiwyg.getAttribute("data-type") === "preview") {
+      prefixHtml =
+        protyle.lute.Md2BlockDOM("###### 脚本预览(仅前10个块)") + prefixHtml;
+    }
+
+    wysiwyg.innerHTML = prefixHtml + html;
+    processRender(wysiwyg);
+  };
+
+  //*描述区
+  const descriptionContiainer = initWysiwygContiainer("260px");
+  const wysiwygDescription = initWysiwyg(descriptionContiainer, "description");
+  updateWysiwyg("", wysiwygDescription);
+  //*预览区
+  const wysiwygContiainer = initWysiwygContiainer("520px");
+  //const wysiwyg = initProtyle(wysiwygContiainer);
+  const wysiwyg = initWysiwyg(wysiwygContiainer, "preview");
+  updateWysiwyg("", wysiwyg);
+
   return root;
 };

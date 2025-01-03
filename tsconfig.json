@@ -48,7 +48,7 @@
         "src/**/*.d.ts",
         "src/**/*.tsx",
         "src/**/*.vue"
-    ],
+, "subMod/siyuanPlugin-common/src/render.ts", "subMod/siyuanPlugin-common/types/render.d.ts"    ],
     "references": [
         {
             "path": "./tsconfig.node.json"
