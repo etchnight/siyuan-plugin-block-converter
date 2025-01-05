@@ -34,12 +34,30 @@ export const protyleUtil = (
    *      - protyle-wysiwyg
    */
 
+  /**尺寸计算 */
+  const compuleteSize = () => {
+    const height = window.outerHeight * 0.75;
+    const width = window.outerWidth * 0.75;
+    const center = { x: window.outerWidth / 2, y: window.outerHeight / 2 };
+    const size = {
+      left: center.x - width / 2 + "px",
+      top: center.y - height / 2 + "px",
+      width: width + "px",
+      height: height + "px",
+      leftWidth: width * 0.25 + "px",
+      midWidth: width * 0.25 + "px",
+      rightWidth: width * 0.5 + "px",
+    };
+    return size;
+  };
+  const size = compuleteSize();
+
   //根节点
   const root = document.createElement("div");
   const protyleUtil = document.createElement("div");
   protyleUtil.classList.add("protyle-util");
-  protyleUtil.style.top = "65.1125px";
-  protyleUtil.style.left = "288.8px";
+  protyleUtil.style.top = size.top; //"65.1125px";
+  protyleUtil.style.left = size.left; //"288.8px";
   protyleUtil.style.zIndex = "11";
   //protyleUtil.style.position = "absolute";
   root.appendChild(protyleUtil);
@@ -47,16 +65,14 @@ export const protyleUtil = (
   //容器
   const utilContiainer = document.createElement("div");
   utilContiainer.classList.add("fn__flex");
-  //max-height: 372.8px;
-  utilContiainer.style.maxHeight = "500px";
+  utilContiainer.style.maxHeight = size.height; //"372.8px";
   protyleUtil.appendChild(utilContiainer);
 
   //左侧
   const leftContiainer = document.createElement("div");
   leftContiainer.classList.add("fn__flex-column");
-  //min-width: 260px;max-width:50vw
-  leftContiainer.style.width = "260px";
-  leftContiainer.style.maxWidth = "50vw";
+  //leftContiainer.style.width = "260px";
+  leftContiainer.style.maxWidth = size.leftWidth; //"50vw";
   utilContiainer.appendChild(leftContiainer);
 
   //*工具栏（左上）
@@ -212,11 +228,11 @@ listItem.appendChild(remove); */
   };
 
   //*描述区
-  const descriptionContiainer = initWysiwygContiainer("260px");
+  const descriptionContiainer = initWysiwygContiainer(size.midWidth); //("260px");
   const wysiwygDescription = initWysiwyg(descriptionContiainer, "description");
   updateWysiwyg("", wysiwygDescription);
   //*预览区
-  const wysiwygContiainer = initWysiwygContiainer("520px");
+  const wysiwygContiainer = initWysiwygContiainer(size.rightWidth); //("520px");
   //const wysiwyg = initProtyle(wysiwygContiainer);
   const wysiwyg = initWysiwyg(wysiwygContiainer, "preview");
   updateWysiwyg("", wysiwyg);
