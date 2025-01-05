@@ -20,6 +20,7 @@ export const i18nObj = {
     message_copySuccess: "已写入剪贴板",
     message_updateSuccess: "更新成功",
     message_completed: "已完成: ",
+    message_noSnippet: "当前代码片段没有找到有效内容",
     /**dialog */
     dialog_protyle_util_description: "脚本描述",
     dialog_protyle_util_preview: "脚本预览",
@@ -46,6 +47,8 @@ export const i18nObj = {
     message_copySuccess: "written to the clipboard",
     message_updateSuccess: "Updated successfully",
     message_completed: "completed: ",
+    message_noSnippet:
+      "The current code snippet does not contain valid content.",
 
     dialog_protyle_util_description: "Script description",
     dialog_protyle_util_preview: "Result preview",

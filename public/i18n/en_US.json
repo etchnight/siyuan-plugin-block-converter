@@ -15,6 +15,7 @@
   "message_copySuccess": "written to the clipboard",
   "message_updateSuccess": "Updated successfully",
   "message_completed": "completed: ",
+  "message_noSnippet": "The current code snippet does not contain valid content.",
   "dialog_protyle_util_description": "Script description",
   "dialog_protyle_util_preview": "Result preview",
   "dialog_protyle_util_preview_memo": " (only the first ${arg1} blocks)"

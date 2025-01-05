@@ -1,13 +1,7 @@
 import TurndownService from "turndown";
 //import { IProtyle } from "../../subMod/siyuanPlugin-common/types/global-siyuan";
 import { buildSyTableBlocks } from "./tableTransfer";
-import {
-  buildFunc,
-  getCurrentBlock,
-  getI18n,
-  IFunc,
-  ISnippet,
-} from "./common";
+import { buildFunc, getCurrentBlock, getI18n, IFunc, ISnippet } from "./common";
 import { IProtyle, showMessage } from "siyuan";
 import { EComponent } from "./constants";
 import { insertBlock } from "../../subMod/siyuanPlugin-common/siyuan-api";
@@ -95,6 +89,9 @@ export async function execPaste(
 async function buildCustomRule(jsBlock: ISnippet) {
   const func = (await buildFunc(jsBlock, true)) as IFunc;
   const rules = func();
+  if (!rules) {
+    return [];
+  }
   return rules.filter((e) => {
     if (!e) {
       return false;

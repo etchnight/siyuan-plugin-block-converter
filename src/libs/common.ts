@@ -2,7 +2,7 @@
  * 存放一些公共函数
  */
 import { Dialog, IGetDocInfo, IProtyle, Lute, Menu, showMessage } from "siyuan";
-
+import { parse, ParseResult } from "@babel/parser";
 import {
   Block,
   BlockId,
@@ -128,6 +128,33 @@ export type IFunc = () => TurndownService.Rule[];
  */
 type IOutput = string; //Markdown文本
 
+const extractScriptPaste = (content: string) => {
+  try {
+    const ast = parse(content, {
+      sourceType: "module",
+    });
+
+    const body = ast.program.body;
+    const expressions = body.filter((item) => {
+      return item.type === "ExpressionStatement";
+    });
+    if (!expressions.length) return "";
+    const rules = expressions.find((item) => {
+      return item.expression.type === "ArrayExpression";
+    });
+    if (!rules) return "";
+    const lines = content.split("\n");
+    const arrayLines = lines.slice(
+      rules.loc.start.line - 1,
+      rules.loc.end.line
+    );
+    return arrayLines.join("\n");
+  } catch (e) {
+    console.warn(e);
+    return "";
+  }
+};
+
 /**
  * @description 从文件或笔记中获取snippet并转为函数
  *
@@ -161,11 +188,16 @@ export async function buildFunc(
       path: "/data/storage/petal/" + CONSTANTS.PluginName + "/" + file.path,
     });
   }
-
-  const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
   if (isCustomPaste) {
-    return new Function(`return ${jsBlockContent}`) as IFunc;
+    const content = extractScriptPaste(jsBlockContent);
+    if (!content) {
+      showMessage(getI18n().message_noSnippet);
+    }
+    return new Function(`return ${content}`) as IFunc;
   } else {
+    const AsyncFunction = Object.getPrototypeOf(
+      async function () {}
+    ).constructor;
     return new AsyncFunction(
       "input",
       "tools",
