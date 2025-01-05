@@ -72,13 +72,13 @@ export async function execUpdate(
 ) {
   const outputDoms = await update(file, blockElements, protyle);
   //*执行添加、更新、删除操作
-  let count = 1;
+  let count = 0;
   let preBlockId = outputDoms[0].id;
   for (let i = 0; i < outputDoms.length; i++) {
+    count++;
     const { id, parentId, oldDom, isDelete, isIgnore } = outputDoms[i];
     if (isIgnore) {
       preBlockId = id;
-      count++;
       continue;
     }
     if (isDelete && i !== 0) {
@@ -89,13 +89,11 @@ export async function execUpdate(
         parentId,
         preBlockId
       );
-      count++;
       continue;
     } else {
       preBlockId = id;
     }
     preBlockId = await updateByDoms(outputDoms[i], protyle, preBlockId);
-    count++;
     showMessage(`${getI18n().message_completed}${count}/${outputDoms.length}`);
   }
   showMessage(`${file.label}${getI18n().message_updateSuccess}`);

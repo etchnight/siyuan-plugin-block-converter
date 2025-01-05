@@ -134,8 +134,9 @@ export async function execPaste(
 ) {
   const outputDoms = await paste(file, blockElements, protyle);
   //*执行添加、更新操作
-  let count = 1;
+  let count = 0;
   for (let i = 0; i < outputDoms.length; i++) {
+    count++;
     const { id, dom, isDelete } = outputDoms[i];
     if (isDelete) {
       //*更新
@@ -151,7 +152,6 @@ export async function execPaste(
       }
     }
     showMessage(`${getI18n().message_completed}${count}/${outputDoms.length}`);
-    count++;
   }
 }
 
