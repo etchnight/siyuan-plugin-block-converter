@@ -5,6 +5,8 @@
   "name_saveSnippet": "保存为代码片段",
   "setting_isTurnON": "是否开启",
   "setting_jsDoc": "js所在文档",
+  "setting_previewLimit": "预览显示的块数量",
+  "setting_previewLimitDesc": "当设置为0时，不限制预览显示的块数量",
   "message_saveSnippetSuccess": "保存成功",
   "message_getClipboardHtml": "请粘贴html或纯文本",
   "message_timeout": "运行超时",
@@ -12,5 +14,8 @@
   "message_error1": "脚本运行出错，请查看控制台",
   "message_copySuccess": "已写入剪贴板",
   "message_updateSuccess": "更新成功",
-  "message_completed": "已完成: "
+  "message_completed": "已完成: ",
+  "dialog_protyle_util_description": "脚本描述",
+  "dialog_protyle_util_preview": "脚本预览",
+  "dialog_protyle_util_preview_memo": "(仅前${arg1}个块)"
 }

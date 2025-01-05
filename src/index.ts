@@ -21,7 +21,7 @@ import {
   protyleUtilDialog,
 } from "./libs/common";
 import { execPaste } from "./libs/customPaste";
-import { store, switchWait } from "./libs/store";
+import { store, switchPreviewLimit, switchWait } from "./libs/store";
 import { getFile } from "../subMod/siyuanPlugin-common/siyuan-api/file";
 import { CONSTANTS, EComponent } from "./libs/constants";
 import { i18nObj } from "./types/i18nObj";
@@ -37,6 +37,7 @@ interface IConfig {
   blockCusCopyJsRootId: SettingData;
   isBlockCusUpdate: SettingData;
   blockCusUpdateJsRootId: SettingData;
+  previewLimit: SettingData; //预览窗口的块数限制
 }
 
 export default class PluginBlockConverter extends Plugin {
@@ -54,12 +55,16 @@ export default class PluginBlockConverter extends Plugin {
 
     await this.loadConfig();
 
+    const confirmCallback = async () => {
+      switchPreviewLimit(this.data["config.json"].previewLimit.value as number);
+    };
     buildSetting(
       this.data["config.json"] as any as { [key: string]: SettingData },
       {
         storageName: "config.json",
-        isReload: true,
+        isReload: false,
         plugin: this,
+        confirmCallback,
       }
     );
     this.initCommand();
@@ -89,7 +94,7 @@ export default class PluginBlockConverter extends Plugin {
   };
 
   private async loadConfig() {
-    const DefaultDATA = {
+    const DefaultDATA: { config: IConfig } = {
       config: {
         isCustomPaste: {
           type: "switch",
@@ -121,6 +126,13 @@ export default class PluginBlockConverter extends Plugin {
           title: `${this.i18n.name_blockCustomUpdate} - ${this.i18n.setting_jsDoc}`,
           value: "",
         },
+        previewLimit: {
+          type: "slider",
+          title: `${this.i18n.setting_previewLimit}`,
+          value: "10",
+          range: { min: 0, max: 50, step: 10 },
+          description: this.i18n.setting_previewLimitDesc,
+        },
       },
     };
     await this.loadData("config.json");
@@ -129,6 +141,7 @@ export default class PluginBlockConverter extends Plugin {
       DefaultDATA.config,
       this.data["config.json"]
     );
+    switchPreviewLimit(this.data["config.json"].previewLimit.value as number);
     //this.updateConfig();
   }
 

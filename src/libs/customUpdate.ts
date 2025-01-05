@@ -1,7 +1,12 @@
 import { IProtyle, showMessage } from "siyuan";
 import { executeFunc, getArgsByElement, getI18n, ISnippet } from "./common";
 import { store } from "./store";
-import { deleteBlock, insertBlock, setBlockAttrs, updateBlockWithAttr } from "../../subMod/siyuanPlugin-common/siyuan-api";
+import {
+  deleteBlock,
+  insertBlock,
+  setBlockAttrs,
+  updateBlockWithAttr,
+} from "../../subMod/siyuanPlugin-common/siyuan-api";
 //import { IProtyle } from "../../subMod/siyuanPlugin-common/types/global-siyuan";
 
 export interface IUpdateResult {
@@ -154,7 +159,9 @@ export async function previewUpdate(
   blockElements: HTMLElement[],
   protyle: IProtyle
 ) {
-  const blockElementsLimit = blockElements.slice(0, 10); //TODO 可配置
+  const blockElementsLimit = store.previewLimit
+    ? blockElements.slice(0, store.previewLimit)
+    : blockElements;
   const outputDoms = await update(file, blockElementsLimit, protyle);
   const blocks: HTMLDivElement[] = [];
   for (const output of outputDoms) {

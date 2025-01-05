@@ -5,6 +5,8 @@ export type i18nObj = {
 "name_saveSnippet":string,
 "setting_isTurnON":string,
 "setting_jsDoc":string,
+"setting_previewLimit":string,
+"setting_previewLimitDesc":string,
 "message_saveSnippetSuccess":string,
 "message_getClipboardHtml":string,
 "message_timeout":string,
@@ -13,4 +15,7 @@ export type i18nObj = {
 "message_copySuccess":string,
 "message_updateSuccess":string,
 "message_completed":string,
+"dialog_protyle_util_description":string,
+"dialog_protyle_util_preview":string,
+"dialog_protyle_util_preview_memo":string,
 }

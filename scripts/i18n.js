@@ -9,6 +9,8 @@ export const i18nObj = {
     /**设置 */
     setting_isTurnON: "是否开启", //是否在选项中开启
     setting_jsDoc: "js所在文档",
+    setting_previewLimit: "预览显示的块数量",
+    setting_previewLimitDesc: "当设置为0时，不限制预览显示的块数量",
     /**消息 */
     message_saveSnippetSuccess: "保存成功",
     message_getClipboardHtml: "请粘贴html或纯文本",
@@ -18,6 +20,10 @@ export const i18nObj = {
     message_copySuccess: "已写入剪贴板",
     message_updateSuccess: "更新成功",
     message_completed: "已完成: ",
+    /**dialog */
+    dialog_protyle_util_description: "脚本描述",
+    dialog_protyle_util_preview: "脚本预览",
+    dialog_protyle_util_preview_memo: "(仅前${arg1}个块)",
   },
   en_US: {
     name_blockCustomUpdate: "custom update",
@@ -27,6 +33,9 @@ export const i18nObj = {
 
     setting_isTurnON: "turn on to enable", //是否在选项中开启
     setting_jsDoc: "document of JavaScript snegment",
+    setting_previewLimit: "Number of blocks displayed in preview",
+    setting_previewLimitDesc:
+      "When set to 0, the number of blocks displayed in the preview is not limited",
 
     message_saveSnippetSuccess: "save successfully",
     message_getClipboardHtml: "Please paste html or plain text",
@@ -37,6 +46,10 @@ export const i18nObj = {
     message_copySuccess: "written to the clipboard",
     message_updateSuccess: "Updated successfully",
     message_completed: "completed: ",
+
+    dialog_protyle_util_description: "Script description",
+    dialog_protyle_util_preview: "Result preview",
+    dialog_protyle_util_preview_memo: " (only the first ${arg1} blocks)",
   },
 };
 
@@ -54,7 +67,7 @@ function buildType() {
     typeStr += `"${key}":string,\n`;
   }
   typeStr += "}";
-  fs.writeFileSync("./src/types/i18nObj.ts", typeStr, "utf-8");
+  fs.writeFileSync("./src/types/i18nObj.d.ts", typeStr, "utf-8");
 }
 
 function buildFile() {

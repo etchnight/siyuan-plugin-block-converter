@@ -4,12 +4,13 @@
  */
 
 import { Dialog, IProtyle } from "siyuan";
-import { getComment, ISnippet } from "../libs/common";
+import { getComment, getI18n, ISnippet } from "../libs/common";
 import { execCopy, previewCopy } from "./customCopy";
 import { execUpdate, previewUpdate } from "./customUpdate";
 import { previewPaste } from "./customPaste";
 import { EComponent } from "./constants";
 import { processRender } from "../../subMod/siyuanPlugin-common/src/render";
+import { store } from "./store";
 export const protyleUtil = (
   files: ISnippet[],
   blockElements: HTMLElement[],
@@ -216,11 +217,22 @@ listItem.appendChild(remove); */
   };
   const updateWysiwyg = async (html: string, wysiwyg: HTMLDivElement) => {
     let prefixHtml = `<div data-node-id="description" data-type="NodeThematicBreak" class="hr"><div></div></div>`;
+    const titleText = "###### ";
     if (wysiwyg.getAttribute("data-type") === "description") {
-      prefixHtml = protyle.lute.Md2BlockDOM("###### 脚本描述") + prefixHtml;
-    } else if (wysiwyg.getAttribute("data-type") === "preview") {
       prefixHtml =
-        protyle.lute.Md2BlockDOM("###### 脚本预览(仅前10个块)") + prefixHtml;
+        protyle.lute.Md2BlockDOM(
+          titleText + getI18n().dialog_protyle_util_description
+        ) + prefixHtml;
+    } else if (wysiwyg.getAttribute("data-type") === "preview") {
+      let previewText = getI18n().dialog_protyle_util_preview;
+      if (store.previewLimit != 0) {
+        previewText += getI18n().dialog_protyle_util_preview_memo.replace(
+          "${arg1}",
+          store.previewLimit.toString()
+        );
+      }
+      prefixHtml =
+        protyle.lute.Md2BlockDOM(titleText + previewText) + prefixHtml;
     }
 
     wysiwyg.innerHTML = prefixHtml + html;

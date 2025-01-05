@@ -5,6 +5,8 @@
   "name_saveSnippet": "save as code snippet",
   "setting_isTurnON": "turn on to enable",
   "setting_jsDoc": "document of JavaScript snegment",
+  "setting_previewLimit": "Number of blocks displayed in preview",
+  "setting_previewLimitDesc": "When set to 0, the number of blocks displayed in the preview is not limited",
   "message_saveSnippetSuccess": "save successfully",
   "message_getClipboardHtml": "Please paste html or plain text",
   "message_timeout": "Run timed out",
@@ -12,5 +14,8 @@
   "message_error1": "There was an error with the script running, please check the console",
   "message_copySuccess": "written to the clipboard",
   "message_updateSuccess": "Updated successfully",
-  "message_completed": "completed: "
+  "message_completed": "completed: ",
+  "dialog_protyle_util_description": "Script description",
+  "dialog_protyle_util_preview": "Result preview",
+  "dialog_protyle_util_preview_memo": " (only the first ${arg1} blocks)"
 }

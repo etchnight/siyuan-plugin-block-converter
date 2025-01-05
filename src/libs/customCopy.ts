@@ -1,5 +1,6 @@
 import { IProtyle, showMessage } from "siyuan";
 import { executeFunc, getArgsByElement, getI18n, ISnippet } from "./common";
+import { store } from "./store";
 //import { IProtyle } from "../../subMod/siyuanPlugin-common/types/global-siyuan";
 
 function buildCopyPreview(jsBlock: ISnippet) {
@@ -59,7 +60,9 @@ export async function previewCopy(
   blockElements: HTMLElement[],
   protyle: IProtyle
 ) {
-  const blockElementsLimit = blockElements.slice(0, 10); //TODO 可配置
+  const blockElementsLimit = store.previewLimit
+    ? blockElements.slice(0, store.previewLimit)
+    : blockElements;
   const output = await copy(file, blockElementsLimit, protyle);
   const lute = protyle.lute;
   return lute.Md2BlockDOM(output);
