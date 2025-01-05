@@ -37,9 +37,9 @@ export const protyleUtil = (
 
   /**尺寸计算 */
   const compuleteSize = () => {
-    const height = window.outerHeight * 0.75;
-    const width = window.outerWidth * 0.75;
-    const center = { x: window.outerWidth / 2, y: window.outerHeight / 2 };
+    const height = window.innerHeight * 0.78;//比容器css设定的80vw略小
+    const width = window.innerWidth * 0.8;
+    const center = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
     const size = {
       left: center.x - width / 2 + "px",
       top: center.y - height / 2 + "px",
@@ -201,6 +201,7 @@ listItem.appendChild(remove); */
     //wysiwyg: HTMLDivElement,
     const wysiwygContiainer = document.createElement("div");
     wysiwygContiainer.style.width = width;
+    //wysiwygContiainer.style.maxHeight = size.height;
     wysiwygContiainer.style.overflow = "auto";
     utilContiainer.appendChild(wysiwygContiainer);
     return wysiwygContiainer;
