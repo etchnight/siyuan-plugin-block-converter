@@ -1,3 +1,20 @@
+## [1.0.2](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v1.0.1...v1.0.2) (2025-01-05)
+
+
+### Bug Fixes
+
+* **自定义粘贴:** 修复问题：如果文件中array不位于文件第一行，无法获取的规则 ([5ab1e6e](https://github.com/etchnight/siyuan-plugin-table-importer/commit/5ab1e6e3059af4ee87da35a1dfeac860d521dcec))
+
+
+### Features
+
+* 新增脚本 文档所有标题降级、列表转mermaid流程图；现在预览可以渲染流程图等 ([b1df0da](https://github.com/etchnight/siyuan-plugin-table-importer/commit/b1df0dac00cb902028a39a5bfe3626ebe8b85d0f))
+* 支持设置预览块数量限制 ([868913a](https://github.com/etchnight/siyuan-plugin-table-importer/commit/868913a64fb8c2c04e51f71b2401abfe2fe13f7e))
+* **自定义复制:** 增加示例 ([705d870](https://github.com/etchnight/siyuan-plugin-table-importer/commit/705d8701c27fc5568872e0bcc3d4eb3d9ecb8d35))
+* dialog 出现时重算尺寸 ([0baf7dd](https://github.com/etchnight/siyuan-plugin-table-importer/commit/0baf7dd19a74ee73afbcd52eacc2ae0f382b8b5d))
+
+
+
 ## [1.0.1](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v1.0.0...v1.0.1) (2025-01-01)
 
 
