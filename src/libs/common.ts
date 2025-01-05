@@ -2,7 +2,7 @@
  * 存放一些公共函数
  */
 import { Dialog, IGetDocInfo, IProtyle, Lute, Menu, showMessage } from "siyuan";
-import { parse, ParseResult } from "@babel/parser";
+import { parse } from "@babel/parser";
 import {
   Block,
   BlockId,
@@ -12,10 +12,13 @@ import {
   getBlockAttrs,
   getDoc,
   getFile,
+  insertBlock,
   queryBlockById,
   readDir,
   requestQuerySQL,
+  setBlockAttrs,
   TransactionRes,
+  updateBlockWithAttr,
 } from "../../subMod/siyuanPlugin-common/siyuan-api";
 import * as siyuanApi from "../../subMod/siyuanPlugin-common/siyuan-api";
 //tools 附加工具库
@@ -105,8 +108,14 @@ export interface IFuncInput {
   extra: { title: string; attrs: { [key: string]: string } }; //当前文档标题,当前块属性
   index: number; //当前块索引
   array: Block[]; //所有块
-  isDelete: boolean; //是否删除，在自定义更新中使用，表示是否删除当前块
-  isIgnore: boolean; //是否忽略，在自定义更新中使用，true 表示不进行任何操作，比output原样输出安全，优先于isDelete
+  /*是否删除，默认为false
+  在自定义更新中使用时，表示是否删除当前块
+  在自定义粘贴中使用时，表示是否清空当前块再粘贴*/
+  isDelete: boolean;
+  /*是否忽略，默认为false
+  在自定义更新中使用，true 表示不进行任何操作，比output原样输出安全，优先于isDelete
+  在自定义粘贴中使用时，表示是否执行最后的转换操作，有executeFunc语句时需要设置为 true*/
+  isIgnore: boolean;
 }
 
 /**
@@ -122,12 +131,17 @@ export type IAsyncFunc = (
   output: IOutput
 ) => Promise<{ input: IFuncInput; tools: ITools; output: IOutput }>;
 
-export type IFunc = () => TurndownService.Rule[];
+//export type IFunc = () => TurndownService.Rule[];
 /**
  * 自定义函数输入参数3: output，输出，默认为原块的Markdown内容
  */
 type IOutput = string; //Markdown文本
 
+/**
+ * @deprecated 直接获取文件内容即可，不再使用该函数
+ * @param content
+ * @returns
+ */
 const extractScriptPaste = (content: string) => {
   try {
     const ast = parse(content, {
@@ -165,13 +179,13 @@ const extractScriptPaste = (content: string) => {
  * @returns
  */
 export async function buildFunc(
-  file: ISnippet,
+  file: ISnippet
   //jsBlockId?: string,
   //name?: string,
   //filePath?: string,
   //snippet?: string,
-  isCustomPaste: boolean = false
-): Promise<IAsyncFunc | IFunc> {
+  //isCustomPaste: boolean
+): Promise<IAsyncFunc> {
   //*使用顺序:  Id -> name -> filePath
   let jsBlockContent: string;
   if (file.id) {
@@ -188,26 +202,17 @@ export async function buildFunc(
       path: "/data/storage/petal/" + CONSTANTS.PluginName + "/" + file.path,
     });
   }
-  if (isCustomPaste) {
-    const content = extractScriptPaste(jsBlockContent);
-    if (!content) {
-      showMessage(getI18n().message_noSnippet);
-    }
-    return new Function(`return ${content}`) as IFunc;
-  } else {
-    const AsyncFunction = Object.getPrototypeOf(
-      async function () {}
-    ).constructor;
-    return new AsyncFunction(
-      "input",
-      "tools",
-      "output",
-      ` 
-    ${jsBlockContent ? jsBlockContent : ""}
-    return { input , tools , output };
+  const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+
+  return new AsyncFunction(
+    "input",
+    "tools",
+    "output",
     `
-    );
-  }
+      ${jsBlockContent ? jsBlockContent : ""}
+      return { input , tools , output };
+      `
+  );
 }
 
 export async function getComment(file: ISnippet) {
@@ -327,7 +332,7 @@ export async function getArgsByElement(
       index: i, //当前块索引
       array: array.map((e) => e.block), //所有块
       isDelete: false, //是否删除
-      isIgnore: false,
+      isIgnore: false, //
       //output: e.block.markdown, //输出内容
     };
     return input_func;
@@ -342,6 +347,7 @@ export async function getArgsByElement(
       prettierPluginMarkdown,
     },
     siyuanApi,
+    turndown: new TurndownService(),
   };
   return { inputs, tools };
 }
@@ -526,4 +532,89 @@ export async function protyleUtilDialog(
           },
         });
         menu2.open({ x: 100, y: 100 }); */
+}
+
+/**
+ * - 自定义粘贴和自定义更新使用
+ * - 将输入输出的markdown转换为dom
+ *
+ * @param input markdown
+ * @param result markdown
+ * @param protyle
+ * @returns
+ */
+export const result2BlockDom = (
+  input: IFuncInput,
+  output: IOutput,
+  protyle: IProtyle
+) => {
+  //将自定义脚本返回的input结构转换为dom结构
+  const dom = document.createElement("div");
+  const oldDom = document.createElement("div");
+  oldDom.innerHTML = protyle.lute.Md2BlockDOM(input.block.markdown);
+  if (output && output.trim()) {
+    dom.innerHTML = protyle.lute.Md2BlockDOM(output);
+    (dom.firstChild as HTMLDivElement).setAttribute(
+      "data-node-id",
+      input.block.id
+    );
+  }
+  return {
+    dom,
+    oldDom,
+  };
+};
+
+export interface IUpdateResult {
+  id: string;
+  parentId: string;
+  dom: HTMLDivElement; //是一个div，其children可能包含多个block div 节点
+  attrs: { [key: string]: string };
+  oldDom: HTMLDivElement;
+  isDelete: boolean;
+  isIgnore: boolean;
+}
+
+//* 见IUpdateResult的解释，dom可能包含多个block div节点
+export async function updateByDoms(
+  outputDom: IUpdateResult,
+  protyle: IProtyle,
+  preBlockId: string
+) {
+  const { id, dom, attrs, oldDom } = outputDom;
+  let updateFlag = false;
+  for (const block of dom.children) {
+    if (!updateFlag) {
+      await updateBlockWithAttr(
+        {
+          dataType: "dom",
+          id: id,
+          data: block.outerHTML,
+        },
+        protyle,
+        oldDom.innerHTML
+      );
+      updateFlag = true; //已执行过更新操作，后续操作为插入
+    } else {
+      const res = await insertBlock(
+        {
+          dataType: "dom",
+          previousID: preBlockId,
+          data: block.outerHTML,
+        },
+        protyle
+      );
+      if (!res) {
+        continue;
+      }
+      preBlockId = res[0]?.doOperations[0]?.id || preBlockId;
+    }
+  }
+  if (attrs) {
+    await setBlockAttrs({
+      id: id,
+      attrs: attrs,
+    });
+  }
+  return preBlockId;
 }

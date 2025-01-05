@@ -4,8 +4,9 @@
  * 
  * 这个脚本目前并不完善，因为行内大于于等于二号字的文本会被误判为标题
  * 
-```html
-<!--这是输入内容示例（解析后结果）-->
+ * 复制以下内容，然后执行自定义粘贴，即可看到效果
+ * 
+<div>
 <p
   class="MsoPlainText"
   align="center"
@@ -20,18 +21,21 @@
     ><font face="宋体">标题文本</font></span
   >
 </p>
-```
+<div>
 
  */
-[
-  {
-    filter: function (node, options) {
-      const fontSize = node.style.fontSize;
-      const fontSizeNum = parseInt(fontSize);
-      return fontSizeNum >= 22;
-    },
-    replacement: function (content, node, options) {
-      return "## " + content;
-    },
+
+tools.turndown.addRule("示例", {
+  filter: function (node, options) {
+    const fontSize = node.style.fontSize;
+    const fontSizeNum = parseInt(fontSize);
+    return fontSizeNum >= 22;
   },
-];
+  replacement: function (content, node, options) {
+    return "## " + content;
+  },
+});
+
+if (!input.isIgnore) {
+  output = tools.turndown.turndown(output);
+}

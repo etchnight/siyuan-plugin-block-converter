@@ -7,7 +7,7 @@ import { Dialog, IProtyle } from "siyuan";
 import { getComment, getI18n, ISnippet } from "../libs/common";
 import { execCopy, previewCopy } from "./customCopy";
 import { execUpdate, previewUpdate } from "./customUpdate";
-import { previewPaste } from "./customPaste";
+import { execPaste, previewPaste } from "./customPaste";
 import { EComponent } from "./constants";
 import { processRender } from "../../subMod/siyuanPlugin-common/src/render";
 import { store } from "./store";
@@ -139,7 +139,7 @@ export const protyleUtil = (
       } else if (component == EComponent.Update) {
         html = await previewUpdate(file, blockElements, protyle);
       } else if (component == EComponent.Paste) {
-        html = await previewPaste(file, protyle);
+        html = await previewPaste(file, blockElements, protyle);
       }
       await updateWysiwyg(html, wysiwyg);
     });
@@ -153,6 +153,8 @@ export const protyleUtil = (
         await execCopy(file, blockElements, protyle);
       } else if (component == EComponent.Update) {
         await execUpdate(file, blockElements, protyle);
+      } else if (component == EComponent.Paste) {
+        await execPaste(file, blockElements, protyle);
       }
     });
     const text = document.createElement("span");

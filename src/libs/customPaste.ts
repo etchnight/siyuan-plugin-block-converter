@@ -1,10 +1,19 @@
 import TurndownService from "turndown";
 //import { IProtyle } from "../../subMod/siyuanPlugin-common/types/global-siyuan";
 import { buildSyTableBlocks } from "./tableTransfer";
-import { buildFunc, getCurrentBlock, getI18n, IFunc, ISnippet } from "./common";
-import { IProtyle, showMessage } from "siyuan";
+import {
+  executeFunc,
+  getArgsByElement,
+  getI18n,
+  ISnippet,
+  IUpdateResult,
+  result2BlockDom,
+  updateByDoms,
+} from "./common";
+import { IProtyle, Lute, showMessage } from "siyuan";
 import { EComponent } from "./constants";
 import { insertBlock } from "../../subMod/siyuanPlugin-common/siyuan-api";
+import { store } from "./store";
 
 async function getClipboardHtml() {
   const content = await navigator.clipboard.read().then((e) => e[0]);
@@ -18,32 +27,16 @@ async function getClipboardHtml() {
     return;
   }
   const html = await blob.text();
-  console.warn(`[${EComponent.Paste}]`, { html });
+  const div = document.createElement("div");
+  div.innerHTML = html;
+  console.warn(`[${EComponent.Paste}-Input]`, div);
   return html;
 }
 
-async function paste(
-  //previousId: BlockId,
-  file: ISnippet,
-  //html: string,
-  protyle: IProtyle
-) {
-  //*粘贴组件可能会因剪贴板内容不同而不同
-  const html = await getClipboardHtml();
-  const turndownService = new TurndownService();
-  addTableRule(turndownService, protyle);
-  const rules = await buildCustomRule(file);
-  let count = 0;
-  for (const rule of rules) {
-    count++;
-    turndownService.addRule("rule" + count, rule);
-  }
-
-  const markdown = turndownService.turndown(html);
-  const domText = protyle.lute.Md2BlockDOM(markdown);
+//*html块转普通Block
+const htmlBlock2text = (domText: string) => {
   const parentDom = document.createElement("div");
   parentDom.innerHTML = domText;
-  //*html块转普通Block
   for (const child of parentDom.children) {
     if (child.getAttribute("data-type") === "NodeHTMLBlock") {
       const content = child
@@ -57,37 +50,114 @@ async function paste(
     }
   }
   return parentDom.innerHTML;
+};
+async function paste(
+  file: ISnippet,
+  blockElements: HTMLElement[],
+  protyle: IProtyle
+): Promise<IUpdateResult[]> {
+  //*粘贴组件可能会因剪贴板内容不同而不同
+  const html = await getClipboardHtml();
+  /*const turndownService = new TurndownService();
+  addTableRule(turndownService, protyle);
+  const rules = await buildCustomRule(file);
+  let count = 0;
+  for (const rule of rules) {
+    count++;
+    turndownService.addRule("rule" + count, rule);
+  }
+  const markdown = turndownService.turndown(html);*/
+  const lute = protyle.lute; //当前编辑器内的lute实例
+  const { inputs, tools } = await getArgsByElement(blockElements, lute);
+  const result = await executeFunc(inputs[0], tools, html, file);
+  console.warn(`[${EComponent.Paste}-Output]\n`, result.output);
+  //* 通过两次转换将markdown拆分成多个块
+  let domText = lute.Md2BlockDOM(result.output);
+  domText = htmlBlock2text(domText);
+  const div = document.createElement("div");
+  div.innerHTML = domText;
+
+  let i = 0;
+  const outputDoms = inputs.map((input) => {
+    const output = div.children[i]
+      ? lute.BlockDOM2Md(div.children[i].outerHTML)
+      : "";
+    const { dom, oldDom } = result2BlockDom(input, output, protyle);
+
+    i++;
+    //执行自定义脚本
+    return {
+      id: input.block.id,
+      parentId: input.block.parent_id,
+      dom,
+      attrs: result.input.extra.attrs,
+      oldDom,
+      isDelete: result.input.isDelete,
+      isIgnore: result.input.isIgnore,
+    };
+  });
+  //*剩余的分配到最后一个
+  for (i; i < div.children.length; i++) {
+    outputDoms[outputDoms.length - 1].dom.append(div.children[i]);
+  }
+  return outputDoms;
 }
 
 export async function previewPaste(
   file: ISnippet,
-  //html: string,
+  blockElements: HTMLElement[],
   protyle: IProtyle
 ) {
-  return await paste(file, protyle);
-  //return file.output as string;
+  const blockElementsLimit = store.previewLimit
+    ? blockElements.slice(0, store.previewLimit)
+    : blockElements;
+  const outputDoms = await paste(file, blockElementsLimit, protyle);
+  const blocks: HTMLDivElement[] = [];
+  for (const output of outputDoms) {
+    if (!output.isDelete) {
+      blocks.push(output.oldDom);
+    }
+    blocks.push(output.dom);
+  }
+  const blocksHtml: string[] = blocks.map((block) => {
+    const div = document.createElement("div");
+    div.appendChild(block);
+    return block.outerHTML;
+  });
+  return blocksHtml.join("");
 }
 export async function execPaste(
   file: ISnippet,
+  blockElements: HTMLElement[],
   //html: string,
-  protyle: IProtyle,
-  output?: string
+  protyle: IProtyle
 ) {
-  //console.warn(`[customPaste]`, { markdown });
-  const previousBlock = getCurrentBlock();
-  const previousId = previousBlock.getAttribute("data-node-id");
-  if (!output) {
-    output = await paste(file, protyle);
+  const outputDoms = await paste(file, blockElements, protyle);
+  //*执行添加、更新操作
+  let count = 1;
+  for (let i = 0; i < outputDoms.length; i++) {
+    const { id, dom, isDelete } = outputDoms[i];
+    if (isDelete) {
+      //*更新
+      await updateByDoms(outputDoms[i], protyle, id);
+    } else {
+      //*插入粘贴的内容
+      for (const block of dom.children) {
+        block.setAttribute("data-node-id", window.Lute.NewNodeID());
+        await insertBlock(
+          { dataType: "dom", data: block.outerHTML, previousID: id },
+          protyle
+        );
+      }
+    }
+    showMessage(`${getI18n().message_completed}${count}/${outputDoms.length}`);
+    count++;
   }
-  //*插入粘贴的内容
-  await insertBlock(
-    { dataType: "dom", data: output as string, previousID: previousId },
-    protyle
-  );
 }
 
+/* 构建自定义规则
 async function buildCustomRule(jsBlock: ISnippet) {
-  const func = (await buildFunc(jsBlock, true)) as IFunc;
+  const func = await buildFunc(jsBlock, true);
   const rules = func();
   if (!rules) {
     return [];
@@ -113,8 +183,10 @@ async function buildCustomRule(jsBlock: ISnippet) {
     return true;
   });
 }
+*/
 
 /**
+ * @deprecated
  * 默认规则——将表格转换为思源表格
  */
 function addTableRule(turndownService: TurndownService, protyle: IProtyle) {

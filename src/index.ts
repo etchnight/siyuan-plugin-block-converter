@@ -219,6 +219,7 @@ export default class PluginBlockConverter extends Plugin {
     }
   };
 
+  //todo 应该优化，将三个功能合并
   private async initCommand() {
     let snippets: ISnippet[] = [];
     if (this.data["config.json"].isBlockCusCopy.value) {
@@ -266,7 +267,8 @@ export default class PluginBlockConverter extends Plugin {
           langText: this.i18n.name_customPaste + "-" + snippet.label,
           hotkey: "",
           editorCallback: async (protyle) => {
-            await execPaste(snippet, protyle);
+            const blockElements = getSelectedBlocks(protyle);
+            await execPaste(snippet, blockElements, protyle);
           },
         });
       }

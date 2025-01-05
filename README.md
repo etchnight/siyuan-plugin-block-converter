@@ -94,8 +94,14 @@ interface IInput {
   };
   index: number; //当前块索引
   array: Block[]; //选择的所有块
-  isDelete: boolean; //是否删除，在自定义更新中使用，表示是否删除当前块，默认为false
-  isIgnore: boolean; //是否忽略，在自定义更新中使用，true 表示不进行任何操作，比output原样输出安全，优先于isDelete，默认为false
+  /*是否删除，默认为false
+  在自定义更新中使用时，表示是否删除当前块
+  在自定义粘贴中使用时，表示是否覆盖粘贴（先删除，再写入）*/
+  isDelete: boolean;
+  /*是否忽略，默认为false
+  在自定义更新中使用，true 表示不进行任何操作，比output原样输出安全，优先于isDelete
+  在自定义粘贴中使用时，表示是否执行最后的转换操作，有executeFunc语句时需要设置为 true*/
+  isIgnore: boolean;
 }
 
 /**

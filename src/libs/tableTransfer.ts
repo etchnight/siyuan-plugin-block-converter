@@ -1,4 +1,9 @@
+/**
+ * @deprecated 不再使用，迁移到snippet
+ */
+
 import { BlockId } from "../../subMod/siyuanPlugin-common/types/siyuan-api";
+
 
 export function buildSyTableBlocks(
   ele: HTMLElement,
