@@ -1,3 +1,8 @@
+
+declare const input: IFuncInput;
+declare const tools: ITools;
+declare let output: IOutput;
+
 /**
  * *自定义函数输入参数1
  */
@@ -34,3 +39,4 @@ type IAsyncFunc = (
  * 自定义函数输入参数3: output，输出，默认为原块的Markdown内容
  */
 type IOutput = string; //Markdown文本
+

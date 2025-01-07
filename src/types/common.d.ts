@@ -1,3 +1,4 @@
+import { Block } from "../../subMod/siyuanPlugin-common/types/siyuan-api";
 /**
  * *自定义函数输入参数1
  */

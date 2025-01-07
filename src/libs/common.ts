@@ -33,6 +33,7 @@ import * as prettier from "prettier";
 import prettierPluginBabel from "prettier/plugins/babel";
 import prettierPluginEstree from "prettier/plugins/estree";
 import prettierPluginMarkdown from "prettier/plugins/markdown";
+import { IAsyncFunc, IFuncInput, IOutput, ITools } from "@/types/common";
 
 export function getI18n() {
   const plugin = window.siyuan.ws.app.plugins.find(
