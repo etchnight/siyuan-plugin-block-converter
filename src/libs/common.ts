@@ -342,19 +342,20 @@ export async function getJsBlocks(docId: BlockId) {
 
 /**
  * 获取所有js文件（指定类型）
- * @param component
+ * //@param component
+ * @param pathPrefix 路径前缀，末尾需要带/
  * @returns
  */
 export async function getJsFiles(
-  component: EComponent,
-  pathPrefix: string = "/data/storage/petal/" + CONSTANTS.PluginName + "/"
+  //component: EComponent,
+  pathPrefix: string
 ) {
   const readDirRecur = async (
     path: string,
     fileList: {
       isDir: boolean;
       //isSymlink: boolean;
-      //name: string;
+      name: string;
       //updated: number;
       path: string;
     }[] = [],
@@ -363,26 +364,27 @@ export async function getJsFiles(
     if (level > 20) {
       return;
     }
-    const files = await readDir({ path: pathPrefix + path });
+    const files = await readDir({ path });
     const filesMap = files.map((file) => {
       return {
         isDir: file.isDir,
-        //isSymlink: file.isSymlink,
-        //name: file.name,
-        //updated: file.updated,
-        path: path + "/" + file.name,
+        isSymlink: file.isSymlink,
+        name: file.name,
+        updated: file.updated,
+        path: path + file.name,
       };
     });
+
     for (const file of filesMap) {
       if (file.isDir) {
-        await readDirRecur(file.path, fileList, level + 1);
+        await readDirRecur(file.path + "/", fileList, level + 1);
       } else {
         fileList.push(file);
       }
     }
     return fileList;
   };
-  let files = await readDirRecur(component);
+  let files = await readDirRecur(pathPrefix);
   files = files.filter((file) => {
     return file.path.endsWith(".js") || file.path.endsWith(".ts");
   });
@@ -408,10 +410,10 @@ export interface ISnippet {
  * @returns
  */
 export async function getAllJs(component: EComponent, rootId: string) {
-  const files = await getJsFiles(component);
+  const files = await getJsFiles(CONSTANTS.STORAGE_PATH + component + "/");
   const snippets: ISnippet[] = files.map((file) => {
     return {
-      label: file.path.replace(component + "/", ""), //!
+      label: file.path.replace(CONSTANTS.STORAGE_PATH + component + "/", ""), //!
       path: file.path,
       isFile: true,
       //name: file.name,

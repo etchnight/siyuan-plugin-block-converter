@@ -3,6 +3,7 @@
   "name_blockCustomCopy": "自定义复制",
   "name_customPaste": "自定义粘贴",
   "name_saveSnippet": "保存为代码片段",
+  "name_plugin": "块转换工具",
   "setting_isTurnON": "是否开启",
   "setting_jsDoc": "js所在文档",
   "setting_previewLimit": "预览显示的块数量",
@@ -16,6 +17,7 @@
   "message_updateSuccess": "更新成功",
   "message_completed": "已完成: ",
   "message_noSnippet": "当前代码片段没有找到有效内容",
+  "message_backupSnippet": "请勿在“preinstalled”文件夹保存自定义代码片段，请从控制台查看备份文件位置",
   "dialog_protyle_util_description": "脚本描述",
   "dialog_protyle_util_preview": "脚本预览",
   "dialog_protyle_util_preview_memo": "(仅前${arg1}个块)"

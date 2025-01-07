@@ -23,7 +23,11 @@ import {
 } from "./libs/common";
 import { execPaste } from "./libs/customPaste";
 import { store, switchPreviewLimit, switchWait } from "./libs/store";
-import { getFile } from "../subMod/siyuanPlugin-common/siyuan-api/file";
+import {
+  getFile,
+  putFile,
+  removeFile,
+} from "../subMod/siyuanPlugin-common/siyuan-api/file";
 import { CONSTANTS, EComponent } from "./libs/constants";
 import { i18nObj } from "./types/i18nObj";
 //import { getJsdocData } from "jsdoc-to-markdown";
@@ -277,15 +281,48 @@ export default class PluginBlockConverter extends Plugin {
     //this.blockCustomCopySubmenus = submenu;
   }
 
+  /**
+   * 加载预设的snippet
+   * 移动预设文件夹中无关脚本
+   */
   private loadPresetSnippet = async () => {
-    const constantPath = "/data/plugins/" + CONSTANTS.PluginName + "/snippet/";
+    //const constantPath = "/data/plugins/" + CONSTANTS.PluginName + "/snippet/";
     for (const component of Object.values(EComponent)) {
-      const files = await getJsFiles(component, constantPath);
+      const files = await getJsFiles(
+        CONSTANTS.PLUGIN_SNIPPETS_PATH + component + "/"
+      );
       for (const file of files) {
         const jsContent = await getFile({
-          path: constantPath + file.path,
+          path: file.path,
         });
         await this.saveData(file.path, jsContent);
+      }
+      //* 移动预设文件夹中无关脚本
+      const allFiles = await getJsFiles(
+        CONSTANTS.STORAGE_PATH + component + "/preinstalled/"
+      );
+      //console.log({allFiles});
+      //console.log({files});
+      for (const file of allFiles) {
+        if (file.isDir || files.some((item) => item.name === file.name)) {
+          continue;
+        }
+        const otherFile = await getFile({ path: file.path });
+        const newFileName = window.Lute.NewNodeID() + "-" + file.name;
+        const newFilePath =
+          CONSTANTS.STORAGE_PATH + component + "/backup/" + newFileName;
+        await putFile({
+          path: newFilePath,
+          isDir: false,
+          file: new File([otherFile], newFileName, {
+            type: "text/plain;charset=utf-8",
+          }),
+        });
+        await removeFile({ path: file.path });
+        showMessage(
+          `[${this.i18n.name_plugin}]` + this.i18n.message_backupSnippet
+        );
+        console.warn(`${file.path}\n move to:\n ${newFilePath}`);
       }
     }
   };

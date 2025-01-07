@@ -6,6 +6,7 @@ export const i18nObj = {
     name_blockCustomCopy: "自定义复制",
     name_customPaste: "自定义粘贴",
     name_saveSnippet: "保存为代码片段",
+    name_plugin: "块转换工具",
     /**设置 */
     setting_isTurnON: "是否开启", //是否在选项中开启
     setting_jsDoc: "js所在文档",
@@ -21,6 +22,8 @@ export const i18nObj = {
     message_updateSuccess: "更新成功",
     message_completed: "已完成: ",
     message_noSnippet: "当前代码片段没有找到有效内容",
+    message_backupSnippet:
+      "请勿在“preinstalled”文件夹保存自定义代码片段，请从控制台查看备份文件位置",
     /**dialog */
     dialog_protyle_util_description: "脚本描述",
     dialog_protyle_util_preview: "脚本预览",
@@ -31,6 +34,7 @@ export const i18nObj = {
     name_blockCustomCopy: "custom copy",
     name_customPaste: "custom paste",
     name_saveSnippet: "save as code snippet",
+    name_plugin: "Block Converter",
 
     setting_isTurnON: "turn on to enable", //是否在选项中开启
     setting_jsDoc: "document of JavaScript snegment",
@@ -49,6 +53,8 @@ export const i18nObj = {
     message_completed: "completed: ",
     message_noSnippet:
       "The current code snippet does not contain valid content.",
+    message_backupSnippet:
+      "Please do not save custom  snippets in the 'preinstalled' folder. Please check the console for the location of the backup file.",
 
     dialog_protyle_util_description: "Script description",
     dialog_protyle_util_preview: "Result preview",
