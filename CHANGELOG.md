@@ -1,3 +1,28 @@
+# [1.1.0](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v1.0.2...v1.1.0) (2025-01-07)
+
+
+### Bug Fixes
+
+* 编辑器显示超出窗口高度 ([0bf29eb](https://github.com/etchnight/siyuan-plugin-table-importer/commit/0bf29eb47f9a619b669277811e44eb780206d588))
+* 修复路径引用改变带来的问题 ([6954bfd](https://github.com/etchnight/siyuan-plugin-table-importer/commit/6954bfd748739eb13d908d55bb9d23bb931c41ed))
+* **自定义更新:** 修复已完成数量显示错误 ([f4f65e4](https://github.com/etchnight/siyuan-plugin-table-importer/commit/f4f65e4dee3270a3f8b72b8f17fb62bad0aa9bd6))
+* typescript type文件和tsconfig文件会被复制到storage文件夹 ([828a00c](https://github.com/etchnight/siyuan-plugin-table-importer/commit/828a00c7b43969299067967814c07e2d8ade0927))
+
+
+### Features
+
+* 将表格粘贴作为自定义脚本预设 ([1bce11e](https://github.com/etchnight/siyuan-plugin-table-importer/commit/1bce11ead9321b4cccb05db912223295a2bea861))
+* 清理preinstall文件夹中的其他文件 ([0db84c5](https://github.com/etchnight/siyuan-plugin-table-importer/commit/0db84c5d34d4b52c5403547cc6816a7c907b3300))
+* 支持typescript ([e091727](https://github.com/etchnight/siyuan-plugin-table-importer/commit/e091727cc89f31226739558b1abf8b813c236048)), closes [#9](https://github.com/etchnight/siyuan-plugin-table-importer/issues/9)
+* **自定义粘贴:** 支持覆盖原内容和多段落粘贴到各块下方 ([7bd0599](https://github.com/etchnight/siyuan-plugin-table-importer/commit/7bd0599fbce4a6ab712b2cf838bb23831d0e2dd8))
+
+
+### BREAKING CHANGES
+
+* **自定义粘贴:** 自定义粘贴脚本内容发生了较大改变，现在是标准js程序
+
+
+
 ## [1.0.2](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v1.0.1...v1.0.2) (2025-01-05)
 
 
