@@ -17,6 +17,7 @@ import {
   getAllJs,
   getJsFiles,
   getSelectedBlocks,
+  getSnippetType,
   ISnippet,
   protyleUtilDialog,
 } from "./libs/common";
@@ -29,7 +30,7 @@ import { i18nObj } from "./types/i18nObj";
 //import doctrine from "doctrine";
 
 //const STORAGE_CONFIG_NAME = "config.json";
-
+const CONFIG_NAME = "config.json";
 interface IConfig {
   isCustomPaste: SettingData;
   customPasteJsRootId: SettingData;
@@ -56,12 +57,12 @@ export default class PluginBlockConverter extends Plugin {
     await this.loadConfig();
 
     const confirmCallback = async () => {
-      switchPreviewLimit(this.data["config.json"].previewLimit.value as number);
+      switchPreviewLimit(this.data[CONFIG_NAME].previewLimit.value as number);
     };
     buildSetting(
-      this.data["config.json"] as any as { [key: string]: SettingData },
+      this.data[CONFIG_NAME] as any as { [key: string]: SettingData },
       {
-        storageName: "config.json",
+        storageName: CONFIG_NAME,
         isReload: false,
         plugin: this,
         confirmCallback,
@@ -135,13 +136,13 @@ export default class PluginBlockConverter extends Plugin {
         },
       },
     };
-    await this.loadData("config.json");
-    //* 注意，STORAGE_NAME 为 "config.json"，不是 "config"
-    this.data["config.json"] = Object.assign(
+    await this.loadData(CONFIG_NAME);
+    //* 注意，STORAGE_NAME 为 CONFIG_NAME，不是 "config"
+    this.data[CONFIG_NAME] = Object.assign(
       DefaultDATA.config,
-      this.data["config.json"]
+      this.data[CONFIG_NAME]
     );
-    switchPreviewLimit(this.data["config.json"].previewLimit.value as number);
+    switchPreviewLimit(this.data[CONFIG_NAME].previewLimit.value as number);
     //this.updateConfig();
   }
 
@@ -152,9 +153,9 @@ export default class PluginBlockConverter extends Plugin {
   }) => {
     //this.detail = detail; //快捷键使用
     this.addUtilDialogMenu(detail);
-    /*     this.data["config.json"].isBlockCusCopy.value && this.addCustomCopyMenu(detail);
-    this.data["config.json"].isBlockCusUpdate.value && this.addCustomUpdateMenu(detail);
-    this.data["config.json"].isCustomPaste.value && this.addCustomPasteMenu(detail); */
+    /*     this.data[CONFIG_NAME].isBlockCusCopy.value && this.addCustomCopyMenu(detail);
+    this.data[CONFIG_NAME].isBlockCusUpdate.value && this.addCustomUpdateMenu(detail);
+    this.data[CONFIG_NAME].isCustomPaste.value && this.addCustomPasteMenu(detail); */
     this.addSaveSnippetMenu(detail);
   };
 
@@ -181,28 +182,28 @@ export default class PluginBlockConverter extends Plugin {
       component: EComponent;
       rootId?: string;
     }[] = [];
-    if (this.data["config.json"].isBlockCusCopy.value) {
+    if (this.data[CONFIG_NAME].isBlockCusCopy.value) {
       info.push({
         label: this.i18n.name_blockCustomCopy,
         id: EComponent.Copy,
         component: EComponent.Copy,
-        rootId: this.data["config.json"].blockCusCopyJsRootId.value as string,
+        rootId: this.data[CONFIG_NAME].blockCusCopyJsRootId.value as string,
       });
     }
-    if (this.data["config.json"].isBlockCusUpdate.value) {
+    if (this.data[CONFIG_NAME].isBlockCusUpdate.value) {
       info.push({
         label: this.i18n.name_blockCustomUpdate,
         id: EComponent.Update,
         component: EComponent.Update,
-        rootId: this.data["config.json"].blockCusUpdateJsRootId.value as string,
+        rootId: this.data[CONFIG_NAME].blockCusUpdateJsRootId.value as string,
       });
     }
-    if (this.data["config.json"].isCustomPaste.value) {
+    if (this.data[CONFIG_NAME].isCustomPaste.value) {
       info.push({
         label: this.i18n.name_customPaste,
         id: EComponent.Paste,
         component: EComponent.Paste,
-        rootId: this.data["config.json"].customPasteJsRootId.value as string,
+        rootId: this.data[CONFIG_NAME].customPasteJsRootId.value as string,
       });
     }
     for (const item of info) {
@@ -222,10 +223,10 @@ export default class PluginBlockConverter extends Plugin {
   //todo 应该优化，将三个功能合并
   private async initCommand() {
     let snippets: ISnippet[] = [];
-    if (this.data["config.json"].isBlockCusCopy.value) {
+    if (this.data[CONFIG_NAME].isBlockCusCopy.value) {
       snippets = await getAllJs(
         EComponent.Copy,
-        this.data["config.json"].blockCusCopyJsRootId.value as string
+        this.data[CONFIG_NAME].blockCusCopyJsRootId.value as string
       );
       for (const snippet of snippets) {
         this.addCommand({
@@ -238,10 +239,10 @@ export default class PluginBlockConverter extends Plugin {
           },
         });
       }
-      if (this.data["config.json"].isBlockCusUpdate.value) {
+      if (this.data[CONFIG_NAME].isBlockCusUpdate.value) {
         snippets = await getAllJs(
           EComponent.Update,
-          this.data["config.json"].blockCusUpdateJsRootId.value as string
+          this.data[CONFIG_NAME].blockCusUpdateJsRootId.value as string
         );
         for (const snippet of snippets) {
           this.addCommand({
@@ -256,10 +257,10 @@ export default class PluginBlockConverter extends Plugin {
         }
       }
     }
-    if (this.data["config.json"].isCustomPaste.value) {
+    if (this.data[CONFIG_NAME].isCustomPaste.value) {
       snippets = await getAllJs(
         EComponent.Paste,
-        this.data["config.json"].customPasteJsRootId.value as string
+        this.data[CONFIG_NAME].customPasteJsRootId.value as string
       );
       for (const snippet of snippets) {
         this.addCommand({
@@ -302,6 +303,12 @@ export default class PluginBlockConverter extends Plugin {
     if (blockType !== "NodeCodeBlock") {
       return;
     }
+    const blockLanguage = detail.blockElements[0].querySelector(
+      ".protyle-action__language"
+    );
+    if (!blockLanguage) {
+      return;
+    }
     const saveSnippet = async (dirName: string) => {
       //* fileName见this.data
       const code = detail.blockElements[0].querySelector(
@@ -314,7 +321,10 @@ export default class PluginBlockConverter extends Plugin {
       const name = detail.blockElements[0].getAttribute("name");
       const id = blockId + "-" + window.siyuan.user?.userId || "unknownUserId";
       const fileName = name || id;
-      await this.saveData(`${dirName}/${fileName}.js`, code);
+      await this.saveData(
+        `${dirName}/${fileName}.${getSnippetType(blockLanguage.textContent)}`,
+        code
+      );
       showMessage(this.i18n.message_saveSnippetSuccess);
     };
     detail.menu.addItem({

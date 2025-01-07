@@ -2,7 +2,6 @@
  * 存放一些公共函数
  */
 import { Dialog, IGetDocInfo, IProtyle, Lute, Menu, showMessage } from "siyuan";
-import { parse } from "@babel/parser";
 import {
   Block,
   BlockId,
@@ -21,17 +20,19 @@ import {
   updateBlockWithAttr,
 } from "../../subMod/siyuanPlugin-common/siyuan-api";
 import * as siyuanApi from "../../subMod/siyuanPlugin-common/siyuan-api";
-//tools 附加工具库
-import * as prettier from "prettier";
-import prettierPluginBabel from "prettier/plugins/babel";
-import prettierPluginEstree from "prettier/plugins/estree";
-import prettierPluginMarkdown from "prettier/plugins/markdown";
-
+import * as babel from "@babel/standalone";
+//import * as typescript from "@babel/preset-typescript";
 import { protyleUtil } from "./protyle-util";
 import TurndownService from "turndown";
 import extract from "extract-comments";
 import { CONSTANTS, EComponent } from "./constants";
 import { i18nObj } from "@/types/i18nObj";
+
+//tools 附加工具库
+import * as prettier from "prettier";
+import prettierPluginBabel from "prettier/plugins/babel";
+import prettierPluginEstree from "prettier/plugins/estree";
+import prettierPluginMarkdown from "prettier/plugins/markdown";
 
 export function getI18n() {
   const plugin = window.siyuan.ws.app.plugins.find(
@@ -101,75 +102,6 @@ export function getInsertId(res: TransactionRes[]) {
 }
 
 /**
- * *自定义函数输入参数1
- */
-export interface IFuncInput {
-  block: Block; //当前块
-  extra: { title: string; attrs: { [key: string]: string } }; //当前文档标题,当前块属性
-  index: number; //当前块索引
-  array: Block[]; //所有块
-  /*是否删除，默认为false
-  在自定义更新中使用时，表示是否删除当前块
-  在自定义粘贴中使用时，表示是否清空当前块再粘贴*/
-  isDelete: boolean;
-  /*是否忽略，默认为false
-  在自定义更新中使用，true 表示不进行任何操作，比output原样输出安全，优先于isDelete
-  在自定义粘贴中使用时，表示是否执行最后的转换操作，有executeFunc语句时需要设置为 true*/
-  isIgnore: boolean;
-}
-
-/**
- * *自定义函数输入参数2
- */
-export interface ITools {
-  [key: string]: any;
-}
-
-export type IAsyncFunc = (
-  input: IFuncInput,
-  tools: ITools,
-  output: IOutput
-) => Promise<{ input: IFuncInput; tools: ITools; output: IOutput }>;
-
-//export type IFunc = () => TurndownService.Rule[];
-/**
- * 自定义函数输入参数3: output，输出，默认为原块的Markdown内容
- */
-type IOutput = string; //Markdown文本
-
-/**
- * @deprecated 直接获取文件内容即可，不再使用该函数
- * @param content
- * @returns
- */
-const extractScriptPaste = (content: string) => {
-  try {
-    const ast = parse(content, {
-      sourceType: "module",
-    });
-
-    const body = ast.program.body;
-    const expressions = body.filter((item) => {
-      return item.type === "ExpressionStatement";
-    });
-    if (!expressions.length) return "";
-    const rules = expressions.find((item) => {
-      return item.expression.type === "ArrayExpression";
-    });
-    if (!rules) return "";
-    const lines = content.split("\n");
-    const arrayLines = lines.slice(
-      rules.loc.start.line - 1,
-      rules.loc.end.line
-    );
-    return arrayLines.join("\n");
-  } catch (e) {
-    console.warn(e);
-    return "";
-  }
-};
-
-/**
  * @description 从文件或笔记中获取snippet并转为函数
  *
  * 另外一段描述
@@ -186,24 +118,42 @@ export async function buildFunc(
   //snippet?: string,
   //isCustomPaste: boolean
 ): Promise<IAsyncFunc> {
+  const ts2js = (tsCode: string) => {
+    const result = babel.transform(tsCode, {
+      plugins: ["transform-typescript"],
+    });
+    return result.code;
+  };
   //*使用顺序:  Id -> name -> filePath
-  let jsBlockContent: string;
+  let jsBlockContent: string = "";
   if (file.id) {
-    jsBlockContent = (await queryBlockById(file.id)).content;
+    const block = await queryBlockById(file.id);
+    if (getSnippetType(block.markdown) === "ts") {
+      jsBlockContent = ts2js(block.content);
+    } else {
+      jsBlockContent = block.content;
+    }
   } else if (file.name) {
     const resList = await requestQuerySQL(
       `select * from blocks where name = '${file.name}'`
     );
-    if (resList.length) {
-      jsBlockContent = resList[0].content;
+    const block = resList[0];
+    if (getSnippetType(block.markdown) === "ts") {
+      jsBlockContent = ts2js(block.content);
+    } else {
+      jsBlockContent = block.content;
     }
   } else if (file.path) {
+    const filePath =
+      "/data/storage/petal/" + CONSTANTS.PluginName + "/" + file.path;
     jsBlockContent = await getFile({
-      path: "/data/storage/petal/" + CONSTANTS.PluginName + "/" + file.path,
+      path: filePath,
     });
+    if (filePath.endsWith(".ts")) {
+      jsBlockContent = ts2js(jsBlockContent);
+    }
   }
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
-
   return new AsyncFunction(
     "input",
     "tools",
@@ -352,6 +302,25 @@ export async function getArgsByElement(
   return { inputs, tools };
 }
 
+export function getSnippetType(markdown: string): "js" | "ts" | "other" {
+  markdown = markdown.trim();
+  const content = markdown.replace(/```/, "");
+  if (
+    content.startsWith("js") ||
+    content.startsWith("javascript") ||
+    content.startsWith("Javascript")
+  ) {
+    return "js";
+  } else if (
+    content.startsWith("ts") ||
+    content.startsWith("typescript") ||
+    content.startsWith("Typescript")
+  ) {
+    return "ts";
+  } else {
+    return "other";
+  }
+}
 /**
  * *获取指定文档下的所有js块
  * @param docId
@@ -362,11 +331,7 @@ export async function getJsBlocks(docId: BlockId) {
     (await requestQuerySQL(`SELECT * FROM blocks WHERE blocks.type='c' 
       AND blocks.root_id='${docId}'`)) as Block[];
   jsBlocks = jsBlocks.filter((e) => {
-    return (
-      e.markdown.startsWith("```js") ||
-      e.markdown.startsWith("```javascript") ||
-      e.markdown.startsWith("```JavaScript")
-    );
+    return getSnippetType(e.markdown) !== "other";
   });
   jsBlocks.sort((a, b) => {
     return a.name.localeCompare(b.name, "zh");
@@ -416,7 +381,10 @@ export async function getJsFiles(
     }
     return fileList;
   };
-  const files = await readDirRecur(component);
+  let files = await readDirRecur(component);
+  files = files.filter((file) => {
+    return file.path.endsWith(".js") || file.path.endsWith(".ts");
+  });
   return files;
 }
 

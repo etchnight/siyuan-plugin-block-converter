@@ -10,7 +10,7 @@ import {
   result2BlockDom,
   updateByDoms,
 } from "./common";
-import { IProtyle, Lute, showMessage } from "siyuan";
+import { IProtyle, showMessage } from "siyuan";
 import { EComponent } from "./constants";
 import { insertBlock } from "../../subMod/siyuanPlugin-common/siyuan-api";
 import { store } from "./store";

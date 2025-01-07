@@ -4,7 +4,7 @@
  */
 
 import { Dialog, IProtyle } from "siyuan";
-import { getComment, getI18n, ISnippet } from "../libs/common";
+import { getComment, getI18n, ISnippet } from "./common";
 import { execCopy, previewCopy } from "./customCopy";
 import { execUpdate, previewUpdate } from "./customUpdate";
 import { execPaste, previewPaste } from "./customPaste";
@@ -37,7 +37,7 @@ export const protyleUtil = (
 
   /**尺寸计算 */
   const compuleteSize = () => {
-    const height = window.innerHeight * 0.78;//比容器css设定的80vw略小
+    const height = window.innerHeight * 0.78; //比容器css设定的80vw略小
     const width = window.innerWidth * 0.8;
     const center = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
     const size = {

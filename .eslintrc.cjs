@@ -23,6 +23,7 @@ module.exports = {
     "@typescript-eslint/no-explicit-any": "off",
     "turbo/no-undeclared-env-vars": "off",
     //"prettier/prettier": "error",
-    "no-console": ["error", { allow: ["warn", "error", "info"] }],
+    "no-console": ["error", { allow: ["warn", "error", "info"] }], //禁用console.log
   },
+  //ignorePatterns: ["public/**/*"],
 };
