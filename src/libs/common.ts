@@ -145,11 +145,13 @@ export async function buildFunc(
       jsBlockContent = block.content;
     }
   } else if (file.path) {
-    const filePath =
-      "/data/storage/petal/" + CONSTANTS.PluginName + "/" + file.path;
-    jsBlockContent = await getFile({
-      path: filePath,
-    });
+    let filePath = file.path;
+    //*相对路径转换为绝对路径，兼容用户输入
+    if (!filePath.startsWith("/data")) {
+      filePath = CONSTANTS.STORAGE_PATH + filePath;
+    }
+    jsBlockContent = await getFile({ path: filePath });
+
     if (filePath.endsWith(".ts")) {
       jsBlockContent = ts2js(jsBlockContent);
     }
@@ -170,7 +172,7 @@ export async function getComment(file: ISnippet) {
   let jsBlockContent: string;
   if (file.path) {
     jsBlockContent = await getFile({
-      path: "/data/storage/petal/" + CONSTANTS.PluginName + "/" + file.path,
+      path: file.path,
     });
   }
   if (!jsBlockContent) {

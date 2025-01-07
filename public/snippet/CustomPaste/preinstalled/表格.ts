@@ -119,7 +119,7 @@ tools.turndown.addRule("表格粘贴加强", {
       } while (headLineNum < headLineNum2);
     }
 
-    return table.outerHTML; //即newTableBlock;
+    return newTableBlock.outerHTML; //即newTableBlock;
   },
 });
 

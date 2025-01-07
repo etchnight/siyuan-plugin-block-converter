@@ -295,7 +295,10 @@ export default class PluginBlockConverter extends Plugin {
         const jsContent = await getFile({
           path: file.path,
         });
-        await this.saveData(file.path, jsContent);
+        await this.saveData(
+          file.path.replace(CONSTANTS.PLUGIN_SNIPPETS_PATH, ""),
+          jsContent
+        );
       }
       //* 移动预设文件夹中无关脚本
       const allFiles = await getJsFiles(

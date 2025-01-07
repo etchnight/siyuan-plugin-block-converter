@@ -25,6 +25,11 @@
 
  */
 
+input.isIgnore = true;
+await tools.executeFunc(input, tools, output, {
+  path: "/CustomPaste/preinstalled/表格.ts",
+});
+
 tools.turndown.addRule("示例", {
   filter: function (node, options) {
     const fontSize = node.style.fontSize;
@@ -36,6 +41,7 @@ tools.turndown.addRule("示例", {
   },
 });
 
+input.isIgnore = false;
 if (!input.isIgnore) {
   output = tools.turndown.turndown(output);
 }
