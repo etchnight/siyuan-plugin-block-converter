@@ -3,6 +3,6 @@
   "compilerOptions": {
     "typeRoots": ["./types"],
     "target": "ESNext",
-    "lib": ["es2015", "dom"],
-  },
+    "lib": ["es2015", "dom"]
+  }
 }

@@ -150,7 +150,7 @@ export async function buildFunc(
     if (!filePath.startsWith("/data")) {
       filePath = CONSTANTS.STORAGE_PATH + filePath;
     }
-    jsBlockContent = await getFile({ path: filePath });
+    jsBlockContent = (await getFile({ path: filePath })) as string;
 
     if (filePath.endsWith(".ts")) {
       jsBlockContent = ts2js(jsBlockContent);
@@ -171,9 +171,9 @@ export async function buildFunc(
 export async function getComment(file: ISnippet) {
   let jsBlockContent: string;
   if (file.path) {
-    jsBlockContent = await getFile({
+    jsBlockContent = (await getFile({
       path: file.path,
-    });
+    })) as string;
   }
   if (!jsBlockContent) {
     return;

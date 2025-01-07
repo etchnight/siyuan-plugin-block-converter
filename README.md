@@ -88,7 +88,7 @@ type IOutput = string; //默认为输入块的Markdown文本，注意，在定�
 
 #### 调用其他 js 代码片段
 
-```js
+```Typescript
 async function executeFunc(
   input: IFuncInput,
   tools: ITools,
@@ -97,7 +97,8 @@ async function executeFunc(
     isFile: boolean;//是否为文件
     label: string;//显示名称
     snippet?: string;//代码片段内容
-    path?: string; //file专属，注意，该路径是相对于"/data/storage/petal/siyuan-plugin-block-converter/"的路径
+    //file专属，注意，该路径是相对于"/data/storage/petal/siyuan-plugin-block-converter/"的路径
+    path?: string; 
     id?: string; //Block块专属，拟调用的js块id
     name?: string; //Block块专属，拟调用的js块命名
     description?: string;//描述
@@ -123,8 +124,9 @@ async function executeFunc(
     ],
   });
   ```
-- executeFunc，调用其他js代码片段，详见上文
+- executeFunc，调用其他js代码片段，详见 [调用其他 js 代码片段](#调用其他-js-代码片段)
 - siyuanApi，对思源内核api的封装，目前并不完善
+- turndown实例，用于自定义粘贴模块，详见下文
 
 ## 自定义块粘贴
 
@@ -177,7 +179,6 @@ if (!input.isIgnore) {
 
 - `input.extra.attr` 表示更新后的属性
 - 返回`input.isDelete`为 `true` 时，则会删除该块
-  ~~- 注意，由于`output`有内容才会对块进行处理，所以，若要删除该块，需要返回`output`不为空~~
   - 所选块的第一个块不能被删除
 
 ### ⚠️ 注意事项

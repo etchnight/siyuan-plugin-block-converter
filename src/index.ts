@@ -6,6 +6,7 @@ import {
   IMenu,
   IProtyle,
   IGetDocInfo,
+  IObject,
 } from "siyuan";
 import {
   buildSetting,
@@ -286,10 +287,10 @@ export default class PluginBlockConverter extends Plugin {
    * 移动预设文件夹中无关脚本
    */
   private loadPresetSnippet = async () => {
-    //const constantPath = "/data/plugins/" + CONSTANTS.PluginName + "/snippet/";
-    for (const component of Object.values(EComponent)) {
+    //*将文件从plugin文件夹移动到storage文件夹
+    const loadFiles = async (path: string) => {
       const files = await getJsFiles(
-        CONSTANTS.PLUGIN_SNIPPETS_PATH + component + "/"
+        CONSTANTS.PLUGIN_SNIPPETS_PATH + path + "/"
       );
       for (const file of files) {
         const jsContent = await getFile({
@@ -300,6 +301,19 @@ export default class PluginBlockConverter extends Plugin {
           jsContent
         );
       }
+      return files;
+    };
+    //*types等文件
+    await loadFiles("types");
+    //*tsconfig.json
+    const tsconfigPath = CONSTANTS.PLUGIN_SNIPPETS_PATH + "tsconfig.json";
+    const tsconfig = await getFile({ path: tsconfigPath });
+    await this.saveData(
+      tsconfigPath.replace(CONSTANTS.PLUGIN_SNIPPETS_PATH, ""),
+      tsconfig
+    );
+    for (const component of Object.values(EComponent)) {
+      const files = await loadFiles(component);
       //* 移动预设文件夹中无关脚本
       const allFiles = await getJsFiles(
         CONSTANTS.STORAGE_PATH + component + "/preinstalled/"
@@ -310,14 +324,14 @@ export default class PluginBlockConverter extends Plugin {
         if (file.isDir || files.some((item) => item.name === file.name)) {
           continue;
         }
-        const otherFile = await getFile({ path: file.path });
+        const otherFile = (await getFile({ path: file.path })) as IObject;
         const newFileName = window.Lute.NewNodeID() + "-" + file.name;
         const newFilePath =
           CONSTANTS.STORAGE_PATH + component + "/backup/" + newFileName;
         await putFile({
           path: newFilePath,
           isDir: false,
-          file: new File([otherFile], newFileName, {
+          file: new File([JSON.stringify(otherFile)], newFileName, {
             type: "text/plain;charset=utf-8",
           }),
         });
