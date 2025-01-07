@@ -106,9 +106,12 @@ tools.turndown.addRule("表格粘贴加强", {
           for (let j = 0; j < row.cells.length; j++) {
             const cell = row.cells[j];
             if (cell.className !== "fn__none") {
-              headLineNums[j] = headLineNums[j]
-                ? headLineNums[j] + cell.rowSpan
-                : cell.rowSpan;
+              //*注意合并的列也要遍历
+              for (let m = 0; m < cell.colSpan; m++) {
+                headLineNums[j + m] = headLineNums[j + m]
+                  ? headLineNums[j + m] + cell.rowSpan
+                  : cell.rowSpan;
+              }
             }
           }
         }
