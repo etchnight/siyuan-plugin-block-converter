@@ -228,57 +228,59 @@ export default class PluginBlockConverter extends Plugin {
   //todo 应该优化，将三个功能合并
   private async initCommand() {
     let snippets: ISnippet[] = [];
-    if (this.data[CONFIG_NAME].isBlockCusCopy.value) {
-      snippets = await getAllJs(
-        EComponent.Copy,
-        this.data[CONFIG_NAME].blockCusCopyJsRootId.value as string
-      );
-      for (const snippet of snippets) {
-        this.addCommand({
-          langKey: CONSTANTS.PluginName + encodeURIComponent(snippet.label),
-          langText: this.i18n.name_blockCustomCopy + "-" + snippet.label,
-          hotkey: "",
-          editorCallback: async (protyle) => {
-            const blockElements = getSelectedBlocks(protyle);
-            await execCopy(snippet, blockElements, protyle);
-          },
-        });
-      }
-      if (this.data[CONFIG_NAME].isBlockCusUpdate.value) {
-        snippets = await getAllJs(
-          EComponent.Update,
-          this.data[CONFIG_NAME].blockCusUpdateJsRootId.value as string
-        );
+    const addCustomCommand = async (
+      component: EComponent,
+      isValue: boolean,
+      rootId: string,
+      langTextPrefix: string,
+      execFunc: (
+        file: ISnippet,
+        blockElements: HTMLElement[],
+        protyle: IProtyle
+      ) => Promise<void>
+    ) => {
+      if (isValue) {
+        snippets = await getAllJs(component, rootId);
         for (const snippet of snippets) {
+          //todo 虽然能执行但是控制台有错误 https://github.com/siyuan-note/siyuan/issues/13314 未测试新版本是否能正常执行
           this.addCommand({
-            langKey: CONSTANTS.PluginName + encodeURIComponent(snippet.label),
-            langText: this.i18n.name_blockCustomUpdate + "-" + snippet.label,
+            langKey:
+              CONSTANTS.PluginName +
+              "-" +
+              component +
+              "-" +
+              encodeURIComponent(snippet.label),
+            langText: langTextPrefix + "-" + snippet.label,
             hotkey: "",
             editorCallback: async (protyle) => {
               const blockElements = getSelectedBlocks(protyle);
-              await execUpdate(snippet, blockElements, protyle);
+              await execFunc(snippet, blockElements, protyle);
             },
           });
         }
       }
-    }
-    if (this.data[CONFIG_NAME].isCustomPaste.value) {
-      snippets = await getAllJs(
-        EComponent.Paste,
-        this.data[CONFIG_NAME].customPasteJsRootId.value as string
-      );
-      for (const snippet of snippets) {
-        this.addCommand({
-          langKey: CONSTANTS.PluginName + encodeURIComponent(snippet.label),
-          langText: this.i18n.name_customPaste + "-" + snippet.label,
-          hotkey: "",
-          editorCallback: async (protyle) => {
-            const blockElements = getSelectedBlocks(protyle);
-            await execPaste(snippet, blockElements, protyle);
-          },
-        });
-      }
-    }
+    };
+    await addCustomCommand(
+      EComponent.Copy,
+      this.data[CONFIG_NAME].isBlockCusCopy.value as boolean,
+      this.data[CONFIG_NAME].blockCusCopyJsRootId.value as string,
+      this.i18n.name_blockCustomCopy,
+      execCopy
+    );
+    await addCustomCommand(
+      EComponent.Update,
+      this.data[CONFIG_NAME].isBlockCusUpdate.value as boolean,
+      this.data[CONFIG_NAME].blockCusUpdateJsRootId.value as string,
+      this.i18n.name_blockCustomUpdate,
+      execUpdate
+    );
+    await addCustomCommand(
+      EComponent.Paste,
+      this.data[CONFIG_NAME].isCustomPaste.value as boolean,
+      this.data[CONFIG_NAME].customPasteJsRootId.value as string,
+      this.i18n.name_customPaste,
+      execPaste
+    );
     //this.blockCustomCopySubmenus = submenu;
   }
 
