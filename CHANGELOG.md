@@ -1,3 +1,15 @@
+## [1.1.1](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v1.1.0...v1.1.1) (2025-01-09)
+
+
+### Bug Fixes
+
+* 脚本名重复时（即使不属于同一个组件），设置快捷键会出现两个脚本共用一个快捷键错误 ([2aaf94d](https://github.com/etchnight/siyuan-plugin-table-importer/commit/2aaf94d52bb7701ccceaa8ea44c616542418e371))
+* 使用命令面板时无法获取选中的块和protyle ([adea692](https://github.com/etchnight/siyuan-plugin-table-importer/commit/adea692f164638799903cf8fdf1662d3938dac57)), closes [#11](https://github.com/etchnight/siyuan-plugin-table-importer/issues/11)
+* 修复问题：未加载和更新预设代码片段 ([3594976](https://github.com/etchnight/siyuan-plugin-table-importer/commit/35949763f65096c2b52a6147389ae7eaa33c7e74))
+* **自定义粘贴:** 预设脚本 表格 ，如果第一行有行列合并时生成的表格不正确 ([3a922b8](https://github.com/etchnight/siyuan-plugin-table-importer/commit/3a922b89b43d1526a988929259e08cf59894606e))
+
+
+
 # [1.1.0](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v1.0.2...v1.1.0) (2025-01-07)
 
 
