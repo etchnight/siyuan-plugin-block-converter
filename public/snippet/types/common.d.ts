@@ -24,7 +24,7 @@ interface IFuncInput {
  * *自定义函数输入参数2
  */
 interface ITools {
-  lute;
+  lute:Lute;
   executeFunc: (
     input: IFuncInput,
     tools: ITools,
