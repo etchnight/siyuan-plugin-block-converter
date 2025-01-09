@@ -86,7 +86,7 @@ export function getSelectedBlocks(
   if (blockElements.length === 0) {
     const curentBlock = getCurrentBlock();
     if (!curentBlock) {
-      showMessage("请选择块");//todo i18n
+      showMessage("请选择块"); //todo i18n
       blockElements = [];
     }
     blockElements = [curentBlock];
@@ -292,6 +292,7 @@ export async function getArgsByElement(
       array: array.map((e) => e.block), //所有块
       isDelete: false, //是否删除
       isIgnore: false, //
+      //dataType: "markdown",
       //output: e.block.markdown, //输出内容
     };
     return input_func;
@@ -552,6 +553,7 @@ export interface IUpdateResult {
   oldDom: HTMLDivElement;
   isDelete: boolean;
   isIgnore: boolean;
+  //dataType: "dom" | "markdown";
 }
 
 //* 见IUpdateResult的解释，dom可能包含多个block div节点

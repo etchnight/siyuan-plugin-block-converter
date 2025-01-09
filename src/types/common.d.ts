@@ -15,6 +15,7 @@ interface IFuncInput {
   在自定义更新中使用，true 表示不进行任何操作，比output原样输出安全，优先于isDelete
   在自定义粘贴中使用时，表示是否执行最后的转换操作，有executeFunc语句时需要设置为 true*/
   isIgnore: boolean;
+  //dataType: "dom" | "markdown"; //返回值的类型
 }
 
 /**

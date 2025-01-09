@@ -161,6 +161,7 @@ export const protyleUtil = (
     text.classList.add("b3-list-item__text");
     text.innerText = file.label;
     listItem.appendChild(text);
+    /*    //todo
     const open = document.createElement("span");
     open.classList.add("b3-list-item__action");
     open.classList.add("b3-tooltips");
@@ -168,8 +169,8 @@ export const protyleUtil = (
     open.setAttribute("aria-label", "打开文件位置");
     open.innerHTML = `<svg><use xlink:href="#iconFolder"></use></svg>`;
     listItem.appendChild(open);
-    //todo
-    /*   const remove = document.createElement("span");
+
+      const remove = document.createElement("span");
 remove.classList.add("b3-list-item__action");
 remove.classList.add("b3-tooltips");
 remove.classList.add("b3-tooltips__w");

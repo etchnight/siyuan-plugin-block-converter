@@ -3,6 +3,8 @@
   "compilerOptions": {
     "typeRoots": ["./types"],
     "target": "ESNext",
-    "lib": ["es2015", "dom"]
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "node",
   }
 }

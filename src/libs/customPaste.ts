@@ -91,6 +91,7 @@ async function paste(
       oldDom,
       isDelete: result.input.isDelete,
       isIgnore: result.input.isIgnore,
+      //dataType: result.input.dataType,
     };
   });
   //*剩余的分配到最后一个
@@ -181,5 +182,3 @@ async function buildCustomRule(jsBlock: ISnippet) {
   });
 }
 */
-
-

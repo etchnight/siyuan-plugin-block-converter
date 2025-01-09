@@ -12,9 +12,11 @@
 
 使用自定义代码进行复制、粘贴和更新操作，以块为单位进行操作，目前包含以下组件：
 
-- 自定义块粘贴：将剪贴板内 html 粘贴至思源笔记，支持自定义转化为 Markdown 规则
-- 自定义块复制：复制块时将把块内容按指定方法处理后再写入剪贴板。
-- 自定义块更新：使用自定义代码处理块内容并更新。
+- 自定义块粘贴：将剪贴板内 html 粘贴至思源笔记，支持自定义转化为 Markdown 规则（input + 剪贴板内容 => Markdown => 插入或更新块）
+- 自定义块复制：复制块时将把块内容按指定方法处理后再写入剪贴板。（input => Markdown => 剪贴板）
+- 自定义块更新：使用自定义代码处理块内容并更新。（input => Markdown => 更新、插入或删除块）
+
+更新与粘贴很相似，在自定义更新中手动获取剪贴板内容，并组合输出也能达到自定义粘贴的效果，并且支持更多功能，由于历史原因`自定义块粘贴`模块继续保留，但是可能不再维护。
 
 ## 使用方法
 
@@ -98,7 +100,7 @@ async function executeFunc(
     label: string;//显示名称
     snippet?: string;//代码片段内容
     //file专属，注意，该路径是相对于"/data/storage/petal/siyuan-plugin-block-converter/"的路径
-    path?: string; 
+    path?: string;
     id?: string; //Block块专属，拟调用的js块id
     name?: string; //Block块专属，拟调用的js块命名
     description?: string;//描述

@@ -1,28 +1,6 @@
 /**
  * @metadata
- * 这是一个示例脚本，其功能是将Word中粘贴的大于等于二号字转化为二级标题
- * 
- * 这个脚本目前并不完善，因为行内大于于等于二号字的文本会被误判为标题
- * 
- * 复制以下内容，然后执行自定义粘贴，即可看到效果
- * 
-<div>
-<p
-  class="MsoPlainText"
-  align="center"
-  style="text-align: center; line-height: 28pt; mso-line-height-rule: exactly">
-  <span
-    style="
-      mso-spacerun: 'yes';
-      font-family: 宋体;
-      font-size: 22pt;
-      mso-font-kerning: 1pt;
-    "
-    ><font face="宋体">标题文本</font></span
-  >
-</p>
-<div>
-
+ * 表格粘贴加强，支持合并单元格
  */
 /**
  * 自定义函数输入参数1 : input，选择的块信息
@@ -121,8 +99,9 @@ tools.turndown.addRule("表格粘贴加强", {
         }
       } while (headLineNum < headLineNum2);
     }
-
-    return newTableBlock.outerHTML; //即newTableBlock;
+    //todo 也可以在上面的矩阵直接转化为Markdown，但是暂时先这样
+    const markdown = tools.lute.BlockDOM2Md(newTableBlock.outerHTML);    
+    return markdown//newTableBlock.outerHTML; //即newTableBlock;
   },
 });
 

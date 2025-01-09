@@ -303,7 +303,6 @@ export default class PluginBlockConverter extends Plugin {
    * 移动预设文件夹中无关脚本
    */
   private loadPresetSnippet = async () => {
-    //*将文件从plugin文件夹移动到storage文件夹
     const loadFiles = async (path: string) => {
       const files = await getJsFiles(
         CONSTANTS.PLUGIN_SNIPPETS_PATH + path + "/"
@@ -319,6 +318,10 @@ export default class PluginBlockConverter extends Plugin {
       }
       return files;
     };
+    //*将文件从plugin文件夹移动到storage文件夹
+    await loadFiles("blockCustomCopy");
+    await loadFiles("blockCustomUpdate");
+    await loadFiles("CustomPaste");
     //*types等文件
     await loadFiles("types");
     //*tsconfig.json

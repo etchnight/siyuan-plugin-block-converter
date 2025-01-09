@@ -1,4 +1,3 @@
-
 declare const input: IFuncInput;
 declare const tools: ITools;
 declare let output: IOutput;
@@ -25,6 +24,21 @@ interface IFuncInput {
  * *自定义函数输入参数2
  */
 interface ITools {
+  lute;
+  executeFunc: (
+    input: IFuncInput,
+    tools: ITools,
+    output: string,
+    jsBlock: ISnippet
+  ) => Promise<void>; //执行自定义函数
+  prettier: {
+    prettier;
+    prettierPluginBabel;
+    prettierPluginEstree;
+    prettierPluginMarkdown;
+  };
+  siyuanApi;
+  turndown: any;
   [key: string]: any;
 }
 
@@ -40,3 +54,14 @@ type IAsyncFunc = (
  */
 type IOutput = string; //Markdown文本
 
+interface ISnippet {
+  isFile: boolean;
+  label?: string;
+  snippet?: string;
+  path?: string; //file专属
+  id?: string; //Block块专属
+  name?: string; //Block块专属
+  description?: string;
+  //output?: string | IUpdateResult[]; //脚本可能会改变，所以不预存结果
+  //clipboardHtml?: string; //Paste专属，预存输入
+}
