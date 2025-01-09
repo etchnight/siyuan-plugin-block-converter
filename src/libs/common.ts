@@ -34,6 +34,7 @@ import prettierPluginBabel from "prettier/plugins/babel";
 import prettierPluginEstree from "prettier/plugins/estree";
 import prettierPluginMarkdown from "prettier/plugins/markdown";
 import { IAsyncFunc, IFuncInput, IOutput, ITools } from "@/types/common";
+import { store } from "./store";
 
 export function getI18n() {
   const plugin = window.siyuan.ws.app.plugins.find(
@@ -65,7 +66,7 @@ export function getCurrentBlock(): HTMLElement {
  * *获取选中的所有块
  */
 export function getSelectedBlocks(
-  protyle: IProtyle
+  protyle?: IProtyle
   /*   detail: {
     menu: Menu;
     blockElements?: HTMLElement[];
@@ -73,19 +74,24 @@ export function getSelectedBlocks(
     protyle: IProtyle;
   } */
 ) {
+  //*焦点不在编辑器内
+  if (!protyle) {
+    protyle = store.protyle;
+  }
   //选择多个块
   let blockElements: HTMLElement[] = Array.from(
     protyle.wysiwyg.element.querySelectorAll(".protyle-wysiwyg--select")
   );
   //选择单个块
   if (blockElements.length === 0) {
-    blockElements = [getCurrentBlock()];
+    const curentBlock = getCurrentBlock();
+    if (!curentBlock) {
+      showMessage("请选择块");//todo i18n
+      blockElements = [];
+    }
+    blockElements = [curentBlock];
   }
-  /*   const newDetail = {
-    menu: detail.menu,
-    blockElements: blockElements,
-    protyle: protyle,
-  }; */
+
   return blockElements;
 }
 /**

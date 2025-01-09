@@ -23,7 +23,12 @@ import {
   protyleUtilDialog,
 } from "./libs/common";
 import { execPaste } from "./libs/customPaste";
-import { store, switchPreviewLimit, switchWait } from "./libs/store";
+import {
+  store,
+  switchPreviewLimit,
+  switchProtyle,
+  switchWait,
+} from "./libs/store";
 import {
   getFile,
   putFile,
@@ -58,7 +63,7 @@ export default class PluginBlockConverter extends Plugin {
     this.eventBus.on("click-blockicon", this.blockIconEvent);
     this.eventBus.on("ws-main", this.switchWait);
     this.eventBus.on("click-editortitleicon", this.openMenuDoctreeEvent);
-
+    this.eventBus.on("switch-protyle", switchProtyle);
     await this.loadConfig();
 
     const confirmCallback = async () => {
@@ -84,6 +89,7 @@ export default class PluginBlockConverter extends Plugin {
     this.eventBus.off("click-blockicon", this.blockIconEvent);
     this.eventBus.off("ws-main", this.switchWait);
     this.eventBus.off("click-editortitleicon", this.openMenuDoctreeEvent);
+    this.eventBus.off("switch-protyle", switchProtyle);
   }
 
   /**
@@ -252,6 +258,14 @@ export default class PluginBlockConverter extends Plugin {
               encodeURIComponent(snippet.label),
             langText: langTextPrefix + "-" + snippet.label,
             hotkey: "",
+            callback: () => {
+              //*默认callback没有参数，只能尝试从全局获取protyle
+              const blockElements = getSelectedBlocks();
+              if (!store.protyle) {
+                showMessage("未找到当前编辑器"); //todo
+              }
+              execFunc(snippet, blockElements, store.protyle);
+            },
             editorCallback: async (protyle) => {
               const blockElements = getSelectedBlocks(protyle);
               await execFunc(snippet, blockElements, protyle);
