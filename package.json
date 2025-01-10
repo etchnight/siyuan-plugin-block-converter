@@ -41,7 +41,7 @@
   "dependencies": {
     "@babel/standalone": "^7.26.4",
     "cz-conventional-changelog": "^3.3.0",
-    "extract-comments": "^1.1.0",
+    "doctrine-standalone": "^1.0.0",
     "prettier": "^3.4.2",
     "turndown": "^7.1.3"
   },

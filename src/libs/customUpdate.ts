@@ -12,7 +12,10 @@ import { store } from "./store";
 import { deleteBlock } from "../../subMod/siyuanPlugin-common/siyuan-api";
 //import { IProtyle } from "../../subMod/siyuanPlugin-common/types/global-siyuan";
 
-function buildUpdatePreview(jsBlock: ISnippet) {
+function buildUpdatePreview(
+  jsBlock: ISnippet,
+  callback?: (file: ISnippet) => Promise<void>
+) {
   const transform = async (
     blockElements: HTMLElement[],
     protyle: IProtyle
@@ -34,7 +37,8 @@ function buildUpdatePreview(jsBlock: ISnippet) {
           input,
           tools,
           input.block.markdown,
-          jsBlock
+          jsBlock,
+          callback
         );
         if (!result) {
           return;
@@ -58,9 +62,10 @@ function buildUpdatePreview(jsBlock: ISnippet) {
 async function update(
   file: ISnippet,
   blockElements: HTMLElement[],
-  protyle: IProtyle
+  protyle: IProtyle,
+  callback?: (file: ISnippet) => Promise<void>
 ) {
-  const updatePreview = buildUpdatePreview(file);
+  const updatePreview = buildUpdatePreview(file, callback);
   const outputDoms = await updatePreview(blockElements, protyle);
   return outputDoms;
 }
@@ -68,9 +73,10 @@ async function update(
 export async function execUpdate(
   file: ISnippet,
   blockElements: HTMLElement[],
-  protyle: IProtyle
+  protyle: IProtyle,
+  callback?: (file: ISnippet) => Promise<void>
 ) {
-  const outputDoms = await update(file, blockElements, protyle);
+  const outputDoms = await update(file, blockElements, protyle, callback);
   //*执行添加、更新、删除操作
   let count = 0;
   let preBlockId = outputDoms[0].id;
@@ -102,12 +108,13 @@ export async function execUpdate(
 export async function previewUpdate(
   file: ISnippet,
   blockElements: HTMLElement[],
-  protyle: IProtyle
+  protyle: IProtyle,
+  callback?: (file: ISnippet) => Promise<void>
 ) {
   const blockElementsLimit = store.previewLimit
     ? blockElements.slice(0, store.previewLimit)
     : blockElements;
-  const outputDoms = await update(file, blockElementsLimit, protyle);
+  const outputDoms = await update(file, blockElementsLimit, protyle, callback);
   const blocks: HTMLDivElement[] = [];
   for (const output of outputDoms) {
     if (output.isDelete) {

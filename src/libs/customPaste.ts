@@ -51,7 +51,8 @@ const htmlBlock2text = (domText: string) => {
 async function paste(
   file: ISnippet,
   blockElements: HTMLElement[],
-  protyle: IProtyle
+  protyle: IProtyle,
+  callback?: (file: ISnippet) => Promise<void>
 ): Promise<IUpdateResult[]> {
   //*粘贴组件可能会因剪贴板内容不同而不同
   const html = await getClipboardHtml();
@@ -66,7 +67,7 @@ async function paste(
   const markdown = turndownService.turndown(html);*/
   const lute = protyle.lute; //当前编辑器内的lute实例
   const { inputs, tools } = await getArgsByElement(blockElements, lute);
-  const result = await executeFunc(inputs[0], tools, html, file);
+  const result = await executeFunc(inputs[0], tools, html, file, callback);
   console.warn(`[${EComponent.Paste}-Output]\n`, result.output);
   //* 通过两次转换将markdown拆分成多个块
   let domText = lute.Md2BlockDOM(result.output);
@@ -104,12 +105,13 @@ async function paste(
 export async function previewPaste(
   file: ISnippet,
   blockElements: HTMLElement[],
-  protyle: IProtyle
+  protyle: IProtyle,
+  callback?: (file: ISnippet) => Promise<void>
 ) {
   const blockElementsLimit = store.previewLimit
     ? blockElements.slice(0, store.previewLimit)
     : blockElements;
-  const outputDoms = await paste(file, blockElementsLimit, protyle);
+  const outputDoms = await paste(file, blockElementsLimit, protyle, callback);
   const blocks: HTMLDivElement[] = [];
   for (const output of outputDoms) {
     if (!output.isDelete) {
@@ -128,9 +130,10 @@ export async function execPaste(
   file: ISnippet,
   blockElements: HTMLElement[],
   //html: string,
-  protyle: IProtyle
+  protyle: IProtyle,
+  callback?: (file: ISnippet) => Promise<void>
 ) {
-  const outputDoms = await paste(file, blockElements, protyle);
+  const outputDoms = await paste(file, blockElements, protyle, callback);
   //*执行添加、更新操作
   let count = 0;
   for (let i = 0; i < outputDoms.length; i++) {

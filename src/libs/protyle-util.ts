@@ -4,7 +4,7 @@
  */
 
 import { Dialog, IProtyle } from "siyuan";
-import { getComment, getI18n, ISnippet } from "./common";
+import { getI18n, ISnippet } from "./common";
 import { execCopy, previewCopy } from "./customCopy";
 import { execUpdate, previewUpdate } from "./customUpdate";
 import { execPaste, previewPaste } from "./customPaste";
@@ -30,6 +30,7 @@ export const protyleUtil = (
    *      - b3-list
    *        - b3-list-item
    *    - div(descriptionContiainer)description
+   *      - Refresh（重新运行）
    *      - protyle-wysiwyg
    *    - div(previewContiainer)
    *      - protyle-wysiwyg
@@ -102,10 +103,11 @@ export const protyleUtil = (
           next.setAttribute("data-type", "next");
           next.innerHTML = `<svg><use xlink:href="#iconRight"></use></svg>`;
           tools.appendChild(next); */
-  //*列表项
 
   //*私有状态，用于记录当前选中的文件
   let selectedFile: ISnippet | undefined;
+  let lastFile: ISnippet | undefined; //*不会清空
+  //*列表项
   const buildListItem = (file: ISnippet) => {
     const listItem = document.createElement("div");
     listItem.classList.add("b3-list-item");
@@ -113,6 +115,7 @@ export const protyleUtil = (
     //*运行脚本（预览）
     listItem.addEventListener("mouseenter", async () => {
       selectedFile = file;
+      lastFile = file;
       //*防抖
       await new Promise((resolve) => {
         setTimeout(() => {
@@ -123,25 +126,18 @@ export const protyleUtil = (
         return;
       }
       //*描述
-      await updateWysiwyg("", wysiwygDescription);
-      await getComment(file);
-      if (file.description) {
-        await updateWysiwyg(
-          protyle.lute.Md2BlockDOM(file.description),
-          wysiwygDescription
-        );
-      }
-      //dialog.destroy();
-      await updateWysiwyg("", wysiwyg);
-      let html = "";
-      if (component == EComponent.Copy) {
-        html = await previewCopy(file, blockElements, protyle);
-      } else if (component == EComponent.Update) {
-        html = await previewUpdate(file, blockElements, protyle);
-      } else if (component == EComponent.Paste) {
-        html = await previewPaste(file, blockElements, protyle);
-      }
-      await updateWysiwyg(html, wysiwyg);
+      const updateDescription = async (file: ISnippet) => {
+        await updateWysiwyg("", wysiwygDescription);
+        //await getComment(file);
+        if (file.description) {
+          await updateWysiwyg(
+            protyle.lute.Md2BlockDOM(file.description),
+            wysiwygDescription
+          );
+        }
+        //dialog.destroy();
+      };
+      await run(file, "preview", updateDescription);
     });
     listItem.addEventListener("mouseleave", () => {
       selectedFile = null;
@@ -149,13 +145,7 @@ export const protyleUtil = (
     //*运行脚本（执行）
     listItem.addEventListener("click", async () => {
       dialog.destroy();
-      if (component == EComponent.Copy) {
-        await execCopy(file, blockElements, protyle);
-      } else if (component == EComponent.Update) {
-        await execUpdate(file, blockElements, protyle);
-      } else if (component == EComponent.Paste) {
-        await execPaste(file, blockElements, protyle);
-      }
+      await run(file, "exec", updateState);
     });
     const text = document.createElement("span");
     text.classList.add("b3-list-item__text");
@@ -181,17 +171,17 @@ listItem.appendChild(remove); */
   };
 
   //*文件列表
-  const listEle = document.createElement("div");
-  listEle.classList.add("b3-list");
-  listEle.classList.add("fn__flex-1");
-  listEle.classList.add("b3-list--background");
-  listEle.style.position = "relative";
-  leftContiainer.appendChild(listEle);
+  const fileListEle = document.createElement("div");
+  fileListEle.classList.add("b3-list");
+  fileListEle.classList.add("fn__flex-1");
+  fileListEle.classList.add("b3-list--background");
+  fileListEle.style.position = "relative";
+  leftContiainer.appendChild(fileListEle);
   const updateList = (filter?: string) => {
-    listEle.innerHTML = "";
+    fileListEle.innerHTML = "";
     files.forEach((file) => {
       if (!filter || file.label.includes(filter)) {
-        listEle.appendChild(buildListItem(file));
+        fileListEle.appendChild(buildListItem(file));
       }
     });
   };
@@ -208,7 +198,7 @@ listItem.appendChild(remove); */
     return wysiwygContiainer;
   };
 
-  //更新编辑器内容
+  //*更新编辑器内容
   const initWysiwyg = (
     contiainer: HTMLDivElement,
     type: "preview" | "description"
@@ -241,17 +231,113 @@ listItem.appendChild(remove); */
 
     wysiwyg.innerHTML = prefixHtml + html;
     processRender(wysiwyg);
+    wysiwyg.querySelectorAll("[data-node-id]").forEach((block) => {
+      if (block.getAttribute("data-type") == "NodeCodeBlock") {
+        return;
+      }
+      block
+        .querySelector("[contenteditable]")
+        ?.setAttribute("contenteditable", "false");
+    });
   };
 
   //*描述区
   const descriptionContiainer = initWysiwygContiainer(size.midWidth); //("260px");
   const wysiwygDescription = initWysiwyg(descriptionContiainer, "description");
   updateWysiwyg("", wysiwygDescription);
+  const getAdditionalStatement = () => {
+    const block = wysiwygDescription.querySelector(
+      "[data-node-id='additionalStatement']"
+    );
+    if (!block) {
+      return "";
+    }
+    const codeEle = block.querySelector("[contenteditable='true']");
+    return codeEle.textContent;
+  };
+
+  //*描述区按钮（中上），参考思源设置 -> 快捷键界面
+  const globalToolsEle = document.createElement("div");
+  globalToolsEle.classList.add("fn__flex");
+  globalToolsEle.classList.add("b3-label");
+  globalToolsEle.classList.add("config__item");
+  descriptionContiainer.insertBefore(
+    globalToolsEle,
+    descriptionContiainer.firstElementChild
+  );
+
+  //*重新运行
+  const initButton = (icon: string, label: string) => {
+    const button = document.createElement("button");
+    button.className = "b3-button b3-button--outline fn__flex-center";
+    button.innerHTML = `<svg><use xlink:href="#${icon}"></use></svg>
+    ${label}`;
+    return button;
+  };
+  const updateState = async (file: ISnippet) => {
+    file.additionalStatement = getAdditionalStatement();
+  };
+  const refreshButton = initButton("iconRefresh", "重新运行");
+  globalToolsEle.appendChild(refreshButton);
+  refreshButton.addEventListener("click", async () => {
+    run(lastFile, "preview", updateState);
+  });
+
+  //*正式运行
+  const runButton = initButton("iconPlay", "正式运行");
+  const fn__space = document.createElement("span");
+  fn__space.classList.add("fn__space");
+  globalToolsEle.appendChild(fn__space);
+  globalToolsEle.appendChild(runButton);
+  runButton.addEventListener("click", async () => {
+    dialog.destroy();
+    run(lastFile, "exec", updateState);
+  });
+
   //*预览区
   const wysiwygContiainer = initWysiwygContiainer(size.rightWidth); //("520px");
   //const wysiwyg = initProtyle(wysiwygContiainer);
   const wysiwyg = initWysiwyg(wysiwygContiainer, "preview");
   updateWysiwyg("", wysiwyg);
 
+  //*运行
+  const run = async (
+    file: ISnippet,
+    mode: "preview" | "exec",
+    callback?: (file: ISnippet) => Promise<void>
+  ) => {
+    if (mode == "preview") {
+      await updateWysiwyg("正在执行...", wysiwyg);
+    }
+    let html = "";
+    const list = [
+      {
+        component: EComponent.Copy,
+        previewFunc: previewCopy,
+        executeFunc: execCopy,
+      },
+      {
+        component: EComponent.Update,
+        previewFunc: previewUpdate,
+        executeFunc: execUpdate,
+      },
+      {
+        component: EComponent.Paste,
+        previewFunc: previewPaste,
+        executeFunc: execPaste,
+      },
+    ];
+    const item = list.find((item) => item.component == component);
+    if (item) {
+      if (mode == "preview") {
+        html = await item.previewFunc(file, blockElements, protyle, callback);
+      } else if (mode == "exec") {
+        await item.executeFunc(file, blockElements, protyle, callback);
+      }
+    }
+    if (mode == "preview") {
+      await updateWysiwyg(html, wysiwyg);
+    }
+  };
   return root;
 };

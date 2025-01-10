@@ -1,6 +1,19 @@
-const INDEX_NAME = "index"; //导入文件默认首页名，如："readme";"index";
-const ROOT_HPATH = ""; //根目录，不指定的话会寻找最近的,如：/测试跳转 (不含笔记本名，总是会在本笔记本内寻找)
-const isUpdate = false; //如需更新，改为：true
+/**
+ * @metadata
+将[VuePress](https://vuepress.vuejs.org/zh/guide/markdown.html#%E9%93%BE%E6%8E%A5)风格内部链接转为思源笔记内部链接。
+
+参见：
+- [有办法在思源导入的 github 的 md 文件中实现内部锚链接跳转吗](https://ld246.com/article/1736153236901)
+- [github风格链接](https://github.github.com/gfm/#link)
+
+@param {string} [INDEX_NAME = "index"]  //导入文件默认首页名，如："readme";"index";
+@param {string} [ROOT_HPATH = ""]  
+@param {boolean} [isUpdate] //如需更新，改为：true
+*/
+
+declare const INDEX_NAME = "index"; //导入文件默认首页名，如："readme";"index";
+declare const ROOT_HPATH = ""; //根目录，不指定的话会寻找最近的,如：/测试跳转 (不含笔记本名，总是会在本笔记本内寻找)
+declare const isUpdate = false; //如需更新，改为：true
 
 const func = async () => {
   const html = tools.lute.Md2BlockDOM(output);

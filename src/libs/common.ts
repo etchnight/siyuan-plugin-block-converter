@@ -24,9 +24,10 @@ import * as babel from "@babel/standalone";
 //import * as typescript from "@babel/preset-typescript";
 import { protyleUtil } from "./protyle-util";
 import TurndownService from "turndown";
-import extract from "extract-comments";
+//import extract from "extract-comments";
 import { CONSTANTS, EComponent } from "./constants";
 import { i18nObj } from "@/types/i18nObj";
+import doctrine from "doctrine-standalone";
 
 //tools 附加工具库
 import * as prettier from "prettier";
@@ -110,20 +111,20 @@ export function getInsertId(res: TransactionRes[]) {
 
 /**
  * @description 从文件或笔记中获取snippet并转为函数
- *
- * 另外一段描述
- * @param jsBlockId
- * @param name
- * @param jsBlockContent
+ * 注意，获取了描述中的参数代码并将添加到头部
+ * 每次重新获取所需代码
+ * @param file
+ * @param callback 在生成函数前执行的回调函数，用于显示描述等
  * @returns
  */
 export async function buildFunc(
-  file: ISnippet
+  file: ISnippet,
   //jsBlockId?: string,
   //name?: string,
   //filePath?: string,
   //snippet?: string,
   //isCustomPaste: boolean
+  callback?: (file: ISnippet) => Promise<void>
 ): Promise<IAsyncFunc> {
   const ts2js = (tsCode: string) => {
     const result = babel.transform(tsCode, {
@@ -131,25 +132,17 @@ export async function buildFunc(
     });
     return result.code;
   };
-  //*使用顺序:  Id -> name -> filePath
+  //*使用顺序: Id -> name -> filePath
   let jsBlockContent: string = "";
   if (file.id) {
     const block = await queryBlockById(file.id);
-    if (getSnippetType(block.markdown) === "ts") {
-      jsBlockContent = ts2js(block.content);
-    } else {
-      jsBlockContent = block.content;
-    }
+    jsBlockContent = block.content;
   } else if (file.name) {
     const resList = await requestQuerySQL(
       `select * from blocks where name = '${file.name}'`
     );
     const block = resList[0];
-    if (getSnippetType(block.markdown) === "ts") {
-      jsBlockContent = ts2js(block.content);
-    } else {
-      jsBlockContent = block.content;
-    }
+    jsBlockContent = block.content;
   } else if (file.path) {
     let filePath = file.path;
     //*相对路径转换为绝对路径，兼容用户输入
@@ -157,11 +150,18 @@ export async function buildFunc(
       filePath = CONSTANTS.STORAGE_PATH + filePath;
     }
     jsBlockContent = (await getFile({ path: filePath })) as string;
-
-    if (filePath.endsWith(".ts")) {
-      jsBlockContent = ts2js(jsBlockContent);
-    }
   }
+  const { description, additionalStatement } = await getComment(jsBlockContent);
+  file.description = description;
+  if (!file.additionalStatement) {
+    file.additionalStatement = additionalStatement;
+  }
+  //*用于改变additionalStatement、显示描述等
+  callback && (await callback(file));
+  if (file.additionalStatement) {
+    jsBlockContent = file.additionalStatement + "\n" + jsBlockContent;
+  }
+  jsBlockContent = ts2js(jsBlockContent);
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
   return new AsyncFunction(
     "input",
@@ -174,37 +174,60 @@ export async function buildFunc(
   );
 }
 
-export async function getComment(file: ISnippet) {
-  let jsBlockContent: string;
-  if (file.path) {
-    jsBlockContent = (await getFile({
-      path: file.path,
-    })) as string;
-  }
+/**
+ * 获取描述、附加语句
+ * @param file
+ * @returns
+ */
+export async function getComment(jsBlockContent: string) {
   if (!jsBlockContent) {
     return;
   }
-  const comments = extract(jsBlockContent) as {
-    type: "BlockComment" | "LineComment";
-    value: string;
-  }[];
+  const comments = jsBlockContent.match(/\/\*[\s\S]*?\*\//g);
   if (!comments.length) {
     return;
   }
   const comment = comments.find((comment) => {
-    if (comment.type !== "BlockComment") {
-      return false;
-    }
-    return (
-      comment.value.startsWith("@metadata") ||
-      comment.value.startsWith("\n@metadata")
-    );
+    return comment.match("@metadata") || comment.match("\n@metadata");
   });
   if (!comment) {
     return;
   }
-  const commentValue = comment.value.replace("@metadata", "");
-  file.description = commentValue;
+  const ast = doctrine.parse(comment, { unwrap: true, sloppy: true });
+  const description = ast.tags.find((item) => item.title === "metadata");
+  const params = ast.tags.filter((item) => item.title === "param") as {
+    title: "param";
+    description: string;
+    type: {
+      type: string; //"OptionalType";
+      expression: {
+        type: string; //"NameExpression";
+        name: string; //"string";
+      };
+    };
+    name: string; // "INDEX_NAME";
+    default: string; // '"index"';
+  }[];
+  let paramsMarkdown: string[] = [];
+  let additionalStatement = "";
+  if (params.length) {
+    const markdowns = params.map((item) => {
+      return `${item.description || ""}\n${item.name} = ${item.default}`;
+    });
+    additionalStatement = markdowns.join("\n");
+    paramsMarkdown = [
+      "```ts",
+      "//需要改变的参数：",
+      additionalStatement,
+      "```",
+      '{: id="additionalStatement"}',
+    ];
+  }
+  return {
+    description: `${paramsMarkdown.join("\n")}\n${description.description}`,
+    additionalStatement: additionalStatement,
+  };
+  //20250101000000-additio
 }
 
 /**
@@ -219,9 +242,10 @@ export async function executeFunc(
   input: IFuncInput,
   tools: ITools,
   output: string,
-  jsBlock: ISnippet
+  jsBlock: ISnippet,
+  callback?: (file: ISnippet) => Promise<void>
 ) {
-  const func = (await buildFunc(jsBlock)) as IAsyncFunc;
+  const func = (await buildFunc(jsBlock, callback)) as IAsyncFunc;
   //let reloadFlag = true;
   let errorFlag = true;
   //超时自动刷新
@@ -408,6 +432,7 @@ export interface ISnippet {
   id?: string; //Block块专属
   name?: string; //Block块专属
   description?: string;
+  additionalStatement?: string; //附加语句
   //output?: string | IUpdateResult[]; //脚本可能会改变，所以不预存结果
   //clipboardHtml?: string; //Paste专属，预存输入
 }
@@ -421,12 +446,13 @@ export interface ISnippet {
 export async function getAllJs(component: EComponent, rootId: string) {
   const files = await getJsFiles(CONSTANTS.STORAGE_PATH + component + "/");
   const snippets: ISnippet[] = files.map((file) => {
-    return {
+    const snippet: ISnippet = {
       label: file.path.replace(CONSTANTS.STORAGE_PATH + component + "/", ""), //!
       path: file.path,
       isFile: true,
       //name: file.name,
     };
+    return snippet;
   });
   const jsBlocks = await getJsBlocks(rootId);
   jsBlocks.forEach((jsBlock) => {
@@ -436,9 +462,10 @@ export async function getAllJs(component: EComponent, rootId: string) {
       snippet: jsBlock.content,
       id: jsBlock.id,
       name: jsBlock.name,
-      description: jsBlock.memo,
+      //description: jsBlock.memo,
     });
   });
+
   return snippets;
 }
 

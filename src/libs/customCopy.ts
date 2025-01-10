@@ -3,7 +3,10 @@ import { executeFunc, getArgsByElement, getI18n, ISnippet } from "./common";
 import { store } from "./store";
 //import { IProtyle } from "../../subMod/siyuanPlugin-common/types/global-siyuan";
 
-function buildCopyPreview(jsBlock: ISnippet) {
+function buildCopyPreview(
+  jsBlock: ISnippet,
+  callback?: (file: ISnippet) => Promise<void>
+) {
   const copyPreview = async (
     blockElements: HTMLElement[],
     protyle: IProtyle
@@ -17,7 +20,8 @@ function buildCopyPreview(jsBlock: ISnippet) {
           input,
           tools,
           input.block.markdown,
-          jsBlock
+          jsBlock,
+          callback
         );
         return result;
       })
@@ -33,9 +37,10 @@ function buildCopyPreview(jsBlock: ISnippet) {
 async function copy(
   file: ISnippet,
   blockElements: HTMLElement[],
-  protyle: IProtyle
+  protyle: IProtyle,
+  callback?: (file: ISnippet) => Promise<void>
 ) {
-  const copyPreview = buildCopyPreview(file);
+  const copyPreview = buildCopyPreview(file, callback);
   const output = await copyPreview(blockElements, protyle);
   return output;
 }
@@ -48,9 +53,10 @@ async function copy(
 export async function execCopy(
   file: ISnippet,
   blockElements: HTMLElement[],
-  protyle: IProtyle
+  protyle: IProtyle,
+  callback?: (file: ISnippet) => Promise<void>
 ) {
-  const output = await copy(file, blockElements, protyle);
+  const output = await copy(file, blockElements, protyle, callback);
   await navigator.clipboard.writeText(output);
   showMessage(`${output}${getI18n().message_copySuccess}`);
 }
@@ -58,12 +64,13 @@ export async function execCopy(
 export async function previewCopy(
   file: ISnippet,
   blockElements: HTMLElement[],
-  protyle: IProtyle
+  protyle: IProtyle,
+  callback?: (file: ISnippet) => Promise<void>
 ) {
   const blockElementsLimit = store.previewLimit
     ? blockElements.slice(0, store.previewLimit)
     : blockElements;
-  const output = await copy(file, blockElementsLimit, protyle);
+  const output = await copy(file, blockElementsLimit, protyle, callback);
   const lute = protyle.lute;
   return lute.Md2BlockDOM(output);
 }
