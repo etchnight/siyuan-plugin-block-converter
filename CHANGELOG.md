@@ -1,3 +1,18 @@
+## [1.1.2](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v1.1.1...v1.1.2) (2025-01-10)
+
+
+### Bug Fixes
+
+* 无注释解析错误，语句中有return语句执行错误 ([1af2a4d](https://github.com/etchnight/siyuan-plugin-table-importer/commit/1af2a4da93cf010726f37ea5091c613bc9240fdc))
+
+
+### Features
+
+* 添加lute类型，添加新预设脚本 vuePress链接转思源链接 ([8707229](https://github.com/etchnight/siyuan-plugin-table-importer/commit/87072290f927435ce6fe561b4d8562bf13edf797))
+* 运行前可以改变参数 ([c8e3876](https://github.com/etchnight/siyuan-plugin-table-importer/commit/c8e387657ac1c585e0c75e10034915f9bb8f69c7))
+
+
+
 ## [1.1.1](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v1.1.0...v1.1.1) (2025-01-09)
 
 
