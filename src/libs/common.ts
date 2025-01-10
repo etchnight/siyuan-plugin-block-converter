@@ -127,6 +127,10 @@ export async function buildFunc(
   callback?: (file: ISnippet) => Promise<void>
 ): Promise<IAsyncFunc> {
   const ts2js = (tsCode: string) => {
+    if (!tsCode) {
+      return "";
+    }
+    tsCode = ["async function main(){", tsCode, "}", "await main()"].join("\n");
     const result = babel.transform(tsCode, {
       plugins: ["transform-typescript"],
     });
@@ -151,10 +155,10 @@ export async function buildFunc(
     }
     jsBlockContent = (await getFile({ path: filePath })) as string;
   }
-  const { description, additionalStatement } = await getComment(jsBlockContent);
-  file.description = description;
+  const comment = await getComment(jsBlockContent);
+  file.description = comment?.description || "";
   if (!file.additionalStatement) {
-    file.additionalStatement = additionalStatement;
+    file.additionalStatement = comment?.additionalStatement || "";
   }
   //*用于改变additionalStatement、显示描述等
   callback && (await callback(file));
@@ -184,7 +188,7 @@ export async function getComment(jsBlockContent: string) {
     return;
   }
   const comments = jsBlockContent.match(/\/\*[\s\S]*?\*\//g);
-  if (!comments.length) {
+  if (!comments || !comments.length) {
     return;
   }
   const comment = comments.find((comment) => {
