@@ -115,7 +115,6 @@ export const protyleUtil = (
     //*运行脚本（预览）
     listItem.addEventListener("mouseenter", async () => {
       selectedFile = file;
-      lastFile = file;
       //*防抖
       await new Promise((resolve) => {
         setTimeout(() => {
@@ -125,6 +124,8 @@ export const protyleUtil = (
       if (selectedFile !== file) {
         return;
       }
+      lastFile = file;//应该放在防抖之后，防止未运行但重新运行、正式运行的脚本切换
+
       //*描述
       const updateDescription = async (file: ISnippet) => {
         await updateWysiwyg("", wysiwygDescription);
