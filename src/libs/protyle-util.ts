@@ -147,26 +147,13 @@ export const protyleUtil = (
       dialog.destroy();
       await run(file, "exec", updateState);
     });
+    //*标题
     const text = document.createElement("span");
     text.classList.add("b3-list-item__text");
     text.innerText = file.label;
     listItem.appendChild(text);
-    /*    //todo
-    const open = document.createElement("span");
-    open.classList.add("b3-list-item__action");
-    open.classList.add("b3-tooltips");
-    open.classList.add("b3-tooltips__w");
-    open.setAttribute("aria-label", "打开文件位置");
-    open.innerHTML = `<svg><use xlink:href="#iconFolder"></use></svg>`;
-    listItem.appendChild(open);
+    //TODO 只能通过electron打开资源浏览器，故打开功能暂时不能实现 
 
-      const remove = document.createElement("span");
-remove.classList.add("b3-list-item__action");
-remove.classList.add("b3-tooltips");
-remove.classList.add("b3-tooltips__w");
-remove.setAttribute("aria-label", "删除");
-remove.innerHTML = `<svg><use xlink:href="#iconTrashcan"></use></svg>`;
-listItem.appendChild(remove); */
     return listItem;
   };
 
