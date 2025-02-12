@@ -172,14 +172,11 @@ export async function buildFunc(
   }
   const comment = await getComment(jsBlockContent, file);
   file.description = comment?.description || "";
-  if (!file.additionalStatement) {
-    file.additionalStatement = comment?.additionalStatement || "";
-  }
+  file.addStmtDefault = comment?.addStmtDefault || "";
+  file.addStmt = comment?.addStmt || comment?.addStmtDefault || "";
   //*用于用户在UI中改变additionalStatement、显示描述等
   callback && (await callback(file));
-  if (file.additionalStatement) {
-    jsBlockContent = file.additionalStatement + "\n" + jsBlockContent;
-  }
+  jsBlockContent = file.addStmt + "\n" + jsBlockContent;
   jsBlockContent = ts2js(jsBlockContent);
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
   return new AsyncFunction(
@@ -227,38 +224,27 @@ export async function getComment(jsBlockContent: string, file: ISnippet) {
     name: string; // "INDEX_NAME";
     default: string; // '"index"';
   }[];
-  let paramsMarkdown: string[] = [];
-  let additionalStatement = "";
+  let addStmtDefault = ""; //原始值
   if (params.length) {
     const markdowns = params.map((item) => {
       return `${item.description || ""}\n${item.name} = ${item.default}`;
     });
-    additionalStatement = markdowns.join("\n");
-    //*载入自定义配置
-    const plugin = getPlugin();
-    const key = file.name || file.id || file.path;
-    let additionalStatement2 = "";
-    try {
-      additionalStatement2 =
-        plugin.data["snippetConfig.json"][key].additionalStatement;
-    } catch (error) {
-      additionalStatement2 = "";
-    }
-    if (additionalStatement2) {
-      additionalStatement = additionalStatement2;
-    }
-
-    paramsMarkdown = [
-      "```ts",
-      "//需要改变的参数：", //todo i18n
-      additionalStatement,
-      "```",
-      '{: id="additionalStatement"}',
-    ];
+    addStmtDefault = "//需要改变的参数：\n" + markdowns.join("\n"); //todo i18n;
+  }
+  //*载入自定义配置
+  let addStmt = ""; //预设值
+  const plugin = getPlugin();
+  const key =
+    file.name || file.id || file.path.replace(CONSTANTS.STORAGE_PATH, "");
+  try {
+    addStmt = plugin.data["snippetConfig.json"][key].additionalStatement;
+  } catch (error) {
+    addStmt = "";
   }
   return {
-    description: `${paramsMarkdown.join("\n")}\n${description.description}`,
-    additionalStatement: additionalStatement,
+    description: description.description,
+    addStmt: addStmt,
+    addStmtDefault: addStmtDefault,
   };
   //20250101000000-additio
 }
@@ -467,7 +453,8 @@ export interface ISnippet {
   id?: string; //Block块专属
   name?: string; //Block块专属
   description?: string;
-  additionalStatement?: string; //附加语句
+  addStmt?: string; //附加语句
+  addStmtDefault?: string; //附加语句默认值
   //output?: string | IUpdateResult[]; //脚本可能会改变，所以不预存结果
   //clipboardHtml?: string; //Paste专属，预存输入
 }

@@ -3,12 +3,12 @@
  * todo 尺寸计算
  */
 
-import { Dialog, IProtyle, Plugin } from "siyuan";
+import { Dialog, IProtyle } from "siyuan";
 import { getI18n, getPlugin, ISnippet } from "./common";
 import { execCopy, previewCopy } from "./customCopy";
 import { execUpdate, previewUpdate } from "./customUpdate";
 import { execPaste, previewPaste } from "./customPaste";
-import { EComponent } from "./constants";
+import { CONSTANTS, EComponent } from "./constants";
 import { processRender } from "../../subMod/siyuanPlugin-common/src/render";
 import { store } from "./store";
 export const protyleUtil = (
@@ -107,6 +107,27 @@ export const protyleUtil = (
   //*私有状态，用于记录当前选中的文件
   let selectedFile: ISnippet | undefined;
   let lastFile: ISnippet | undefined; //*不会清空
+
+  //*描述
+  const updateDescription = async (file: ISnippet) => {
+    await updateWysiwyg("", wysiwygDescription);
+    //await getComment(file);
+    if (file.description) {
+      const paramsMarkdown = [
+        "```ts",
+        file.addStmt,
+        "```",
+        '{: id="additionalStatement"}',
+      ];
+      const description = `${paramsMarkdown.join("\n")}\n${file.description}`;
+      await updateWysiwyg(
+        protyle.lute.Md2BlockDOM(description),
+        wysiwygDescription
+      );
+    }
+    //dialog.destroy();
+  };
+
   //*列表项
   const buildListItem = (file: ISnippet) => {
     const listItem = document.createElement("div");
@@ -125,19 +146,6 @@ export const protyleUtil = (
         return;
       }
       lastFile = file; //应该放在防抖之后，防止未运行但重新运行、正式运行的脚本切换
-
-      //*描述
-      const updateDescription = async (file: ISnippet) => {
-        await updateWysiwyg("", wysiwygDescription);
-        //await getComment(file);
-        if (file.description) {
-          await updateWysiwyg(
-            protyle.lute.Md2BlockDOM(file.description),
-            wysiwygDescription
-          );
-        }
-        //dialog.destroy();
-      };
       await run(file, "preview", updateDescription);
     });
     listItem.addEventListener("mouseleave", () => {
@@ -241,7 +249,8 @@ export const protyleUtil = (
       return "";
     }
     const codeEle = block.querySelector("[contenteditable='true']");
-    return codeEle.textContent;
+    const result = codeEle?.textContent?.trim();
+    return result;
   };
 
   //*描述区按钮（中上），参考思源设置 -> 快捷键界面
@@ -249,12 +258,13 @@ export const protyleUtil = (
   globalToolsEle.classList.add("fn__flex");
   globalToolsEle.classList.add("b3-label");
   globalToolsEle.classList.add("config__item");
+  globalToolsEle.style.flexWrap = "wrap";
   descriptionContiainer.insertBefore(
     globalToolsEle,
     descriptionContiainer.firstElementChild
   );
 
-  //*参数修改功能
+  //*构建按钮
   const initButton = (icon: string, label: string) => {
     const button = document.createElement("button");
     button.className = "b3-button b3-button--outline fn__flex-center";
@@ -263,24 +273,12 @@ export const protyleUtil = (
     return button;
   };
   const updateState = async (file: ISnippet) => {
-    file.additionalStatement = getAdditionalStatement();
+    file.addStmt = getAdditionalStatement();
   };
-  const saveState = async (file: ISnippet) => {
-    const plugin = getPlugin();
-    const additionalStatement = getAdditionalStatement();
-    const key = file.name || file.id || file.path;
-    if (!plugin.data["snippetConfig.json"]) {
-      plugin.data["snippetConfig.json"] = {};
-    }
-    if (!plugin.data["snippetConfig.json"][key]) {
-      plugin.data["snippetConfig.json"][key] = {};
-    }
-    plugin.data["snippetConfig.json"][key].additionalStatement =
-      additionalStatement;
-    await plugin.saveData(
-      "snippetConfig.json",
-      plugin.data["snippetConfig.json"]
-    );
+  const spaceEle = () => {
+    const fn__space = document.createElement("span");
+    fn__space.classList.add("fn__space");
+    return fn__space;
   };
   //*重新运行
   const refreshButton = initButton("iconRefresh", "重新运行");
@@ -291,9 +289,7 @@ export const protyleUtil = (
 
   //*正式运行
   const runButton = initButton("iconPlay", "正式运行");
-  const fn__space = document.createElement("span");
-  fn__space.classList.add("fn__space");
-  globalToolsEle.appendChild(fn__space);
+  globalToolsEle.appendChild(spaceEle());
   globalToolsEle.appendChild(runButton);
   runButton.addEventListener("click", async () => {
     dialog.destroy();
@@ -302,11 +298,37 @@ export const protyleUtil = (
 
   //*保存参数
   const saveButton = initButton("iconFile", "保存参数");
-  fn__space.classList.add("fn__space");
-  globalToolsEle.appendChild(fn__space);
+  globalToolsEle.appendChild(spaceEle());
   globalToolsEle.appendChild(saveButton);
   saveButton.addEventListener("click", async () => {
-    saveState(lastFile);
+    const plugin = getPlugin();
+    const additionalStatement = getAdditionalStatement();
+    const key =
+      lastFile.name ||
+      lastFile.id ||
+      lastFile.path.replace(CONSTANTS.STORAGE_PATH, "");
+    if (!plugin.data["snippetConfig.json"]) {
+      plugin.data["snippetConfig.json"] = {};
+    }
+    if (!plugin.data["snippetConfig.json"][key]) {
+      plugin.data["snippetConfig.json"][key] = {};
+    }
+    plugin.data["snippetConfig.json"][key].additionalStatement =
+      additionalStatement;
+    lastFile.addStmt = additionalStatement;
+    await plugin.saveData(
+      "snippetConfig.json",
+      plugin.data["snippetConfig.json"]
+    );
+  });
+
+  //*恢复参数
+  const restoreButton = initButton("iconUndo", "恢复默认参数");
+  globalToolsEle.appendChild(spaceEle());
+  globalToolsEle.appendChild(restoreButton);
+  restoreButton.addEventListener("click", async () => {
+    lastFile.addStmt = lastFile.addStmtDefault;
+    updateDescription(lastFile);
   });
 
   //*预览区
