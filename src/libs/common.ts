@@ -209,8 +209,15 @@ export async function getComment(jsBlockContent: string, file: ISnippet) {
   if (!comment) {
     return;
   }
-  const ast = doctrine.parse(comment, { unwrap: true, sloppy: true });
-  const description = ast.tags.find((item) => item.title === "metadata");
+  //*解析注释
+  const ast = doctrine.parse(comment, { unwrap: false, sloppy: true });
+  //!unwrap 设置为true时必须按以下方法获取描述
+  //*const description = ast.tags.find((item) => item.title === "metadata");
+  //*获取整体描述
+  let description = ast.description as string;
+  const desList = description.split("\n");
+  description = desList.slice(2, -1).join("\n");
+  //*获取参数描述
   const params = ast.tags.filter((item) => item.title === "param") as {
     title: "param";
     description: string;
@@ -227,7 +234,16 @@ export async function getComment(jsBlockContent: string, file: ISnippet) {
   let addStmtDefault = ""; //原始值
   if (params.length) {
     const markdowns = params.map((item) => {
-      return `${item.description || ""}\n${item.name} = ${item.default}`;
+      let paraDesc = item.description || "";
+      if (paraDesc.endsWith("*/")) {
+        paraDesc = paraDesc.slice(0, -2);
+      }
+      if (paraDesc.startsWith("/*")) {
+        paraDesc = paraDesc.slice(2);
+      }
+      paraDesc = paraDesc.replace(/\r\n/g, "");
+      paraDesc = paraDesc.replace(/\n/g, "");
+      return `${paraDesc}\n${item.name} = ${item.default}`;
     });
     addStmtDefault = "//需要改变的参数：\n" + markdowns.join("\n"); //todo i18n;
   }
@@ -242,7 +258,7 @@ export async function getComment(jsBlockContent: string, file: ISnippet) {
     addStmt = "";
   }
   return {
-    description: description.description,
+    description: description,
     addStmt: addStmt,
     addStmtDefault: addStmtDefault,
   };
