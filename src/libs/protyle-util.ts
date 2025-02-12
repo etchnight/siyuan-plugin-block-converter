@@ -3,8 +3,8 @@
  * todo 尺寸计算
  */
 
-import { Dialog, IProtyle } from "siyuan";
-import { getI18n, ISnippet } from "./common";
+import { Dialog, IProtyle, Plugin } from "siyuan";
+import { getI18n, getPlugin, ISnippet } from "./common";
 import { execCopy, previewCopy } from "./customCopy";
 import { execUpdate, previewUpdate } from "./customUpdate";
 import { execPaste, previewPaste } from "./customPaste";
@@ -124,7 +124,7 @@ export const protyleUtil = (
       if (selectedFile !== file) {
         return;
       }
-      lastFile = file;//应该放在防抖之后，防止未运行但重新运行、正式运行的脚本切换
+      lastFile = file; //应该放在防抖之后，防止未运行但重新运行、正式运行的脚本切换
 
       //*描述
       const updateDescription = async (file: ISnippet) => {
@@ -153,7 +153,7 @@ export const protyleUtil = (
     text.classList.add("b3-list-item__text");
     text.innerText = file.label;
     listItem.appendChild(text);
-    //TODO 只能通过electron打开资源浏览器，故打开功能暂时不能实现 
+    //TODO 只能通过electron打开资源浏览器，故打开功能暂时不能实现
 
     return listItem;
   };
@@ -254,7 +254,7 @@ export const protyleUtil = (
     descriptionContiainer.firstElementChild
   );
 
-  //*重新运行
+  //*参数修改功能
   const initButton = (icon: string, label: string) => {
     const button = document.createElement("button");
     button.className = "b3-button b3-button--outline fn__flex-center";
@@ -265,6 +265,24 @@ export const protyleUtil = (
   const updateState = async (file: ISnippet) => {
     file.additionalStatement = getAdditionalStatement();
   };
+  const saveState = async (file: ISnippet) => {
+    const plugin = getPlugin();
+    const additionalStatement = getAdditionalStatement();
+    const key = file.name || file.id || file.path;
+    if (!plugin.data["snippetConfig.json"]) {
+      plugin.data["snippetConfig.json"] = {};
+    }
+    if (!plugin.data["snippetConfig.json"][key]) {
+      plugin.data["snippetConfig.json"][key] = {};
+    }
+    plugin.data["snippetConfig.json"][key].additionalStatement =
+      additionalStatement;
+    await plugin.saveData(
+      "snippetConfig.json",
+      plugin.data["snippetConfig.json"]
+    );
+  };
+  //*重新运行
   const refreshButton = initButton("iconRefresh", "重新运行");
   globalToolsEle.appendChild(refreshButton);
   refreshButton.addEventListener("click", async () => {
@@ -280,6 +298,15 @@ export const protyleUtil = (
   runButton.addEventListener("click", async () => {
     dialog.destroy();
     run(lastFile, "exec", updateState);
+  });
+
+  //*保存参数
+  const saveButton = initButton("iconFile", "保存参数");
+  fn__space.classList.add("fn__space");
+  globalToolsEle.appendChild(fn__space);
+  globalToolsEle.appendChild(saveButton);
+  saveButton.addEventListener("click", async () => {
+    saveState(lastFile);
   });
 
   //*预览区

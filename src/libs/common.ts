@@ -1,7 +1,15 @@
 /**
  * 存放一些公共函数
  */
-import { Dialog, IGetDocInfo, IProtyle, Lute, Menu, showMessage } from "siyuan";
+import {
+  Dialog,
+  IGetDocInfo,
+  IProtyle,
+  Lute,
+  Menu,
+  Plugin,
+  showMessage,
+} from "siyuan";
 import {
   Block,
   BlockId,
@@ -42,6 +50,13 @@ export function getI18n() {
     (e) => e.name == CONSTANTS.PluginName
   );
   return plugin.i18n as i18nObj;
+}
+
+export function getPlugin() {
+  const plugin = window.siyuan.ws.app.plugins.find(
+    (e) => e.name == CONSTANTS.PluginName
+  );
+  return plugin as Plugin;
 }
 /**
  * *获取光标所在块
@@ -155,12 +170,12 @@ export async function buildFunc(
     }
     jsBlockContent = (await getFile({ path: filePath })) as string;
   }
-  const comment = await getComment(jsBlockContent);
+  const comment = await getComment(jsBlockContent, file);
   file.description = comment?.description || "";
   if (!file.additionalStatement) {
     file.additionalStatement = comment?.additionalStatement || "";
   }
-  //*用于改变additionalStatement、显示描述等
+  //*用于用户在UI中改变additionalStatement、显示描述等
   callback && (await callback(file));
   if (file.additionalStatement) {
     jsBlockContent = file.additionalStatement + "\n" + jsBlockContent;
@@ -183,7 +198,7 @@ export async function buildFunc(
  * @param file
  * @returns
  */
-export async function getComment(jsBlockContent: string) {
+export async function getComment(jsBlockContent: string, file: ISnippet) {
   if (!jsBlockContent) {
     return;
   }
@@ -219,9 +234,23 @@ export async function getComment(jsBlockContent: string) {
       return `${item.description || ""}\n${item.name} = ${item.default}`;
     });
     additionalStatement = markdowns.join("\n");
+    //*载入自定义配置
+    const plugin = getPlugin();
+    const key = file.name || file.id || file.path;
+    let additionalStatement2 = "";
+    try {
+      additionalStatement2 =
+        plugin.data["snippetConfig.json"][key].additionalStatement;
+    } catch (error) {
+      additionalStatement2 = "";
+    }
+    if (additionalStatement2) {
+      additionalStatement = additionalStatement2;
+    }
+
     paramsMarkdown = [
       "```ts",
-      "//需要改变的参数：",
+      "//需要改变的参数：", //todo i18n
       additionalStatement,
       "```",
       '{: id="additionalStatement"}',
@@ -427,7 +456,9 @@ export async function getJsFiles(
   });
   return files;
 }
-
+/**
+ * @param additionalStatement 附加语句
+ */
 export interface ISnippet {
   isFile: boolean;
   label: string;

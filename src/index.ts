@@ -56,6 +56,7 @@ export default class PluginBlockConverter extends Plugin {
   declare public data: {
     //config: typeof DefaultDATA.config;
     "config.json": IConfig;
+    "snippetConfig.json": any;
   };
   declare public i18n: i18nObj;
   async onload() {
@@ -106,6 +107,7 @@ export default class PluginBlockConverter extends Plugin {
   };
 
   private async loadConfig() {
+    await this.loadData("snippetConfig.json");
     const DefaultDATA: { config: IConfig } = {
       config: {
         isCustomPaste: {
