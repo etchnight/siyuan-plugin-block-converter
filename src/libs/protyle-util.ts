@@ -112,19 +112,20 @@ export const protyleUtil = (
   const updateDescription = async (file: ISnippet) => {
     await updateWysiwyg("", wysiwygDescription);
     //await getComment(file);
-    if (file.description) {
-      const paramsMarkdown = [
+    let paramsMarkdown = [];
+    if (file.addStmt) {
+      paramsMarkdown = [
         "```ts",
         file.addStmt,
         "```",
         '{: id="additionalStatement"}',
       ];
-      const description = `${paramsMarkdown.join("\n")}\n${file.description}`;
-      await updateWysiwyg(
-        protyle.lute.Md2BlockDOM(description),
-        wysiwygDescription
-      );
     }
+    const description = `${paramsMarkdown.join("\n")}\n${file.description || ""}`;
+    await updateWysiwyg(
+      protyle.lute.Md2BlockDOM(description),
+      wysiwygDescription
+    );
     //dialog.destroy();
   };
 

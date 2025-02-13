@@ -199,24 +199,29 @@ export async function getComment(jsBlockContent: string, file: ISnippet) {
   if (!jsBlockContent) {
     return;
   }
-  const comments = jsBlockContent.match(/\/\*[\s\S]*?\*\//g);
+  const comments = jsBlockContent.match(/\/\*[\s\S\n]*?\*\//g);
   if (!comments || !comments.length) {
     return;
   }
   const comment = comments.find((comment) => {
-    return comment.match("@metadata") || comment.match("\n@metadata");
+    return comment.match("@metadata");
   });
   if (!comment) {
     return;
   }
   //*解析注释
   const ast = doctrine.parse(comment, { unwrap: false, sloppy: true });
-  //!unwrap 设置为true时必须按以下方法获取描述
-  //*const description = ast.tags.find((item) => item.title === "metadata");
   //*获取整体描述
-  let description = ast.description as string;
-  const desList = description.split("\n");
-  description = desList.slice(2, -1).join("\n");
+  let description = "";
+  try {
+    description = ast.tags.find(
+      (item) => item.title === "metadata"
+    ).description;
+  } catch (error) {
+    description = ast.description as string;
+    const desList = description.split("\n");
+    description = desList.slice(2, -1).join("\n");
+  }
   //*获取参数描述
   const params = ast.tags.filter((item) => item.title === "param") as {
     title: "param";
@@ -257,11 +262,12 @@ export async function getComment(jsBlockContent: string, file: ISnippet) {
   } catch (error) {
     addStmt = "";
   }
-  return {
+  const result = {
     description: description,
     addStmt: addStmt,
     addStmtDefault: addStmtDefault,
   };
+  return result;
   //20250101000000-additio
 }
 
