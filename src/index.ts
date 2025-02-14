@@ -36,6 +36,7 @@ import {
 } from "../subMod/siyuanPlugin-common/siyuan-api/file";
 import { CONSTANTS, EComponent } from "./libs/constants";
 import { i18nObj } from "./types/i18nObj";
+import { diffLines } from "diff";
 //import { getJsdocData } from "jsdoc-to-markdown";
 //import doctrine from "doctrine";
 
@@ -305,25 +306,86 @@ export default class PluginBlockConverter extends Plugin {
    * 移动预设文件夹中无关脚本
    */
   private loadPresetSnippet = async () => {
-    const loadFiles = async (path: string) => {
+    const backup = async (
+      file: {
+        isDir: boolean;
+        name: string;
+        path: string;
+      },
+      dirName: string
+    ) => {
+      const otherFile = (await getFile({ path: file.path })) as IObject;
+      const fileNameGroup = file.name.match(/(.*)\.(.*)/);
+      const newFileName = `${fileNameGroup[1]}-${window.Lute.NewNodeID()}.${fileNameGroup[2]}`;
+      const newFilePath =
+        CONSTANTS.STORAGE_PATH + dirName + "/backup/" + newFileName;
+      await putFile({
+        path: newFilePath,
+        isDir: false,
+        file: new File([JSON.stringify(otherFile)], newFileName, {
+          type: "text/plain;charset=utf-8",
+        }),
+      });
+      await removeFile({ path: file.path });
+      showMessage(
+        `[${this.i18n.name_plugin}]` + this.i18n.message_backupSnippet
+      );
+      console.warn(`${file.path}\n move to:\n ${newFilePath}`);
+    };
+    const loadFiles = async (dirName: string) => {
+      //*获取预设脚本
       const files = await getJsFiles(
-        CONSTANTS.PLUGIN_SNIPPETS_PATH + path + "/"
+        CONSTANTS.PLUGIN_SNIPPETS_PATH + dirName + "/"
       );
       for (const file of files) {
         const jsContent = await getFile({
           path: file.path,
         });
-        await this.saveData(
-          file.path.replace(CONSTANTS.PLUGIN_SNIPPETS_PATH, ""),
-          jsContent
-        );
+        const newPath = file.path.replace(CONSTANTS.PLUGIN_SNIPPETS_PATH, "");
+        //*差异比较，发现不同备份
+        try {
+          const jsContent2 = await this.loadData(newPath);
+          const diffResult = diffLines(
+            jsContent as string,
+            jsContent2 as string
+          );
+          if (diffResult.length > 1) {
+            backup(
+              {
+                isDir: false,
+                name: file.name,
+                path: CONSTANTS.STORAGE_PATH + newPath,
+              },
+              dirName
+            );
+          }
+          //console.log({ file, diffResult });
+        } catch (e) {
+          console.warn(e);
+        }
+        await this.saveData(newPath, jsContent);
       }
+      //* 移动预设文件夹中无关脚本
+
+      if (Object.values(EComponent).includes(dirName as EComponent)) {
+        const allFiles = await getJsFiles(
+          CONSTANTS.STORAGE_PATH + dirName + "/preinstalled/"
+        );
+        for (const file of allFiles) {
+          if (file.isDir || files.some((item) => item.name === file.name)) {
+            continue;
+          }
+          await backup(file, dirName);
+        }
+      }
+
+      //console.log(dirName + " load success");
       return files;
     };
     //*将文件从plugin文件夹移动到storage文件夹
-    await loadFiles("blockCustomCopy");
-    await loadFiles("blockCustomUpdate");
-    await loadFiles("CustomPaste");
+    for (const component of Object.values(EComponent)) {
+      await loadFiles(component);
+    }
     //*types等文件
     await loadFiles("types");
     //*tsconfig.json
@@ -333,36 +395,6 @@ export default class PluginBlockConverter extends Plugin {
       tsconfigPath.replace(CONSTANTS.PLUGIN_SNIPPETS_PATH, ""),
       tsconfig
     );
-    for (const component of Object.values(EComponent)) {
-      const files = await loadFiles(component);
-      //* 移动预设文件夹中无关脚本
-      const allFiles = await getJsFiles(
-        CONSTANTS.STORAGE_PATH + component + "/preinstalled/"
-      );
-      //console.log({allFiles});
-      //console.log({files});
-      for (const file of allFiles) {
-        if (file.isDir || files.some((item) => item.name === file.name)) {
-          continue;
-        }
-        const otherFile = (await getFile({ path: file.path })) as IObject;
-        const newFileName = window.Lute.NewNodeID() + "-" + file.name;
-        const newFilePath =
-          CONSTANTS.STORAGE_PATH + component + "/backup/" + newFileName;
-        await putFile({
-          path: newFilePath,
-          isDir: false,
-          file: new File([JSON.stringify(otherFile)], newFileName, {
-            type: "text/plain;charset=utf-8",
-          }),
-        });
-        await removeFile({ path: file.path });
-        showMessage(
-          `[${this.i18n.name_plugin}]` + this.i18n.message_backupSnippet
-        );
-        console.warn(`${file.path}\n move to:\n ${newFilePath}`);
-      }
-    }
   };
 
   private addSaveSnippetMenu = async (detail: {

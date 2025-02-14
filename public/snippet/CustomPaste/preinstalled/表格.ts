@@ -68,9 +68,11 @@ const getHeadRowNum = (matrix: cell[][]) => {
   let safeCount = 0;
   while (safeCount < 9999) {
     safeCount++;
-    for (let i = 0; i < matrix[headRowNum].length; i++) {
+    const row= matrix[headRowNum];
+    if (!row) break;
+    for (let i = 0; i < row.length; i++) {
       const maxRowSpan = Math.max(
-        ...matrix[headRowNum].map((cell) => cell.rowSpan)
+        ...row.map((cell) => cell.rowSpan)
       );
       if (maxRowSpan == 1) break;
       headRowNum = headRowNum + maxRowSpan;
