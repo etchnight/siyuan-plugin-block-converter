@@ -39,6 +39,7 @@ interface ITools {
   };
   siyuanApi;
   turndown: any;
+  jsYaml: any;
   [key: string]: any;
 }
 

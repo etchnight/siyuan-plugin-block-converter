@@ -3,7 +3,7 @@
  * todo 尺寸计算
  */
 
-import { Dialog, IProtyle } from "siyuan";
+import { Dialog, IProtyle, Lute } from "siyuan";
 import { getI18n, getPlugin, ISnippet } from "./common";
 import { execCopy, previewCopy } from "./customCopy";
 import { execUpdate, previewUpdate } from "./customUpdate";
@@ -110,7 +110,7 @@ export const protyleUtil = (
 
   //*描述
   const updateDescription = async (file: ISnippet) => {
-    await updateWysiwyg("", wysiwygDescription);
+    updateWysiwyg("", wysiwygDescription);
     //await getComment(file);
     let paramsMarkdown = [];
     if (file.addStmt) {
@@ -122,10 +122,7 @@ export const protyleUtil = (
       ];
     }
     const description = `${paramsMarkdown.join("\n")}\n${file.description || ""}`;
-    await updateWysiwyg(
-      protyle.lute.Md2BlockDOM(description),
-      wysiwygDescription
-    );
+    updateWysiwyg(protyle.lute.Md2BlockDOM(description), wysiwygDescription);
     //dialog.destroy();
   };
 
@@ -206,7 +203,7 @@ export const protyleUtil = (
     contiainer.appendChild(wysiwyg);
     return wysiwyg;
   };
-  const updateWysiwyg = async (html: string, wysiwyg: HTMLDivElement) => {
+  const updateWysiwyg = (html: string, wysiwyg: HTMLDivElement) => {
     let prefixHtml = `<div data-node-id="description" data-type="NodeThematicBreak" class="hr"><div></div></div>`;
     const titleText = "###### ";
     if (wysiwyg.getAttribute("data-type") === "description") {
@@ -228,14 +225,16 @@ export const protyleUtil = (
 
     wysiwyg.innerHTML = prefixHtml + html;
     processRender(wysiwyg);
+    //*设置禁止编辑
     wysiwyg.querySelectorAll("[data-node-id]").forEach((block) => {
-      if (block.getAttribute("data-type") == "NodeCodeBlock") {
+      if (block.getAttribute("data-node-id") == "additionalStatement") {
         return;
       }
-      block
-        .querySelector("[contenteditable]")
-        ?.setAttribute("contenteditable", "false");
+      block.querySelectorAll("[contenteditable]").forEach((item) => {
+        item.setAttribute("contenteditable", "false");
+      });
     });
+    return wysiwyg.innerHTML;
   };
 
   //*描述区
@@ -255,11 +254,15 @@ export const protyleUtil = (
   };
 
   //*描述区按钮（中上），参考思源设置 -> 快捷键界面
-  const globalToolsEle = document.createElement("div");
-  globalToolsEle.classList.add("fn__flex");
-  globalToolsEle.classList.add("b3-label");
-  globalToolsEle.classList.add("config__item");
-  globalToolsEle.style.flexWrap = "wrap";
+  const initToolsEle = () => {
+    const globalToolsEle = document.createElement("div");
+    globalToolsEle.classList.add("fn__flex");
+    globalToolsEle.classList.add("b3-label");
+    globalToolsEle.classList.add("config__item");
+    globalToolsEle.style.flexWrap = "wrap";
+    return globalToolsEle;
+  };
+  const globalToolsEle = initToolsEle();
   descriptionContiainer.insertBefore(
     globalToolsEle,
     descriptionContiainer.firstElementChild
@@ -338,6 +341,49 @@ export const protyleUtil = (
   const wysiwyg = initWysiwyg(wysiwygContiainer, "preview");
   updateWysiwyg("", wysiwyg);
 
+  //*预览区工具栏
+  const wysiwygToolsEle = initToolsEle();
+  wysiwygContiainer.insertBefore(
+    wysiwygToolsEle,
+    wysiwygContiainer.firstElementChild
+  );
+
+  const switchButton = initButton("iconUndo", "显示原文");
+  wysiwygToolsEle.appendChild(switchButton);
+  const buildOriginHtml = () => {
+    //todo store.previewLimit重复？
+    let html = blockElements.slice(0, store.previewLimit).reduce((pre, cur) => {
+      return cur.outerHTML + pre;
+    }, "");
+    const div = document.createElement("div");
+    div.innerHTML = html;
+    div.querySelectorAll("[data-node-id]").forEach((item) => {
+      item.setAttribute("data-node-id", window.Lute.NewNodeID());
+      item.classList.remove("protyle-wysiwyg--select");
+    });
+    html = updateWysiwyg(div.innerHTML, wysiwyg);
+    return html;
+  };
+  const switchButtonStore = {
+    state: true,
+    html: buildOriginHtml(),
+  };
+  switchButton.addEventListener("click", () => {
+    //const text = switchButton.textContent.trim();
+    let newButton: HTMLButtonElement;
+    if (switchButtonStore.state) {
+      newButton = initButton("iconRedo", "显示结果");
+    } else {
+      newButton = initButton("iconUndo", "显示原文");
+    }
+    switchButton.innerHTML = newButton.innerHTML;
+    switchButtonStore.state = !switchButtonStore.state;
+    [wysiwyg.innerHTML, switchButtonStore.html] = [
+      switchButtonStore.html,
+      wysiwyg.innerHTML,
+    ];
+  });
+
   //*运行
   const run = async (
     file: ISnippet,
@@ -345,7 +391,7 @@ export const protyleUtil = (
     callback?: (file: ISnippet) => Promise<void>
   ) => {
     if (mode == "preview") {
-      await updateWysiwyg("正在执行...", wysiwyg);
+      updateWysiwyg("正在执行...", wysiwyg);
     }
     let html = "";
     const list = [
@@ -374,7 +420,7 @@ export const protyleUtil = (
       }
     }
     if (mode == "preview") {
-      await updateWysiwyg(html, wysiwyg);
+      updateWysiwyg(html, wysiwyg);
     }
   };
   return root;

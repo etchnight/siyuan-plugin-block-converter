@@ -36,15 +36,15 @@ import TurndownService from "turndown";
 import { CONSTANTS, EComponent } from "./constants";
 import { i18nObj } from "@/types/i18nObj";
 import doctrine from "doctrine-standalone";
+import { IAsyncFunc, IFuncInput, IOutput, ITools } from "@/types/common";
+import { store } from "./store";
 
 //tools 附加工具库
 import * as prettier from "prettier";
 import prettierPluginBabel from "prettier/plugins/babel";
 import prettierPluginEstree from "prettier/plugins/estree";
 import prettierPluginMarkdown from "prettier/plugins/markdown";
-import { IAsyncFunc, IFuncInput, IOutput, ITools } from "@/types/common";
-import { store } from "./store";
-
+import * as jsYaml from "js-yaml";
 export function getI18n() {
   const plugin = window.siyuan.ws.app.plugins.find(
     (e) => e.name == CONSTANTS.PluginName
@@ -373,6 +373,7 @@ export async function getArgsByElement(
     },
     siyuanApi,
     turndown: new TurndownService(),
+    jsYaml,
   };
   return { inputs, tools };
 }
