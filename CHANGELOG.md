@@ -1,3 +1,24 @@
+## [1.1.3](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v1.1.2...v1.1.3) (2025-02-28)
+
+
+### Bug Fixes
+
+* 修复重新运行、正式运行 ([d1c1811](https://github.com/etchnight/siyuan-plugin-table-importer/commit/d1c18116f9a9e7718593ea85ee3e16354d4f6892))
+* 优化表格脚本 ([6842c02](https://github.com/etchnight/siyuan-plugin-table-importer/commit/6842c022b11f03c14ac49ef11edab5ac365ca501))
+* 优化描述显示 ([0bdf025](https://github.com/etchnight/siyuan-plugin-table-importer/commit/0bdf0250578eb8be6638ef5955316f8dc6e50d02))
+* 优化预设脚本覆盖 ([48e0089](https://github.com/etchnight/siyuan-plugin-table-importer/commit/48e00894ca924fdea20c5839abda69d09bd46edc))
+* 优化注释显示 ([8e09937](https://github.com/etchnight/siyuan-plugin-table-importer/commit/8e09937046a8796e8306a8a76131c41baba89299))
+
+
+### Features
+
+* 保存自定义脚本参数 ([3aadb28](https://github.com/etchnight/siyuan-plugin-table-importer/commit/3aadb284d5e5b45087087adba6900f9f9bfdbaa4))
+* 恢复默认参数 ([edb2745](https://github.com/etchnight/siyuan-plugin-table-importer/commit/edb274549ddf7949dddf625c166629f39c69aa67))
+* 增加turndown type ([946df5a](https://github.com/etchnight/siyuan-plugin-table-importer/commit/946df5ae63d1953aba869ea1fae59b2300b56ec1))
+* **protyle-util:** 结果/原文切换 ([9345294](https://github.com/etchnight/siyuan-plugin-table-importer/commit/93452949c4d2f3e6d9d895fa5eecf5f9b7a34069))
+
+
+
 ## [1.1.2](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v1.1.1...v1.1.2) (2025-01-10)
 
 
