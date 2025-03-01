@@ -553,14 +553,14 @@ export async function protyleUtilDialog(
     return;
   }
   const snippets = await getAllJs(component, rootId);
-  const protyleUtilDiv = protyleUtil(
+  const protyleUtilDiv = new protyleUtil(
     snippets,
     detail.blockElements,
     detail.protyle,
     dialog,
     component
   );
-  container.appendChild(protyleUtilDiv);
+  container.appendChild(protyleUtilDiv.root);
   //console.log(container);
   //* menu方案
   /*
