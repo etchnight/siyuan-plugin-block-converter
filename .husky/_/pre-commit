@@ -1,2 +1,13 @@
 #!/usr/bin/env sh
-. "${0%/*}/h"
+# 确保脚本抛出遇到的错误
+
+echo '开始检查代码...'
+# git diff 获取更改的内容 可以通过参数--diff-filter 配置条件
+npx eslint $(git diff --cached --name-only --diff-filter=ACM -- '*.ts')
+# 变量$?--->上一个命令的执行状态结果
+if [ $? != '0' ];then
+  echo "eslint 检查不通过"
+ exit 1
+else
+  echo "eslint 检查通过"
+fi

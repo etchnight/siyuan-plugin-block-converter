@@ -261,10 +261,8 @@ export class protyleUtil {
       this.switchContent();
     });
   };
-
   //*描述
   private updateDescription = async (file: ISnippet) => {
-    console.log(this);
     this.updateWysiwyg("", this.wysiwygDescription);
     //await getComment(file);
     let paramsMarkdown = [];
