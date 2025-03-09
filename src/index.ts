@@ -102,7 +102,14 @@ export default class PluginBlockConverter extends Plugin {
     if (detail.cmd === "transactions") {
       switchWait(true);
     }
-    if (detail.cmd === "databaseIndexCommit" && store.waitting === true) {
+    //* 见 siyuan\kernel\task\queue.go
+    if (
+      (detail.cmd === "databaseIndexCommit" ||
+        detail.cmd === "databaseIndexRef" ||
+        detail.cmd === "databaseIndexFix" ||
+        detail.cmd === "databaseIndexEmbedBlock") &&
+      store.waitting === true
+    ) {
       switchWait(false);
     }
   };
