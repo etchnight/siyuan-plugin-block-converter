@@ -102,7 +102,7 @@ export default class PluginBlockConverter extends Plugin {
     if (detail.cmd === "transactions") {
       switchWait(true);
     }
-    if (detail.cmd === "databaseIndexCommit" && store.waitting === true) {
+    if (detail.cmd === "databaseIndexCommit" ) {//&& store.waitting === true
       switchWait(false);
     }
   };

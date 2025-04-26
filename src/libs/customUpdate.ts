@@ -22,11 +22,11 @@ function buildUpdatePreview(
   ): Promise<IUpdateResult[]> => {
     const lute = protyle.lute; //当前编辑器内的lute实例
     //*等待store中的waitting状态
-    while (store.waitting) {
+    //while (store.waitting) {
       await new Promise<void>((resolve, _reject) => {
         setTimeout(resolve, 100);
       });
-    }
+    //}
     //*从数据库中查询出所有块
     const { inputs, tools } = await getArgsByElement(blockElements, lute);
     //*执行自定义脚本并转化为dom结构
