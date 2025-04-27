@@ -3,7 +3,7 @@
  * todo 尺寸计算
  */
 
-import { Dialog, IProtyle, Lute } from "siyuan";
+import { Dialog, IProtyle } from "siyuan";
 import { getI18n, getPlugin, ISnippet } from "./common";
 import { execCopy, previewCopy } from "./customCopy";
 import { execUpdate, previewUpdate } from "./customUpdate";
@@ -21,23 +21,23 @@ export const protyleUtil = (
   /**
    * root
    * - protyle-util
-   *  - fn__flex(utilContiainer)
-   *    - fn__flex-column(leftContiainer)
+   *  - fn__flex(utilContainer)
+   *    - fn__flex-column(leftContainer)
    *      - fn__flex(tools)
    *        - input
    *        - previous//todo
    *        - next//todo
    *      - b3-list
    *        - b3-list-item
-   *    - div(descriptionContiainer)description
+   *    - div(descriptionContainer)description
    *      - Refresh（重新运行）
    *      - protyle-wysiwyg
-   *    - div(previewContiainer)
+   *    - div(previewContainer)
    *      - protyle-wysiwyg
    */
 
   /**尺寸计算 */
-  const compuleteSize = () => {
+  const computeSize = () => {
     const height = window.innerHeight * 0.78; //比容器css设定的80vw略小
     const width = window.innerWidth * 0.8;
     const center = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
@@ -52,7 +52,7 @@ export const protyleUtil = (
     };
     return size;
   };
-  const size = compuleteSize();
+  const size = computeSize();
 
   //根节点
   const root = document.createElement("div");
@@ -65,23 +65,24 @@ export const protyleUtil = (
   root.appendChild(protyleUtil);
 
   //容器
-  const utilContiainer = document.createElement("div");
-  utilContiainer.classList.add("fn__flex");
-  utilContiainer.style.maxHeight = size.height; //"372.8px";
-  protyleUtil.appendChild(utilContiainer);
+  const utilContainer = document.createElement("div");
+  utilContainer.classList.add("fn__flex");
+  utilContainer.style.maxHeight = size.height; //"372.8px";
+  protyleUtil.appendChild(utilContainer);
 
   //左侧
-  const leftContiainer = document.createElement("div");
-  leftContiainer.classList.add("fn__flex-column");
-  //leftContiainer.style.width = "260px";
-  leftContiainer.style.maxWidth = size.leftWidth; //"50vw";
-  utilContiainer.appendChild(leftContiainer);
+  const leftContainer = document.createElement("div");
+  leftContainer.classList.add("fn__flex-column");
+  //leftContainer.style.width = "260px";
+  leftContainer.style.maxWidth = size.leftWidth; //"50vw";
+  // 修正拼写错误，将 Container 改为 Container
+  utilContainer.appendChild(leftContainer);
 
   //*工具栏（左上）
   const tools = document.createElement("div");
   tools.classList.add("fn__flex");
   tools.style.margin = "0 8px 4px 8px";
-  leftContiainer.appendChild(tools);
+  leftContainer.appendChild(tools);
 
   const input = document.createElement("input");
   input.classList.add("b3-text-field");
@@ -170,7 +171,7 @@ export const protyleUtil = (
   fileListEle.classList.add("fn__flex-1");
   fileListEle.classList.add("b3-list--background");
   fileListEle.style.position = "relative";
-  leftContiainer.appendChild(fileListEle);
+  leftContainer.appendChild(fileListEle);
   const updateList = (filter?: string) => {
     fileListEle.innerHTML = "";
     files.forEach((file) => {
@@ -182,25 +183,25 @@ export const protyleUtil = (
   updateList();
 
   //*编辑器容器
-  const initWysiwygContiainer = (width: string) => {
+  const initWysiwygContainer = (width: string) => {
     //wysiwyg: HTMLDivElement,
-    const wysiwygContiainer = document.createElement("div");
-    wysiwygContiainer.style.width = width;
-    //wysiwygContiainer.style.maxHeight = size.height;
-    wysiwygContiainer.style.overflow = "auto";
-    utilContiainer.appendChild(wysiwygContiainer);
-    return wysiwygContiainer;
+    const wysiwygContainer = document.createElement("div");
+    wysiwygContainer.style.width = width;
+    //wysiwygContainer.style.maxHeight = size.height;
+    wysiwygContainer.style.overflow = "auto";
+    utilContainer.appendChild(wysiwygContainer);
+    return wysiwygContainer;
   };
 
   //*更新编辑器内容
   const initWysiwyg = (
-    contiainer: HTMLDivElement,
+    container: HTMLDivElement,
     type: "preview" | "description"
   ) => {
     const wysiwyg = document.createElement("div");
     wysiwyg.setAttribute("data-type", type);
     wysiwyg.classList.add("protyle-wysiwyg");
-    contiainer.appendChild(wysiwyg);
+    container.appendChild(wysiwyg);
     return wysiwyg;
   };
   const updateWysiwyg = (html: string, wysiwyg: HTMLDivElement) => {
@@ -238,8 +239,8 @@ export const protyleUtil = (
   };
 
   //*描述区
-  const descriptionContiainer = initWysiwygContiainer(size.midWidth); //("260px");
-  const wysiwygDescription = initWysiwyg(descriptionContiainer, "description");
+  const descriptionContainer = initWysiwygContainer(size.midWidth); //("260px");
+  const wysiwygDescription = initWysiwyg(descriptionContainer, "description");
   updateWysiwyg("", wysiwygDescription);
   const getAdditionalStatement = () => {
     const block = wysiwygDescription.querySelector(
@@ -263,9 +264,9 @@ export const protyleUtil = (
     return globalToolsEle;
   };
   const globalToolsEle = initToolsEle();
-  descriptionContiainer.insertBefore(
+  descriptionContainer.insertBefore(
     globalToolsEle,
-    descriptionContiainer.firstElementChild
+    descriptionContainer.firstElementChild
   );
 
   //*构建按钮
@@ -336,16 +337,16 @@ export const protyleUtil = (
   });
 
   //*预览区
-  const wysiwygContiainer = initWysiwygContiainer(size.rightWidth); //("520px");
-  //const wysiwyg = initProtyle(wysiwygContiainer);
-  const wysiwyg = initWysiwyg(wysiwygContiainer, "preview");
+  const wysiwygContainer = initWysiwygContainer(size.rightWidth); //("520px");
+  //const wysiwyg = initProtyle(wysiwygContainer);
+  const wysiwyg = initWysiwyg(wysiwygContainer, "preview");
   updateWysiwyg("", wysiwyg);
 
   //*预览区工具栏
   const wysiwygToolsEle = initToolsEle();
-  wysiwygContiainer.insertBefore(
+  wysiwygContainer.insertBefore(
     wysiwygToolsEle,
-    wysiwygContiainer.firstElementChild
+    wysiwygContainer.firstElementChild
   );
 
   const switchButton = initButton("iconUndo", "显示原文");
