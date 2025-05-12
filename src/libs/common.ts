@@ -30,7 +30,9 @@ import {
 import * as siyuanApi from "../../subMod/siyuanPlugin-common/siyuan-api";
 import * as babel from "@babel/standalone";
 //import * as typescript from "@babel/preset-typescript";
-import { protyleUtil } from "./protyle-util";
+//import { protyleUtil } from "./protyle-util";
+import { createApp } from "vue";
+import ProtyleUtil from "./ProtyleUtil.vue";
 import TurndownService from "turndown";
 //import extract from "extract-comments";
 import { CONSTANTS, EComponent } from "./constants";
@@ -553,37 +555,25 @@ export async function protyleUtilDialog(
     return;
   }
   const snippets = await getAllJs(component, rootId);
-  const protyleUtilDiv = new protyleUtil(
+  const app = createApp(ProtyleUtil, {
+    files: snippets,
+    blockElements: detail.blockElements,
+    protyle: detail.protyle,
+    dialog,
+    component,
+  });
+  app.mount(container);
+  /*
+  const protyleUtilDiv = protyleUtil( 
     snippets,
     detail.blockElements,
     detail.protyle,
     dialog,
     component
   );
-  container.appendChild(protyleUtilDiv.root);
+  container.appendChild(protyleUtilDiv);*/
+
   //console.log(container);
-  //* menu方案
-  /*
-        //* 等待原菜单消失
-        const commonMenu = document.getElementById("commonMenu");
-        let count = 0;
-        while (commonMenu && count < 20) {
-          await new Promise<void>((resolve, _reject) => {
-            setTimeout(resolve, 100);
-          });
-          count++;
-          if (commonMenu.classList.contains("fn__none")) {
-            break;
-          }
-        }
-        const menu2 = new Menu("sdhsjah");
-        menu2.addItem({
-          label: "test",
-          click: () => {
-            console.log("test");
-          },
-        });
-        menu2.open({ x: 100, y: 100 }); */
 }
 
 /**

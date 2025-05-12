@@ -372,7 +372,7 @@ export default class PluginBlockConverter extends Plugin {
         }
         await this.saveData(newPath, jsContent);
       }
-      //* 移动预设文件夹中无关脚本
+      //* 移动预设文件夹中无关脚本 
 
       if (Object.values(EComponent).includes(dirName as EComponent)) {
         const allFiles = await getJsFiles(

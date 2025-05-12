@@ -3,6 +3,7 @@
  */
 
 import { Dialog, IProtyle } from "siyuan";
+import { Dialog, IProtyle } from "siyuan";
 import { getI18n, getPlugin, ISnippet } from "./common";
 import { execCopy, previewCopy } from "./customCopy";
 import { execUpdate, previewUpdate } from "./customUpdate";
@@ -91,9 +92,33 @@ export class protyleUtil {
     html = this.updateWysiwyg(div.innerHTML, this.wysiwyg);
     return html;
   };
+export const protyleUtil = (
+  files: ISnippet[],
+  blockElements: HTMLElement[],
+  protyle: IProtyle,
+  dialog: Dialog,
+  component: EComponent
+) => {
+  /**
+   * root
+   * - protyle-util
+   *  - fn__flex(utilContainer)
+   *    - fn__flex-column(leftContainer)
+   *      - fn__flex(tools)
+   *        - input
+   *        - previous//todo
+   *        - next//todo
+   *      - b3-list
+   *        - b3-list-item
+   *    - div(descriptionContainer)description
+   *      - Refresh（重新运行）
+   *      - protyle-wysiwyg
+   *    - div(previewContainer)
+   *      - protyle-wysiwyg
+   */
 
   /**尺寸计算 */
-  private compuleteSize = () => {
+  const computeSize = () => {
     const height = window.innerHeight * 0.78; //比容器css设定的80vw略小
     const width = window.innerWidth * 0.8;
     const center = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
@@ -108,6 +133,7 @@ export class protyleUtil {
     };
     return size;
   };
+  const size = computeSize();
 
   private render = () => {
     //根节点
@@ -120,25 +146,25 @@ export class protyleUtil {
     //protyleUtil.style.position = "absolute";
     this.root.appendChild(protyleUtilEle);
 
-    //容器
-    const utilContiainer = document.createElement("div");
-    utilContiainer.classList.add("fn__flex");
-    utilContiainer.style.maxHeight = this.size.height; //"372.8px";
-    protyleUtilEle.appendChild(utilContiainer);
+  //容器
+  const utilContainer = document.createElement("div");
+  utilContainer.classList.add("fn__flex");
+  utilContainer.style.maxHeight = size.height; //"372.8px";
+  protyleUtil.appendChild(utilContainer);
 
-    //左侧
-    const leftContiainer = document.createElement("div");
+  //左侧
+  const leftContainer = document.createElement("div");
+  leftContainer.classList.add("fn__flex-column");
+  //leftContainer.style.width = "260px";
+  leftContainer.style.maxWidth = size.leftWidth; //"50vw";
+  // 修正拼写错误，将 Container 改为 Container
+  utilContainer.appendChild(leftContainer);
 
-    leftContiainer.classList.add("fn__flex-column");
-    //leftContiainer.style.width = "260px";
-    leftContiainer.style.maxWidth = this.size.leftWidth; //"50vw";
-    utilContiainer.appendChild(leftContiainer);
-
-    //*工具栏（左上）
-    const tools = document.createElement("div");
-    tools.classList.add("fn__flex");
-    tools.style.margin = "0 8px 4px 8px";
-    leftContiainer.appendChild(tools);
+  //*工具栏（左上）
+  const tools = document.createElement("div");
+  tools.classList.add("fn__flex");
+  tools.style.margin = "0 8px 4px 8px";
+  leftContainer.appendChild(tools);
 
     const input = document.createElement("input");
     input.classList.add("b3-text-field");
@@ -320,24 +346,43 @@ export class protyleUtil {
     return listItem;
   };
 
-  private updateList = (filter?: string) => {
-    this.fileListEle.innerHTML = "";
-    this.files.forEach((file) => {
+  //*文件列表
+  const fileListEle = document.createElement("div");
+  fileListEle.classList.add("b3-list");
+  fileListEle.classList.add("fn__flex-1");
+  fileListEle.classList.add("b3-list--background");
+  fileListEle.style.position = "relative";
+  leftContainer.appendChild(fileListEle);
+  const updateList = (filter?: string) => {
+    fileListEle.innerHTML = "";
+    files.forEach((file) => {
       if (!filter || file.label.includes(filter)) {
         this.fileListEle.appendChild(this.buildListItem(file));
       }
     });
   };
+  updateList();
+
+  //*编辑器容器
+  const initWysiwygContainer = (width: string) => {
+    //wysiwyg: HTMLDivElement,
+    const wysiwygContainer = document.createElement("div");
+    wysiwygContainer.style.width = width;
+    //wysiwygContainer.style.maxHeight = size.height;
+    wysiwygContainer.style.overflow = "auto";
+    utilContainer.appendChild(wysiwygContainer);
+    return wysiwygContainer;
+  };
 
   //*更新编辑器内容
-  private initWysiwyg = (
-    contiainer: HTMLDivElement,
+  const initWysiwyg = (
+    container: HTMLDivElement,
     type: "preview" | "description"
   ) => {
     const wysiwyg = document.createElement("div");
     wysiwyg.setAttribute("data-type", type);
     wysiwyg.classList.add("protyle-wysiwyg");
-    contiainer.appendChild(wysiwyg);
+    container.appendChild(wysiwyg);
     return wysiwyg;
   };
   private updateWysiwyg = (html: string, wysiwyg: HTMLDivElement) => {
@@ -376,8 +421,12 @@ export class protyleUtil {
     return wysiwyg.innerHTML;
   };
 
-  private getAdditionalStatement = () => {
-    const block = this.wysiwygDescription.querySelector(
+  //*描述区
+  const descriptionContainer = initWysiwygContainer(size.midWidth); //("260px");
+  const wysiwygDescription = initWysiwyg(descriptionContainer, "description");
+  updateWysiwyg("", wysiwygDescription);
+  const getAdditionalStatement = () => {
+    const block = wysiwygDescription.querySelector(
       "[data-node-id='additionalStatement']"
     );
     if (!block) {
@@ -387,6 +436,21 @@ export class protyleUtil {
     const result = codeEle?.textContent?.trim();
     return result;
   };
+
+  //*描述区按钮（中上），参考思源设置 -> 快捷键界面
+  const initToolsEle = () => {
+    const globalToolsEle = document.createElement("div");
+    globalToolsEle.classList.add("fn__flex");
+    globalToolsEle.classList.add("b3-label");
+    globalToolsEle.classList.add("config__item");
+    globalToolsEle.style.flexWrap = "wrap";
+    return globalToolsEle;
+  };
+  const globalToolsEle = initToolsEle();
+  descriptionContainer.insertBefore(
+    globalToolsEle,
+    descriptionContainer.firstElementChild
+  );
 
   //*构建按钮
   private initButton = (icon: string, label: string) => {
@@ -404,9 +468,91 @@ export class protyleUtil {
     fn__space.classList.add("fn__space");
     return fn__space;
   };
+  //*重新运行
+  const refreshButton = initButton("iconRefresh", "重新运行");
+  globalToolsEle.appendChild(refreshButton);
+  refreshButton.addEventListener("click", async () => {
+    run(lastFile, "preview", updateState);
+  });
 
-  //*切换原文和结果
-  private switchContent = (state?: boolean) => {
+  //*正式运行
+  const runButton = initButton("iconPlay", "正式运行");
+  globalToolsEle.appendChild(spaceEle());
+  globalToolsEle.appendChild(runButton);
+  runButton.addEventListener("click", async () => {
+    dialog.destroy();
+    run(lastFile, "exec", updateState);
+  });
+
+  //*保存参数
+  const saveButton = initButton("iconFile", "保存参数");
+  globalToolsEle.appendChild(spaceEle());
+  globalToolsEle.appendChild(saveButton);
+  saveButton.addEventListener("click", async () => {
+    const plugin = getPlugin();
+    const additionalStatement = getAdditionalStatement();
+    const key =
+      lastFile.name ||
+      lastFile.id ||
+      lastFile.path.replace(CONSTANTS.STORAGE_PATH, "");
+    if (!plugin.data["snippetConfig.json"]) {
+      plugin.data["snippetConfig.json"] = {};
+    }
+    if (!plugin.data["snippetConfig.json"][key]) {
+      plugin.data["snippetConfig.json"][key] = {};
+    }
+    plugin.data["snippetConfig.json"][key].additionalStatement =
+      additionalStatement;
+    lastFile.addStmt = additionalStatement;
+    await plugin.saveData(
+      "snippetConfig.json",
+      plugin.data["snippetConfig.json"]
+    );
+  });
+
+  //*恢复参数
+  const restoreButton = initButton("iconUndo", "恢复默认参数");
+  globalToolsEle.appendChild(spaceEle());
+  globalToolsEle.appendChild(restoreButton);
+  restoreButton.addEventListener("click", async () => {
+    lastFile.addStmt = lastFile.addStmtDefault;
+    updateDescription(lastFile);
+  });
+
+  //*预览区
+  const wysiwygContainer = initWysiwygContainer(size.rightWidth); //("520px");
+  //const wysiwyg = initProtyle(wysiwygContainer);
+  const wysiwyg = initWysiwyg(wysiwygContainer, "preview");
+  updateWysiwyg("", wysiwyg);
+
+  //*预览区工具栏
+  const wysiwygToolsEle = initToolsEle();
+  wysiwygContainer.insertBefore(
+    wysiwygToolsEle,
+    wysiwygContainer.firstElementChild
+  );
+
+  const switchButton = initButton("iconUndo", "显示原文");
+  wysiwygToolsEle.appendChild(switchButton);
+  const buildOriginHtml = () => {
+    //todo store.previewLimit重复？
+    let html = blockElements.slice(0, store.previewLimit).reduce((pre, cur) => {
+      return cur.outerHTML + pre;
+    }, "");
+    const div = document.createElement("div");
+    div.innerHTML = html;
+    div.querySelectorAll("[data-node-id]").forEach((item) => {
+      item.setAttribute("data-node-id", window.Lute.NewNodeID());
+      item.classList.remove("protyle-wysiwyg--select");
+    });
+    html = updateWysiwyg(div.innerHTML, wysiwyg);
+    return html;
+  };
+  const switchButtonStore = {
+    state: true,
+    html: buildOriginHtml(),
+  };
+  switchButton.addEventListener("click", () => {
     //const text = switchButton.textContent.trim();
     const switchState = () => {
       let newButton: HTMLButtonElement;
