@@ -102,12 +102,12 @@ export function getSelectedBlocks(
   );
   //选择单个块
   if (blockElements.length === 0) {
-    const curentBlock = getCurrentBlock();
-    if (!curentBlock) {
+    const currentBlock = getCurrentBlock();
+    if (!currentBlock) {
       showMessage("请选择块"); //todo i18n
       blockElements = [];
     }
-    blockElements = [curentBlock];
+    blockElements = [currentBlock];
   }
 
   return blockElements;
@@ -270,7 +270,6 @@ export async function getComment(jsBlockContent: string, file: ISnippet) {
     addStmtDefault: addStmtDefault,
   };
   return result;
-  //20250101000000-additio
 }
 
 /**

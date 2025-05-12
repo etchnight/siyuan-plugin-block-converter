@@ -352,9 +352,12 @@ export default class PluginBlockConverter extends Plugin {
         //*差异比较，发现不同备份
         try {
           const jsContent2 = await this.loadData(newPath);
+          // 处理字符串，去除首尾空格
+          const processedJsContent = (jsContent as string).trim();
+          const processedJsContent2 = (jsContent2 as string).trim();
           const diffResult = diffLines(
-            jsContent as string,
-            jsContent2 as string
+            processedJsContent,
+            processedJsContent2
           );
           if (diffResult.length > 1) {
             backup(
@@ -373,7 +376,7 @@ export default class PluginBlockConverter extends Plugin {
         await this.saveData(newPath, jsContent);
       }
       //* 移动预设文件夹中无关脚本 
-
+  
       if (Object.values(EComponent).includes(dirName as EComponent)) {
         const allFiles = await getJsFiles(
           CONSTANTS.STORAGE_PATH + dirName + "/preinstalled/"
@@ -385,7 +388,7 @@ export default class PluginBlockConverter extends Plugin {
           await backup(file, dirName);
         }
       }
-
+  
       //console.log(dirName + " load success");
       return files;
     };
