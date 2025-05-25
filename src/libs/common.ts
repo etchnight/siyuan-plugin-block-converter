@@ -517,7 +517,7 @@ export async function getAllJs(component: EComponent, rootId: string) {
 
 /**
  * 弹出对话框
- * @param blockElements
+ * @param blockElements 如果是文档，将会根据detail.data.rootID获取
  * @param protyle
  * @returns
  */
@@ -530,9 +530,9 @@ export async function protyleUtilDialog(
   },
   rootId: string,
   component: EComponent,
-  isdocument: boolean = false
+  isDocument: boolean = false
 ) {
-  if (isdocument) {
+  if (isDocument) {
     const res = await getDoc({ id: detail.data.rootID });
     const div = document.createElement("div");
     div.innerHTML = res.content;

@@ -195,7 +195,7 @@ export default class PluginBlockConverter extends Plugin {
       data?: IGetDocInfo;
       protyle: IProtyle;
     },
-    isdocument: boolean = false
+    isDocument: boolean = false
   ) => {
     const info: {
       label: string;
@@ -234,7 +234,7 @@ export default class PluginBlockConverter extends Plugin {
         id: item.id,
         //submenu: [],
         click: () => {
-          protyleUtilDialog(detail, item.rootId, item.component, isdocument);
+          protyleUtilDialog(detail, item.rootId, item.component, isDocument);
         },
       };
       detail.menu.addItem(menu);
@@ -256,6 +256,30 @@ export default class PluginBlockConverter extends Plugin {
       ) => Promise<void>
     ) => {
       if (isValue) {
+        //* 增加根组件快捷键
+        this.addCommand({
+          langKey: CONSTANTS.PluginName + "-" + component,
+          langText: langTextPrefix,
+          hotkey: "",
+          callback: () => {
+            if (!store.protyle) {
+              showMessage("未找到当前编辑器"); //todo
+            } else {
+              //todo 在笔记中存储的代码片段RootID未获取
+              protyleUtilDialog(
+                {
+                  menu: new Menu(),
+                  protyle: store.protyle,
+                  blockElements: getSelectedBlocks(),
+                },
+                "",
+                component,
+                false
+              );
+            }
+          },
+        });
+
         snippets = await getAllJs(component, rootId);
         for (const snippet of snippets) {
           //todo 虽然能执行但是控制台有错误 https://github.com/siyuan-note/siyuan/issues/13314 未测试新版本是否能正常执行
@@ -355,10 +379,7 @@ export default class PluginBlockConverter extends Plugin {
           // 处理字符串，去除首尾空格
           const processedJsContent = (jsContent as string).trim();
           const processedJsContent2 = (jsContent2 as string).trim();
-          const diffResult = diffLines(
-            processedJsContent,
-            processedJsContent2
-          );
+          const diffResult = diffLines(processedJsContent, processedJsContent2);
           if (diffResult.length > 1) {
             backup(
               {
@@ -375,8 +396,8 @@ export default class PluginBlockConverter extends Plugin {
         }
         await this.saveData(newPath, jsContent);
       }
-      //* 移动预设文件夹中无关脚本 
-  
+      //* 移动预设文件夹中无关脚本
+
       if (Object.values(EComponent).includes(dirName as EComponent)) {
         const allFiles = await getJsFiles(
           CONSTANTS.STORAGE_PATH + dirName + "/preinstalled/"
@@ -388,7 +409,7 @@ export default class PluginBlockConverter extends Plugin {
           await backup(file, dirName);
         }
       }
-  
+
       //console.log(dirName + " load success");
       return files;
     };
