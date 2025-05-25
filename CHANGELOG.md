@@ -1,3 +1,19 @@
+## [1.1.4](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v1.1.3...v1.1.4) (2025-05-25)
+
+
+### Bug Fixes
+
+* 删除等待数据库提交机制 ([e452ffd](https://github.com/etchnight/siyuan-plugin-table-importer/commit/e452ffd8d2e6d0587789b6526c16c52cc7c54224))
+* 优化等待写入数据库完成 ([dc39540](https://github.com/etchnight/siyuan-plugin-table-importer/commit/dc39540608bd2c60c960564f545fcf0452e81c5b))
+
+
+### Features
+
+* 根组件可以设置快捷键 ([c3613f2](https://github.com/etchnight/siyuan-plugin-table-importer/commit/c3613f2a84d99b50a1ef9cb7eb972e6c4634fc37))
+* 引入 Vue 组件并重构 ProtyleUtil 功能 ([7925f3d](https://github.com/etchnight/siyuan-plugin-table-importer/commit/7925f3dfa28b8be305714325962a0425546d405e))
+
+
+
 ## [1.1.3](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v1.1.2...v1.1.3) (2025-02-28)
 
 
