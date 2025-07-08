@@ -18,6 +18,7 @@ export type i18nObj = {
 "message_completed":string,
 "message_noSnippet":string,
 "message_backupSnippet":string,
+"message_onload_warning":string,
 "dialog_protyle_util_description":string,
 "dialog_protyle_util_preview":string,
 "dialog_protyle_util_preview_memo":string,

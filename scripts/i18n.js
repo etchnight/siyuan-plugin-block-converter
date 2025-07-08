@@ -24,6 +24,8 @@ export const i18nObj = {
     message_noSnippet: "当前代码片段没有找到有效内容",
     message_backupSnippet:
       "请勿在“preinstalled”文件夹保存自定义代码片段，请从控制台查看备份文件位置",
+    message_onload_warning:
+      "每次加载插件时，'preinstalled'文件夹下的代码片段将被覆盖，请勿在该文件夹存放自定义代码片段",
     /**dialog */
     dialog_protyle_util_description: "脚本描述",
     dialog_protyle_util_preview: "脚本预览",
@@ -37,7 +39,7 @@ export const i18nObj = {
     name_plugin: "Block Converter",
 
     setting_isTurnON: "turn on to enable", //是否在选项中开启
-    setting_jsDoc: "document of JavaScript snegment",
+    setting_jsDoc: "document of JavaScript segment",
     setting_previewLimit: "Number of blocks displayed in preview",
     setting_previewLimitDesc:
       "When set to 0, the number of blocks displayed in the preview is not limited",
@@ -55,7 +57,9 @@ export const i18nObj = {
       "The current code snippet does not contain valid content.",
     message_backupSnippet:
       "Please do not save custom  snippets in the 'preinstalled' folder. Please check the console for the location of the backup file.",
-
+    message_onload_warning:
+      "Each time the plugin is loaded, the code snippets in the 'preinstalled' folder will be overwritten. Do not store custom code snippets there.",
+    /**dialog */
     dialog_protyle_util_description: "Script description",
     dialog_protyle_util_preview: "Result preview",
     dialog_protyle_util_preview_memo: " (only the first ${arg1} blocks)",

@@ -36,7 +36,7 @@ import {
 } from "../subMod/siyuanPlugin-common/siyuan-api/file";
 import { CONSTANTS, EComponent } from "./libs/constants";
 import { i18nObj } from "./types/i18nObj";
-import { diffLines } from "diff";
+//import { diffLines } from "diff";
 //import { getJsdocData } from "jsdoc-to-markdown";
 //import doctrine from "doctrine";
 
@@ -67,7 +67,11 @@ export default class PluginBlockConverter extends Plugin {
     this.eventBus.on("click-editortitleicon", this.openMenuDoctreeEvent);
     this.eventBus.on("switch-protyle", switchProtyle);
     await this.loadConfig();
-
+    showMessage(
+      `[${this.i18n.name_plugin}]${this.i18n.message_onload_warning}`,
+      7,
+      "error"
+    );
     const confirmCallback = async () => {
       switchPreviewLimit(this.data[CONFIG_NAME].previewLimit.value as number);
     };
@@ -174,7 +178,7 @@ export default class PluginBlockConverter extends Plugin {
   }) => {
     //this.detail = detail; //快捷键使用
     this.addUtilDialogMenu(detail);
-    /*     this.data[CONFIG_NAME].isBlockCusCopy.value && this.addCustomCopyMenu(detail);
+    /*this.data[CONFIG_NAME].isBlockCusCopy.value && this.addCustomCopyMenu(detail);
     this.data[CONFIG_NAME].isBlockCusUpdate.value && this.addCustomUpdateMenu(detail);
     this.data[CONFIG_NAME].isCustomPaste.value && this.addCustomPasteMenu(detail); */
     this.addSaveSnippetMenu(detail);
@@ -334,7 +338,7 @@ export default class PluginBlockConverter extends Plugin {
 
   /**
    * 加载预设的snippet
-   * 移动预设文件夹中无关脚本
+   *
    */
   private loadPresetSnippet = async () => {
     const backup = async (
@@ -374,6 +378,8 @@ export default class PluginBlockConverter extends Plugin {
         });
         const newPath = file.path.replace(CONSTANTS.PLUGIN_SNIPPETS_PATH, "");
         //*差异比较，发现不同备份
+        //todo 目前该功能总是出现问题，暂时停用
+        /*
         try {
           const jsContent2 = await this.loadData(newPath);
           // 处理字符串，去除首尾空格
@@ -393,12 +399,12 @@ export default class PluginBlockConverter extends Plugin {
           //console.log({ file, diffResult });
         } catch (e) {
           console.warn(e);
-        }
+        }*/
         await this.saveData(newPath, jsContent);
       }
       //* 移动预设文件夹中无关脚本
-
-      if (Object.values(EComponent).includes(dirName as EComponent)) {
+      //todo 目前该功能总是出现问题，暂时停用
+      /*if (Object.values(EComponent).includes(dirName as EComponent)) {
         const allFiles = await getJsFiles(
           CONSTANTS.STORAGE_PATH + dirName + "/preinstalled/"
         );
@@ -408,8 +414,7 @@ export default class PluginBlockConverter extends Plugin {
           }
           await backup(file, dirName);
         }
-      }
-
+      }*/
       //console.log(dirName + " load success");
       return files;
     };

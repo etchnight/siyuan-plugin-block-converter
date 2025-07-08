@@ -18,6 +18,7 @@
   "message_completed": "已完成: ",
   "message_noSnippet": "当前代码片段没有找到有效内容",
   "message_backupSnippet": "请勿在“preinstalled”文件夹保存自定义代码片段，请从控制台查看备份文件位置",
+  "message_onload_warning": "每次加载插件时，preinstalled文件夹下的代码片段将被覆盖，请勿存放自定义代码片段",
   "dialog_protyle_util_description": "脚本描述",
   "dialog_protyle_util_preview": "脚本预览",
   "dialog_protyle_util_preview_memo": "(仅前${arg1}个块)"

@@ -5,7 +5,7 @@
   "name_saveSnippet": "save as code snippet",
   "name_plugin": "Block Converter",
   "setting_isTurnON": "turn on to enable",
-  "setting_jsDoc": "document of JavaScript snegment",
+  "setting_jsDoc": "document of JavaScript segment",
   "setting_previewLimit": "Number of blocks displayed in preview",
   "setting_previewLimitDesc": "When set to 0, the number of blocks displayed in the preview is not limited",
   "message_saveSnippetSuccess": "save successfully",
@@ -18,6 +18,7 @@
   "message_completed": "completed: ",
   "message_noSnippet": "The current code snippet does not contain valid content.",
   "message_backupSnippet": "Please do not save custom  snippets in the 'preinstalled' folder. Please check the console for the location of the backup file.",
+  "message_onload_warning": "Each time the plugin is loaded, the code snippets in the preinstalled folder will be overwritten. Do not store custom code snippets there.",
   "dialog_protyle_util_description": "Script description",
   "dialog_protyle_util_preview": "Result preview",
   "dialog_protyle_util_preview_memo": " (only the first ${arg1} blocks)"
