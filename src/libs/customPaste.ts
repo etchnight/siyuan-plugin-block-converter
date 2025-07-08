@@ -1,6 +1,7 @@
 import {
   executeFunc,
-  getArgsByElement,
+  getInputs,
+  getTools,
   getI18n,
   ISnippet,
   IUpdateResult,
@@ -66,8 +67,9 @@ async function paste(
   }
   const markdown = turndownService.turndown(html);*/
   const lute = protyle.lute; //当前编辑器内的lute实例
-  const { inputs, tools } = await getArgsByElement(blockElements, lute);
-  const result = await executeFunc(inputs[0], tools, html, file, callback);
+  const inputs = await getInputs(blockElements);
+  const tools = getTools(lute);
+    const result = await executeFunc(inputs[0], tools, html, file, callback);
   console.warn(`[${EComponent.Paste}-Output]\n`, result.output);
   //* 通过两次转换将markdown拆分成多个块
   let domText = lute.Md2BlockDOM(result.output);

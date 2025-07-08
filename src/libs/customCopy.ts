@@ -1,5 +1,5 @@
 import { IProtyle, showMessage } from "siyuan";
-import { executeFunc, getArgsByElement, getI18n, ISnippet } from "./common";
+import { executeFunc, getInputs, getTools, getI18n, ISnippet } from "./common";
 import { store } from "./store";
 //import { IProtyle } from "../../subMod/siyuanPlugin-common/types/global-siyuan";
 
@@ -12,7 +12,8 @@ function buildCopyPreview(
     protyle: IProtyle
   ) => {
     const lute = protyle.lute; //当前编辑器内的lute实例
-    const { inputs, tools } = await getArgsByElement(blockElements, lute);
+    const inputs = await getInputs(blockElements);
+    const tools = getTools(lute);
     const results = await Promise.all(
       inputs.map(async (input) => {
         //执行自定义脚本

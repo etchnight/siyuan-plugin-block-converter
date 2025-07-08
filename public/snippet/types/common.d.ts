@@ -24,7 +24,7 @@ interface IFuncInput {
  * *自定义函数输入参数2
  */
 interface ITools {
-  lute:Lute;
+  lute: Lute;
   executeFunc: (
     input: IFuncInput,
     tools: ITools,
@@ -40,6 +40,7 @@ interface ITools {
   siyuanApi;
   turndown: any;
   jsYaml: any;
+  getClipboardHtml: () => Promise<string>; //获取剪贴板内容
   [key: string]: any;
 }
 

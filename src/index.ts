@@ -338,7 +338,6 @@ export default class PluginBlockConverter extends Plugin {
 
   /**
    * 加载预设的snippet
-   *
    */
   private loadPresetSnippet = async () => {
     const backup = async (

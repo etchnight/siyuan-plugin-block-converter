@@ -326,14 +326,11 @@ export async function executeFunc(
 }
 
 /**
- * 根据块元素从数据库查询块信息，并返回 executeFunc 的入参集合
+ * 根据块元素从数据库查询块信息，并返回 executeFunc 的入参 Inputs
  * @param blockElements
  * @returns
  */
-export async function getArgsByElement(
-  blockElements: HTMLElement[],
-  lute: Lute
-) {
+export async function getInputs(blockElements: HTMLElement[]) {
   const inputBlocks = await Promise.all(
     blockElements.map(async (e) => {
       const id = e.getAttribute("data-node-id");
@@ -363,6 +360,31 @@ export async function getArgsByElement(
     };
     return input_func;
   });
+  return inputs;
+}
+/**
+ *
+ * @param lute
+ * @returns 返回 executeFunc 的入参 tools
+ */
+export function getTools(lute: Lute) {
+  const getClipboardHtml = async () => {
+    const content = await navigator.clipboard.read().then((e) => e[0]);
+    let blob: Blob;
+    if (content.types.includes("text/html")) {
+      blob = await content.getType("text/html");
+    } else if (content.types.includes("text/plain")) {
+      blob = await content.getType("text/plain");
+    } else {
+      //showMessage(getI18n().message_getClipboardHtml);
+      return;
+    }
+    const html = await blob.text();
+    const div = document.createElement("div");
+    div.innerHTML = html;
+    //console.warn(`[${EComponent.Paste}-Input]`, div);
+    return html;
+  };
   const tools: ITools = {
     lute,
     executeFunc,
@@ -375,8 +397,9 @@ export async function getArgsByElement(
     siyuanApi,
     turndown: new TurndownService(),
     jsYaml,
+    getClipboardHtml,
   };
-  return { inputs, tools };
+  return tools;
 }
 
 export function getSnippetType(markdown: string): "js" | "ts" | "other" {
