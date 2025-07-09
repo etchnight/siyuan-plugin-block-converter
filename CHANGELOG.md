@@ -1,3 +1,28 @@
+# [2.0.0](https://github.com/etchnight/siyuan-plugin-block-converter/compare/v1.1.4...v2.0.0) (2025-07-09)
+
+
+### Bug Fixes
+
+* 注释掉存在问题的差异比较和移动脚本功能代码 ([e30c93b](https://github.com/etchnight/siyuan-plugin-block-converter/commit/e30c93b929d34beecaf70c06e78611a6765a31d8))
+
+
+### Code Refactoring
+
+* 删除自定义粘贴、自定义复制和在思源笔记中编写js脚本功能 ([faca419](https://github.com/etchnight/siyuan-plugin-block-converter/commit/faca4190557897e3e8d5093ca39f7ce52cb1e54c))
+
+
+### Features
+
+* 增加粘贴表格和html转思源表格预设脚本 ([d6d8bbe](https://github.com/etchnight/siyuan-plugin-block-converter/commit/d6d8bbe4ae82d75267c509b5669c1519c0f81230))
+* tools中加入获取剪贴板函数 ([0e39d6c](https://github.com/etchnight/siyuan-plugin-block-converter/commit/0e39d6c53c4cf5e65e92b6e67843f982e8c3ed7d))
+
+
+### BREAKING CHANGES
+
+* 不在支持自定义粘贴、自定义复制组件和在笔记中编写js脚本功能
+
+
+
 ## [1.1.4](https://github.com/etchnight/siyuan-plugin-table-importer/compare/v1.1.3...v1.1.4) (2025-05-25)
 
 
