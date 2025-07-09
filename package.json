@@ -8,7 +8,7 @@
   "author": "",
   "license": "MIT",
   "scripts": {
-    "make-link": "node  --no-warnings ./scripts/make_dev_link.js",
+    "make-link": "node  --no-warnings ./scripts/make_dev_link.js  && echo WARN: 如果显示操作禁止,使用管理员运行powershell",
     "dev": "vite build --watch",
     "build": "vite build",
     "commit": "git add . && cz",

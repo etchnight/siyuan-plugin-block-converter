@@ -191,3 +191,14 @@ if (!input.isIgnore) {
 - 可以将一个块更新为多个块（如返回的Markdown内容有多个段落），但只有第一个块会继承或更新属性
 - v0.2.4 以上版本：新增 `inputArray` 变量(详见 自定义块复制 部分)，可以利用其将多个块更新为一个块，但是如果任何块返回 `output` 内容为空，为保证数据安全，不会主动将其清空
 - v0.2.6 以上版本：支持`Ctrl+Z`撤销(🚀 实验性)
+
+
+pnpm install -g commitizen
+pnpm install cz-conventional-changelog
+
+# 初始化子模块（读取 .gitmodules 配置）
+git submodule init
+
+# 拉取子模块代码到指定路径
+
+git submodule update

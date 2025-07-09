@@ -10,8 +10,8 @@
 import fs from 'fs';
 import { log, error, getSiYuanDir, chooseTarget, getThisPluginName, makeSymbolicLink } from './utils.js';
 
-let targetDir = 'D:\\Siyuan\\data\\plugins';
-
+//let targetDir = 'D:\\Siyuan\\data\\plugins';
+let targetDir = ''
 /**
  * 1. Get the parent directory to install the plugin
  */
