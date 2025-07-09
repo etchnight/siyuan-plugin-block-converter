@@ -22,8 +22,8 @@ function buildUpdatePreview(
     protyle: IProtyle
   ): Promise<IUpdateResult[]> => {
     const lute = protyle.lute; //当前编辑器内的lute实例
-    //*等待store中的waitting状态
-    //while (store.waitting) {
+    //*等待store中的waiting状态
+    //while (store.waiting) {
     await new Promise<void>((resolve, _reject) => {
       setTimeout(resolve, 100);
     });

@@ -16,7 +16,7 @@
             style="position: relative">
             <div
               v-for="file in filteredFiles"
-              :key="file.id || file.label"
+              :key="file.label"
               class="b3-list-item b3-list-item--hide-action"
               @mouseenter="handleMouseEnter(file)"
               @mouseleave="handleMouseLeave"
@@ -85,10 +85,8 @@
 import { ref, onMounted } from "vue";
 import { Dialog, IProtyle } from "siyuan";
 import { getI18n, getPlugin, ISnippet } from "./common";
-import { execCopy, previewCopy } from "./customCopy";
 import { execUpdate, previewUpdate } from "./customUpdate";
-import { execPaste, previewPaste } from "./customPaste";
-import { CONSTANTS, EComponent } from "./constants";
+import { CONSTANTS } from "./constants";
 import { processRender } from "../../subMod/siyuanPlugin-common/src/render";
 import { store } from "./store";
 
@@ -97,7 +95,6 @@ const props = defineProps<{
   blockElements: HTMLElement[];
   protyle: IProtyle;
   dialog: Dialog;
-  component: EComponent;
 }>();
 
 // 尺寸计算
@@ -258,10 +255,7 @@ const saveParams = async () => {
   if (!lastFile.value) return;
   const plugin = getPlugin();
   const additionalStatement = getAdditionalStatement();
-  const key =
-    lastFile.value.name ||
-    lastFile.value.id ||
-    lastFile.value.path.replace(CONSTANTS.STORAGE_PATH, "");
+  const key = lastFile.value.path.replace(CONSTANTS.STORAGE_PATH, "");
   if (!plugin.data["snippetConfig.json"]) {
     plugin.data["snippetConfig.json"] = {};
   }
@@ -306,40 +300,15 @@ const run = async (
     updateWysiwyg("正在执行...", wysiwygPreview.value);
   }
   let html = "";
-  const list = [
-    {
-      component: EComponent.Copy,
-      previewFunc: previewCopy,
-      executeFunc: execCopy,
-    },
-    {
-      component: EComponent.Update,
-      previewFunc: previewUpdate,
-      executeFunc: execUpdate,
-    },
-    {
-      component: EComponent.Paste,
-      previewFunc: previewPaste,
-      executeFunc: execPaste,
-    },
-  ];
-  const item = list.find((item) => item.component === props.component);
-  if (item) {
-    if (mode === "preview") {
-      html = await item.previewFunc(
-        file,
-        props.blockElements,
-        props.protyle,
-        callback
-      );
-    } else if (mode === "exec") {
-      await item.executeFunc(
-        file,
-        props.blockElements,
-        props.protyle,
-        callback
-      );
-    }
+  if (mode === "preview") {
+    html = await previewUpdate(
+      file,
+      props.blockElements,
+      props.protyle,
+      callback
+    );
+  } else if (mode === "exec") {
+    await execUpdate(file, props.blockElements, props.protyle, callback);
   }
   if (mode === "preview" && wysiwygPreview.value) {
     updateWysiwyg(html, wysiwygPreview.value);

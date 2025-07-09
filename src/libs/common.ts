@@ -35,7 +35,7 @@ import { createApp } from "vue";
 import ProtyleUtil from "./ProtyleUtil.vue";
 import TurndownService from "turndown";
 //import extract from "extract-comments";
-import { CONSTANTS, EComponent } from "./constants";
+import { CONSTANTS } from "./constants";
 import { i18nObj } from "@/types/i18nObj";
 import doctrine from "doctrine-standalone";
 import { IAsyncFunc, IFuncInput, IOutput, ITools } from "@/types/common";
@@ -155,16 +155,7 @@ export async function buildFunc(
   };
   //*使用顺序: Id -> name -> filePath
   let jsBlockContent: string = "";
-  if (file.id) {
-    const block = await queryBlockById(file.id);
-    jsBlockContent = block.content;
-  } else if (file.name) {
-    const resList = await requestQuerySQL(
-      `select * from blocks where name = '${file.name}'`
-    );
-    const block = resList[0];
-    jsBlockContent = block.content;
-  } else if (file.path) {
+  if (file.path) {
     let filePath = file.path;
     //*相对路径转换为绝对路径，兼容用户输入
     if (!filePath.startsWith("/data")) {
@@ -257,8 +248,7 @@ export async function getComment(jsBlockContent: string, file: ISnippet) {
   //*载入自定义配置
   let addStmt = ""; //预设值
   const plugin = getPlugin();
-  const key =
-    file.name || file.id || file.path.replace(CONSTANTS.STORAGE_PATH, "");
+  const key = file.path.replace(CONSTANTS.STORAGE_PATH, "");
   try {
     addStmt = plugin.data["snippetConfig.json"][key].additionalStatement;
   } catch (error) {
@@ -317,9 +307,7 @@ export async function executeFunc(
     showMessage(getI18n().message_timeout);
     throw new Error(getI18n().message_timeout);
   } else if (errorFlag) {
-    showMessage(
-      `${jsBlock.name || jsBlock.id || jsBlock.path}${getI18n().message_error1}`
-    );
+    showMessage(`${jsBlock.path}${getI18n().message_error1}`);
     throw new Error(getI18n().message_error);
   }
   return { input, tools, output };
@@ -495,10 +483,8 @@ export async function getJsFiles(
 export interface ISnippet {
   isFile: boolean;
   label: string;
-  snippet?: string;
-  path?: string; //file专属
-  id?: string; //Block块专属
-  name?: string; //Block块专属
+  snippet?: string; //将在执行时获取
+  path: string; //file专属
   description?: string;
   addStmt?: string; //附加语句
   addStmtDefault?: string; //附加语句默认值
@@ -512,29 +498,22 @@ export interface ISnippet {
  * @param rootId
  * @returns
  */
-export async function getAllJs(component: EComponent, rootId: string) {
-  const files = await getJsFiles(CONSTANTS.STORAGE_PATH + component + "/");
+export async function getAllJs() {
+  const files = await getJsFiles(
+    CONSTANTS.STORAGE_PATH + CONSTANTS.COMPONENT + "/"
+  );
   const snippets: ISnippet[] = files.map((file) => {
     const snippet: ISnippet = {
-      label: file.path.replace(CONSTANTS.STORAGE_PATH + component + "/", ""), //!
+      label: file.path.replace(
+        CONSTANTS.STORAGE_PATH + CONSTANTS.COMPONENT + "/",
+        ""
+      ), //!
       path: file.path,
       isFile: true,
       //name: file.name,
     };
     return snippet;
   });
-  const jsBlocks = await getJsBlocks(rootId);
-  jsBlocks.forEach((jsBlock) => {
-    snippets.push({
-      label: jsBlock.name || jsBlock.content.substring(0, 20),
-      isFile: false,
-      snippet: jsBlock.content,
-      id: jsBlock.id,
-      name: jsBlock.name,
-      //description: jsBlock.memo,
-    });
-  });
-
   return snippets;
 }
 
@@ -551,8 +530,6 @@ export async function protyleUtilDialog(
     data?: IGetDocInfo;
     protyle: IProtyle;
   },
-  rootId: string,
-  component: EComponent,
   isDocument: boolean = false
 ) {
   if (isDocument) {
@@ -576,13 +553,12 @@ export async function protyleUtilDialog(
   if (!container) {
     return;
   }
-  const snippets = await getAllJs(component, rootId);
+  const snippets = await getAllJs();
   const app = createApp(ProtyleUtil, {
     files: snippets,
     blockElements: detail.blockElements,
     protyle: detail.protyle,
     dialog,
-    component,
   });
   app.mount(container);
   /*
