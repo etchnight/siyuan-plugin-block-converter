@@ -112,33 +112,7 @@ type BlockSubType =
   | "other"
   | "box"; //!
 
-/**
- * 数据库查询返回该结果
- * @ial {: [key: string]: string };
- */
-type Block = {
-  id: BlockId;
-  parent_id?: BlockId;
-  root_id: DocumentId;
-  hash: string;
-  box: string;
-  path: string;
-  hpath: string;
-  name: string;
-  alias: string;
-  memo: string;
-  tag: string;
-  content: string;
-  fcontent?: string;
-  markdown: string;
-  length: number;
-  type: BlockType;
-  subtype: BlockSubType;
-  ial?: string; //{ [key: string]: string };
-  sort: number;
-  created: string;
-  updated: string;
-};
+
 /**
  * 数据库refs表查询返回该结果
  */

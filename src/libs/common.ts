@@ -19,13 +19,10 @@ import {
   getBlockAttrs,
   getDoc,
   getFile,
-  insertBlock,
   queryBlockById,
   readDir,
   requestQuerySQL,
-  setBlockAttrs,
   TransactionRes,
-  updateBlockWithAttr,
 } from "../../subMod/siyuanPlugin-common/siyuan-api";
 import * as siyuanApi from "../../subMod/siyuanPlugin-common/siyuan-api";
 import * as babel from "@babel/standalone";
@@ -38,7 +35,6 @@ import TurndownService from "turndown";
 import { CONSTANTS } from "./constants";
 import { i18nObj } from "@/types/i18nObj";
 import doctrine from "doctrine-standalone";
-import { IAsyncFunc, IFuncInput, IOutput, ITools } from "@/types/common";
 import { store } from "./store";
 
 //tools 附加工具库
@@ -136,11 +132,6 @@ export function getInsertId(res: TransactionRes[]) {
  */
 export async function buildFunc(
   file: ISnippet,
-  //jsBlockId?: string,
-  //name?: string,
-  //filePath?: string,
-  //snippet?: string,
-  //isCustomPaste: boolean
   callback?: (file: ISnippet) => Promise<void>
 ): Promise<IAsyncFunc> {
   const ts2js = (tsCode: string) => {
@@ -273,7 +264,6 @@ export async function getComment(jsBlockContent: string, file: ISnippet) {
 export async function executeFunc(
   input: IFuncInput,
   tools: ITools,
-  output: string,
   jsBlock: ISnippet,
   callback?: (file: ISnippet) => Promise<void>
 ) {
@@ -288,12 +278,11 @@ export async function executeFunc(
       }, 5000) //todo 可配置
   );
   const customPromise = new Promise((resolve) => {
-    func(input, tools, output)
+    func(input, tools)
       .then((res: { input: IFuncInput; tools: ITools; output: string }) => {
         //reloadFlag = false; //防止刷新
         input = res.input;
         tools = res.tools;
-        output = res.output;
         errorFlag = false; //防止报错
       })
       .finally(() => {
@@ -310,7 +299,7 @@ export async function executeFunc(
     showMessage(`${jsBlock.path}${getI18n().message_error1}`);
     throw new Error(getI18n().message_error);
   }
-  return { input, tools, output };
+  return { input, tools };
 }
 
 /**
@@ -343,8 +332,8 @@ export async function getInputs(blockElements: HTMLElement[]) {
       array: array.map((e) => e.block), //所有块
       isDelete: false, //是否删除
       isIgnore: false, //
-      //dataType: "markdown",
-      //output: e.block.markdown, //输出内容
+      dataType: "markdown",
+      data: e.block.markdown, //当前块内容
     };
     return input_func;
   });
@@ -477,20 +466,6 @@ export async function getJsFiles(
   });
   return files;
 }
-/**
- * @param additionalStatement 附加语句
- */
-export interface ISnippet {
-  isFile: boolean;
-  label: string;
-  snippet?: string; //将在执行时获取
-  path: string; //file专属
-  description?: string;
-  addStmt?: string; //附加语句
-  addStmtDefault?: string; //附加语句默认值
-  //output?: string | IUpdateResult[]; //脚本可能会改变，所以不预存结果
-  //clipboardHtml?: string; //Paste专属，预存输入
-}
 
 /**
  * ISnippet初始生成函数，获取笔记和文件中的所有js
@@ -561,101 +536,6 @@ export async function protyleUtilDialog(
     dialog,
   });
   app.mount(container);
-  /*
-  const protyleUtilDiv = protyleUtil( 
-    snippets,
-    detail.blockElements,
-    detail.protyle,
-    dialog,
-    component
-  );
-  container.appendChild(protyleUtilDiv);*/
-
-  //console.log(container);
 }
 
-/**
- * - 自定义粘贴和自定义更新使用
- * - 将输入输出的markdown转换为dom
- *
- * @param input markdown
- * @param result markdown
- * @param protyle
- * @returns
- */
-export const result2BlockDom = (
-  input: IFuncInput,
-  output: IOutput,
-  protyle: IProtyle
-) => {
-  //将自定义脚本返回的input结构转换为dom结构
-  const dom = document.createElement("div");
-  const oldDom = document.createElement("div");
-  oldDom.innerHTML = protyle.lute.Md2BlockDOM(input.block.markdown);
-  if (output && output.trim()) {
-    dom.innerHTML = protyle.lute.Md2BlockDOM(output);
-    (dom.firstChild as HTMLDivElement).setAttribute(
-      "data-node-id",
-      input.block.id
-    );
-  }
-  return {
-    dom,
-    oldDom,
-  };
-};
 
-export interface IUpdateResult {
-  id: string;
-  parentId: string;
-  dom: HTMLDivElement; //是一个div，其children可能包含多个block div 节点
-  attrs: { [key: string]: string };
-  oldDom: HTMLDivElement;
-  isDelete: boolean;
-  isIgnore: boolean;
-  //dataType: "dom" | "markdown";
-}
-
-//* 见IUpdateResult的解释，dom可能包含多个block div节点
-export async function updateByDoms(
-  outputDom: IUpdateResult,
-  protyle: IProtyle,
-  preBlockId: string
-) {
-  const { id, dom, attrs, oldDom } = outputDom;
-  let updateFlag = false;
-  for (const block of dom.children) {
-    if (!updateFlag) {
-      await updateBlockWithAttr(
-        {
-          dataType: "dom",
-          id: id,
-          data: block.outerHTML,
-        },
-        protyle,
-        oldDom.innerHTML
-      );
-      updateFlag = true; //已执行过更新操作，后续操作为插入
-    } else {
-      const res = await insertBlock(
-        {
-          dataType: "dom",
-          previousID: preBlockId,
-          data: block.outerHTML,
-        },
-        protyle
-      );
-      if (!res) {
-        continue;
-      }
-      preBlockId = res[0]?.doOperations[0]?.id || preBlockId;
-    }
-  }
-  if (attrs) {
-    await setBlockAttrs({
-      id: id,
-      attrs: attrs,
-    });
-  }
-  return preBlockId;
-}

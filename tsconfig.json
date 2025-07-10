@@ -27,7 +27,7 @@
      */
     "allowJs": true,
     "checkJs": true,
-    "types": ["node"], //, "vite/client"
+    "types": ["node"],
     "typeRoots": ["./src/types", "./node_modules/@types"],
     // "baseUrl": "./src",
     "paths": {

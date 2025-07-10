@@ -16,7 +16,6 @@ import {
   getAllJs,
   getJsFiles,
   getSelectedBlocks,
-  ISnippet,
   protyleUtilDialog,
 } from "./libs/common";
 import {
@@ -50,7 +49,7 @@ export default class PluginBlockConverter extends Plugin {
     //this.displayName = "块转换工具"; //?不能自动加载插件名称
     this.eventBus.on("click-blockicon", this.blockIconEvent);
     this.eventBus.on("ws-main", this.switchWait);
-    this.eventBus.on("click-editortitleicon", this.openMenuDoctreeEvent);
+    this.eventBus.on("click-editortitleicon", this.openMenuDocTreeEvent);
     this.eventBus.on("switch-protyle", switchProtyle);
     await this.loadConfig();
     showMessage(
@@ -80,7 +79,7 @@ export default class PluginBlockConverter extends Plugin {
   onunload() {
     this.eventBus.off("click-blockicon", this.blockIconEvent);
     this.eventBus.off("ws-main", this.switchWait);
-    this.eventBus.off("click-editortitleicon", this.openMenuDoctreeEvent);
+    this.eventBus.off("click-editortitleicon", this.openMenuDocTreeEvent);
     this.eventBus.off("switch-protyle", switchProtyle);
   }
 
@@ -138,7 +137,7 @@ export default class PluginBlockConverter extends Plugin {
     this.addUtilDialogMenu(detail);
   };
 
-  private openMenuDoctreeEvent = ({
+  private openMenuDocTreeEvent = ({
     detail,
   }: {
     detail: { menu: Menu; data: IGetDocInfo; protyle: IProtyle };

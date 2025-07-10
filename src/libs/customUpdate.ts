@@ -1,22 +1,67 @@
 import { IProtyle, showMessage } from "siyuan";
-import {
-  executeFunc,
-  getInputs,
-  getTools,
-  getI18n,
-  ISnippet,
-  IUpdateResult,
-  result2BlockDom,
-  updateByDoms,
-} from "./common";
+import { executeFunc, getInputs, getTools, getI18n } from "./common";
 import { store } from "./store";
-import { deleteBlock } from "../../subMod/siyuanPlugin-common/siyuan-api";
+import {
+  deleteBlock,
+  insertBlock,
+  setBlockAttrs,
+  updateBlockWithAttr,
+} from "../../subMod/siyuanPlugin-common/siyuan-api";
 //import { IProtyle } from "../../subMod/siyuanPlugin-common/types/global-siyuan";
 
-function buildUpdatePreview(
+interface IUpdateResult {
+  newId: string;
+  oldId: string;
+  parentId: string;
+  dom: HTMLDivElement; //是一个div，其children可能包含多个block div 节点
+  attrs: { [key: string]: string };
+  oldDom: HTMLDivElement;
+  isDelete: boolean;
+  isIgnore: boolean;
+  //dataType: "dom" | "markdown";
+}
+
+/**
+ * 将自定义脚本输出的markdown转换为dom
+ *
+ * @param input markdown
+ * @param result markdown
+ * @param protyle
+ * @returns
+ */
+const result2BlockDom = (input: IFuncInput, protyle: IProtyle) => {
+  //将原有块转换为dom结构
+  const oldDom = document.createElement("div");
+  oldDom.innerHTML = protyle.lute.Md2BlockDOM(input.block.markdown);
+  //将自定义脚本返回的input结构转换为dom结构
+  const dom = document.createElement("div");
+  if (input.data && input.data.trim()) {
+    if (input.dataType === "markdown") {
+      dom.innerHTML = protyle.lute.Md2BlockDOM(input.data);
+      (dom.firstChild as HTMLDivElement).setAttribute(
+        "data-node-id",
+        input.block.id
+      );
+    } else if (input.dataType === "dom") {
+      dom.innerHTML = input.data;
+    }
+  }
+  return {
+    dom,
+    oldDom,
+  };
+};
+
+const buildUpdatePreview = (
   jsBlock: ISnippet,
   callback?: (file: ISnippet) => Promise<void>
-) {
+) => {
+  /**
+   *
+   * @param blockElements
+   * @param protyle
+   * @returns
+   */
   const transform = async (
     blockElements: HTMLElement[],
     protyle: IProtyle
@@ -35,19 +80,14 @@ function buildUpdatePreview(
     const outputDoms = await Promise.all(
       inputs.map(async (input) => {
         //执行自定义脚本
-        const result = await executeFunc(
-          input,
-          tools,
-          input.block.markdown,
-          jsBlock,
-          callback
-        );
+        const result = await executeFunc(input, tools, jsBlock, callback);
         if (!result) {
           return;
         }
-        const { dom, oldDom } = result2BlockDom(input, result.output, protyle);
+        const { dom, oldDom } = result2BlockDom(input, protyle);
         return {
-          id: input.block.id,
+          oldId: input.block.id,
+          newId: (dom.firstChild as HTMLElement).getAttribute("data-node-id"),
           parentId: input.block.parent_id,
           dom,
           attrs: result.input.extra.attrs,
@@ -60,59 +100,65 @@ function buildUpdatePreview(
     return outputDoms;
   };
   return transform;
-}
-async function update(
+};
+
+const update = async (
   file: ISnippet,
   blockElements: HTMLElement[],
   protyle: IProtyle,
   callback?: (file: ISnippet) => Promise<void>
-) {
+) => {
   const updatePreview = buildUpdatePreview(file, callback);
   const outputDoms = await updatePreview(blockElements, protyle);
   return outputDoms;
-}
+};
 
-export async function execUpdate(
+/**
+ * 所有块的更新操作
+ * @param file
+ * @param blockElements
+ * @param protyle
+ * @param callback
+ */
+export const execUpdate = async (
   file: ISnippet,
   blockElements: HTMLElement[],
   protyle: IProtyle,
   callback?: (file: ISnippet) => Promise<void>
-) {
+) => {
   const outputDoms = await update(file, blockElements, protyle, callback);
   //*执行添加、更新、删除操作
   let count = 0;
-  let preBlockId = outputDoms[0].id;
+  let preBlockId = outputDoms[0].newId;
   for (let i = 0; i < outputDoms.length; i++) {
     count++;
-    const { id, parentId, oldDom, isDelete, isIgnore } = outputDoms[i];
+    const { oldId, parentId, oldDom, isDelete, isIgnore } = outputDoms[i];
     if (isIgnore) {
-      preBlockId = id;
+      preBlockId = oldId;
       continue;
     }
     if (isDelete && i !== 0) {
       await deleteBlock(
-        { id: id },
+        { id: oldId },
         protyle,
         oldDom.innerHTML,
         parentId,
         preBlockId
       );
-      continue;
     } else {
-      preBlockId = id;
+      preBlockId = await updateByDoms(outputDoms[i], protyle, preBlockId);
     }
-    preBlockId = await updateByDoms(outputDoms[i], protyle, preBlockId);
     showMessage(`${getI18n().message_completed}${count}/${outputDoms.length}`);
   }
   showMessage(`${file.label}${getI18n().message_updateSuccess}`);
-}
+};
 
-export async function previewUpdate(
+export const previewUpdate = async (
   file: ISnippet,
   blockElements: HTMLElement[],
   protyle: IProtyle,
   callback?: (file: ISnippet) => Promise<void>
-) {
+) => {
   const blockElementsLimit = store.previewLimit
     ? blockElements.slice(0, store.previewLimit)
     : blockElements;
@@ -130,4 +176,51 @@ export async function previewUpdate(
     return block.outerHTML;
   });
   return blocksHtml.join("");
-}
+};
+
+/**
+ * 执行单个返回结果的插入、更新操作
+ * @param outputDom
+ * @param protyle
+ * @param preBlockId
+ * @returns
+ */
+const updateByDoms = async (
+  outputDom: IUpdateResult,
+  protyle: IProtyle,
+  preBlockId: string
+) => {
+  const { newId, oldId, dom, attrs } = outputDom;
+  let updateFlag = false;
+  for (const block of dom.children) {
+    if (!updateFlag) {
+      await updateBlockWithAttr({
+        dataType: "dom",
+        newId: newId,
+        oldId: oldId,
+        data: block.outerHTML,
+      });
+      updateFlag = true; //已执行过更新操作，后续操作为插入
+    } else {
+      const res = await insertBlock(
+        {
+          dataType: "dom",
+          previousID: preBlockId,
+          data: block.outerHTML,
+        },
+        protyle
+      );
+      if (!res) {
+        continue;
+      }
+      preBlockId = res[0]?.doOperations[0]?.id || preBlockId;
+    }
+  }
+  if (attrs) {
+    await setBlockAttrs({
+      id: newId,
+      attrs: attrs,
+    });
+  }
+  return preBlockId;
+};
