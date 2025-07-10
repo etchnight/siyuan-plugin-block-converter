@@ -144,7 +144,6 @@ export async function buildFunc(
     });
     return result.code;
   };
-  //*使用顺序: Id -> name -> filePath
   let jsBlockContent: string = "";
   if (file.path) {
     let filePath = file.path;
@@ -359,7 +358,6 @@ export function getTools(lute: Lute) {
     const html = await blob.text();
     const div = document.createElement("div");
     div.innerHTML = html;
-    //console.warn(`[${EComponent.Paste}-Input]`, div);
     return html;
   };
   const tools: ITools = {

@@ -24,7 +24,9 @@ import {
   switchProtyle,
   switchWait,
 } from "./libs/store";
-import { getFile } from "../subMod/siyuanPlugin-common/siyuan-api/file";
+import {
+  getFile,
+} from "../subMod/siyuanPlugin-common/siyuan-api/file";
 import { CONSTANTS } from "./libs/constants";
 import { i18nObj } from "./types/i18nObj";
 //import { diffLines } from "diff";
@@ -219,6 +221,7 @@ export default class PluginBlockConverter extends Plugin {
    */
   private loadPresetSnippet = async () => {
     const loadFiles = async (dirName: string) => {
+      //todo 删除原有文件
       //*获取预设脚本
       const files = await getJsFiles(
         CONSTANTS.PLUGIN_SNIPPETS_PATH + dirName + "/"

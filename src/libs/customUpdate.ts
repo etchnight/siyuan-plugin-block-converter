@@ -87,7 +87,9 @@ const buildUpdatePreview = (
         const { dom, oldDom } = result2BlockDom(input, protyle);
         return {
           oldId: input.block.id,
-          newId: (dom.firstChild as HTMLElement).getAttribute("data-node-id"),
+          newId:
+            (dom.firstChild as HTMLElement)?.getAttribute("data-node-id") ||
+            input.block.id,
           parentId: input.block.parent_id,
           dom,
           attrs: result.input.extra.attrs,
@@ -190,16 +192,20 @@ const updateByDoms = async (
   protyle: IProtyle,
   preBlockId: string
 ) => {
-  const { newId, oldId, dom, attrs } = outputDom;
+  const { newId, oldId, dom, attrs, oldDom } = outputDom;
   let updateFlag = false;
   for (const block of dom.children) {
     if (!updateFlag) {
-      await updateBlockWithAttr({
-        dataType: "dom",
-        newId: newId,
-        oldId: oldId,
-        data: block.outerHTML,
-      });
+      await updateBlockWithAttr(
+        {
+          dataType: "dom",
+          newId: newId,
+          oldId: oldId,
+          data: block.outerHTML,
+        },
+        protyle,
+        oldDom.innerHTML
+      );
       updateFlag = true; //已执行过更新操作，后续操作为插入
     } else {
       const res = await insertBlock(
@@ -219,7 +225,7 @@ const updateByDoms = async (
   if (attrs) {
     await setBlockAttrs({
       id: newId,
-      attrs: attrs,
+      attrs: Object.assign(attrs, { id: newId }),
     });
   }
   return preBlockId;

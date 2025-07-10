@@ -204,6 +204,7 @@ if (!input.isIgnore) {
 - v0.2.4 以上版本：新增 `inputArray` 变量(详见 自定义块复制 部分)，可以利用其将多个块更新为一个块，但是如果任何块返回 `output` 内容为空，为保证数据安全，不会主动将其清空
 - v0.2.6 以上版本：支持 `Ctrl+Z`撤销(🚀 实验性)
 
+```
 pnpm install -g commitizen
 pnpm install cz-conventional-changelog
 
@@ -211,6 +212,10 @@ pnpm install cz-conventional-changelog
 
 git submodule init
 
-# 拉取子模块代码到指定路径
+#  拉取子模块代码到指定路径
 
 git submodule update
+```
+## 已知问题
+
+- 块id改变问题，更新块会强制使用原来的id，无法改变块id，这在文本转列表等情形下有此需求，但无法实现
