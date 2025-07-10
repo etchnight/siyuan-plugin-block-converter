@@ -1,22 +1,34 @@
 # 块转换工具
 
-- ❗❗❗无论如何，使用代码片段更新块都有一定的风险，请使用多个块测试没有问题后再使用该工具进行更新，并推荐对待更新内容进行备份。
-- 🚀 实验性功能基本上都使用了一些未公开的 API，所以可能存在不稳定的情况，请谨慎使用。
-- ❗0.4.0版本开始，插件不再支持旧版本的代码片段，以支持更多功能，请阅读说明。
+<div class="warn" style="background-color: #fff3cd; color: #856404; padding: 15px; border: 1px solid #ffeeba; border-radius: 4px; margin-bottom: 20px;">
+  <strong>警告：</strong>
+  <p>使用代码片段更新块有一定的风险，请使用多个块测试没有问题后再使用该工具进行更新，并推荐对待更新内容进行备份。</p>
+  <p>🚀 实验性功能基本上都使用了一些未公开的 API，所以可能存在不稳定的情况，请谨慎使用。</p>
+  <p>版本更新后可能会改变功能，导致相应代码片段需要更改</p>
+  <p>插件每次加载时会覆盖 `preinstalled`文件夹，如需定制（修改），请复制一个副本。</p>
+</div>
 
 [English](./README_en_US.md)
 
 [更新日志](./CHANGELOG.md)
 
+## 破坏性更新
+
+- v2.0.0 不再支持自定义粘贴、自定义复制组件和在笔记中编写js脚本功能
+- v1.1.0 自定义粘贴脚本内容发生了较大改变，现在是标准js程序
+- v0.4.0 自定义函数的参数和返回值都做了较大的更改
+- v0.3.0 删除 `表格插入助手` 和 `粘贴为 Html 块`功能
+
 ## 简介
 
-使用自定义代码进行复制、粘贴和更新操作，以块为单位进行操作，目前包含以下组件：
+针对单个块/多个块/整篇文档执行自定义代码，并默认使用代码输出的`output`文本变量替换所选块。
 
-- 自定义块粘贴：将剪贴板内 html 粘贴至思源笔记，支持自定义转化为 Markdown 规则（input + 剪贴板内容 => Markdown => 插入或更新块）
-- 自定义块复制：复制块时将把块内容按指定方法处理后再写入剪贴板。（input => Markdown => 剪贴板）
-- 自定义块更新：使用自定义代码处理块内容并更新。（input => Markdown => 更新、插入或删除块）
+- 可自行编写代码片段，支持JavaScript和TypeScript
+- 可实现批量自定义更新块、批量自定义复制块、批量自定义粘贴等功能
+- 逐步增多的预设功能
+- 可自定义快捷键
+- 提高代码复用性
 
-更新与粘贴很相似，在自定义更新中手动获取剪贴板内容，并组合输出也能达到自定义粘贴的效果，并且支持更多功能，由于历史原因`自定义块粘贴`模块继续保留，但是可能不再维护。
 
 ## 使用方法
 
@@ -24,7 +36,7 @@
 
 插件预设了部分代码片段，可以直接使用。点击要 粘贴/复制/更新 的 块/文件 的块标 -> 插件 -> 自定义复制/粘贴/更新，选择要使用的 js 代码。（🚀 对文件使用为实验性功能）
 
-❗插件每次加载时会覆盖`preinstalled`文件夹，如需定制（修改），请复制一个副本。
+❗插件每次加载时会覆盖 `preinstalled`文件夹，如需定制（修改），请复制一个副本。
 
 目前已预设的代码片段：
 
@@ -38,16 +50,16 @@
   - 中文排版综合：空格替换、西文字符替换为中文字符、在中文和英文之间增加空格
   - vuePress链接转思源链接：修复错误的内部链接
 
-如果在注释中以jsdoc风格注释了入参，可在描述窗口的代码块中修改入参值（实质是将代码块中代码放入代码片段前执行，代码中相应入参应采用`declare`形式而非实际赋值，否则会覆盖已修改的值）。
+如果在注释中以jsdoc风格注释了入参，可在描述窗口的代码块中修改入参值（实质是将代码块中代码放入代码片段前执行，代码中相应入参应采用 `declare`形式而非实际赋值，否则会覆盖已修改的值）。
 
 ### 自行编写代码片段
 
 1. 在插件设置中设置 js/ts 代码所在文档，在上述文档中编写 js/ts 代码，代码片段是函数的主体部分
    - 必须使用代码块，并明确表示是 js/ts 代码
    - 可以给块设置“命名”以方便区分，也可以添加备注以作为描述文字
-2. 也可以直接在`data\storage\petal\siyuan-plugin-block-converter`相应的`blockCustomCopy`/`blockCustomUpdate`/`CustomPaste`中新建js/ts文件并编写代码
+2. 也可以直接在 `data\storage\petal\siyuan-plugin-block-converter`相应的 `blockCustomCopy`/`blockCustomUpdate`/`CustomPaste`中新建js/ts文件并编写代码
    - 不同组件的要求不尽相同，请查看组件说明
-   - 可以添加以`@metadata`开头的 jsDoc 风格注释，插件会自动提取注释内容作为描述
+   - 可以添加以 `@metadata`开头的 jsDoc 风格注释，插件会自动提取注释内容作为描述
 3. 点击要 粘贴/复制/更新 的 块/文件 的块标 -> 插件 -> 自定义复制/粘贴/更新，选择要使用的代码片段
    - 🚀 对文件使用为实验性功能
 
@@ -118,7 +130,7 @@ async function executeFunc(
 
 #### tools 上提供的函数
 
-- lute，注意与`window.Lute`不同，为编辑器内使用的 Lute 实例（而非 Lute 类,不需要调用 Lute.New()），具体使用方法参见[思源社区文档](https://docs.siyuan-note.club/zh-Hans/reference/api/plugin/class/Lute.html)。
+- lute，注意与 `window.Lute`不同，为编辑器内使用的 Lute 实例（而非 Lute 类,不需要调用 Lute.New()），具体使用方法参见[思源社区文档](https://docs.siyuan-note.club/zh-Hans/reference/api/plugin/class/Lute.html)。
 - [prettier](https://prettier.io/):代码格式化工具，为了在编辑器中使用，使用方法与官方文档稍有不同，如：
   ```js
   await tools.prettier.prettier.format("foo();", {
@@ -167,7 +179,7 @@ if (!input.isIgnore) {
 ### 其他特性
 
 - 支持设置自定义快捷键（v0.2.6）
-- 函数为异步方法，支持`await`
+- 函数为异步方法，支持 `await`
 - 超时时间 5s，超时后立即返回错误不再执行
 
 ## 自定义块更新
@@ -183,20 +195,20 @@ if (!input.isIgnore) {
 基本同[自定义块复制](#自定义块复制)，有以下不同：
 
 - `input.extra.attr` 表示更新后的属性
-- 返回`input.isDelete`为 `true` 时，则会删除该块
+- 返回 `input.isDelete`为 `true` 时，则会删除该块
   - 所选块的第一个块不能被删除
 
 ### ⚠️ 注意事项
 
 - 可以将一个块更新为多个块（如返回的Markdown内容有多个段落），但只有第一个块会继承或更新属性
 - v0.2.4 以上版本：新增 `inputArray` 变量(详见 自定义块复制 部分)，可以利用其将多个块更新为一个块，但是如果任何块返回 `output` 内容为空，为保证数据安全，不会主动将其清空
-- v0.2.6 以上版本：支持`Ctrl+Z`撤销(🚀 实验性)
-
+- v0.2.6 以上版本：支持 `Ctrl+Z`撤销(🚀 实验性)
 
 pnpm install -g commitizen
 pnpm install cz-conventional-changelog
 
 # 初始化子模块（读取 .gitmodules 配置）
+
 git submodule init
 
 # 拉取子模块代码到指定路径
